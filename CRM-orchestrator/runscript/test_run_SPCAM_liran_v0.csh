@@ -14,7 +14,7 @@ set NPNN           = 56
 #   define case
 ## ====================================================================
 setenv CCSMTAG     CESM-OCR
-setenv CASE        SPdev_liran_1mom_v127
+setenv CASE        SPdev_liran_1mom_v129
 #bloss(2021-01-22): Revert to basic case for testing
 #setenv CASESET     HIST_CAM%SPCAMS_CLM50%SP_CICE%PRES_DOCN%DOM_RTM_SGLC_SWAV
 #setenv CASERES     f19_f19_mg17
@@ -28,6 +28,12 @@ setenv CASERES     f45_g37
 setenv PROJECT     ATM20009
 setenv JOB_QUEUE   $queue
 setenv SCRIPTDIR   $HOME/repositories/$CCSMTAG/CRM-orchestrator/runscript
+### GRID OPTIONS <Liran>
+set crm_nx         = 128         # <<< change this one!
+set crm_ny         = 1
+set crm_dx         = 4000
+set crm_dt         = 1
+set crm_nz         = 24
 ## ====================================================================
 #   define directories <Please make sure the directories are correct>
 ## ====================================================================
@@ -80,7 +86,9 @@ xmlchange --file env_workflow.xml --id JOB_WALLCLOCK_TIME --val $run_time
 #xmlchange --file env_run.xml --id RUN_STARTDATE --val $run_start_date
 xmlchange --file env_run.xml --id STOP_OPTION --val nhour
 xmlchange --file env_run.xml --id STOP_N --val 10
-xmlchange --file env_run.xml --id ATM_NCPL --val 432  
+xmlchange --file env_run.xml --id ATM_NCPL --val 432
+set cam_opt = "-DSPCAM_NX=$crm_nx -DSPCAM_NY=$crm_ny -DSPCAM_NZ=$crm_nz -DSPCAM_DX=$crm_dx -DSPCAM_DT=$crm_dt -DYES3DVAL=0 -DCRM   -Dsam1mom -DPLON=72 -DPLAT=46 -DNUM_COMP_INST_ATM=1 -DNUM_COMP_INST_LND=1 -DNUM_COMP_INST_OCN=1 -DNUM_COMP_INST_ICE=1 -DNUM_COMP_INST_GLC=1 -DNUM_COMP_INST_ROF=1 -DNUM_COMP_INST_WAV=1 -DNUM_COMP_INST_IAC=1 -DNUM_COMP_INST_ESP=1 -DPLEV=26 -DPCNST=3 -DPCOLS=16 -DPSUBCOLS=1 -DN_RAD_CNST=30 -DPTRM=1 -DPTRN=1 -DPTRK=1 -DSPMD " 
+xmlchange --file env_run.xml --id CAM_CPPDEFS --val "$cam_opt"
 #xmlchange --file env_run.xml --id run_data_archive --val "FALSE"
 #xmlchange --file env_run.xml --id RESUBMIT --val 4
 ./case.setup
@@ -96,6 +104,8 @@ cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/ppgrid.o .
 cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/phys_grid.o .
 cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/mct/noesmf/c1a1l1i1o1r1g1w1i1e1/csm_share/shr_kind_mod.o .
 mpif90  -o /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/crm.exe crmdims.o ppgrid.o crmx_crm_module_ORC.o  shr_kind_mod.o phys_grid.o TwoExecutableDriver.o -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -latm -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lice  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/mct/noesmf/lib/ -lclm  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -locn  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lrof  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lglc  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lwav  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lesp  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -liac -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/mct/noesmf/c1a1l1i1o1r1g1w1i1e1/lib -lcsm_share -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/lib -lpiof -lpioc -lgptl -lmct -lmpeu  -lpthread   -mkl=cluster   -L/opt/apps/intel19/impi19_0/parallel-netcdf/4.7.4/x86_64 -lnetcdff -Wl,--as-needed,-L/opt/apps/intel19/impi19_0/parallel-netcdf/4.7.4/x86_64/lib -lnetcdff -lnetcdf  -L/opt/apps/intel19/impi19_0/pnetcdf/1.11.2/lib -lpnetcdf
+cd  $CASEROOT
+./case.submit
 sbatch --time 0:30:00 -p development --account ATM20009 .case.run --resubmit
 cd ..
 #./case.submit
