@@ -401,7 +401,7 @@ real(kind=core_rknd), dimension(nzm) :: &
         ! lrestart_clubb = .true.
         !endif
 #endif
-        call task_init_ORC ()
+        call task_init ()
 
         call setparm()
 
