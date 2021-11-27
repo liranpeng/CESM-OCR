@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # Batch system directives
-#SBATCH  --job-name=run.SPdev_liran_1mom_v125
-#SBATCH  --nodes=1
+#SBATCH  --job-name=run.CASE_FOLDER
+#SBATCH  --nodes=NNODE
 #SBATCH  --ntasks-per-node=NPN
-#SBATCH  --output=run.SPdev_liran_1mom_v125   
+#SBATCH  --output=run.CASE_FOLDER
 #SBATCH  --exclusive                        
 
 """

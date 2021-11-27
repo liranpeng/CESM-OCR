@@ -382,7 +382,7 @@ subroutine tphysbc_spcam (ztodt, state,   &
     type(rad_avgdata_type_sam1mom)   :: rad_avgdata_sam1mom
     type(rad_avgdata_type_m2005)     :: rad_avgdata_m2005
     type(rad_out_t)                  :: rd
-
+    integer,parameter :: rank_offset = 2
     integer :: teout_idx, qini_idx, cldliqini_idx, cldiceini_idx
     integer :: ii, jj
     integer :: ierr !bloss MPI Vars
@@ -498,7 +498,7 @@ subroutine tphysbc_spcam (ztodt, state,   &
        state%crmrank0(:ncol) = -1
        state%crmrank1(:ncol) = -1
        if (lchnk .eq. begchunk .and. masterproc) then
-!         write (iulog,*) 'MDEBUG YO on masterproc lchnk=',begchunk,',ncols',ncol
+         write (iulog,*) 'MDEBUG YO on masterproc lchnk=',begchunk,',ncols',ncol
          ! except (for now) the first six columns on masterproc...
          do i=1,6
            ! each of which is to be linked (for now) to a single-core CRM in the external
@@ -512,9 +512,9 @@ subroutine tphysbc_spcam (ztodt, state,   &
     ! to dedicated CRM rank:
       do i=1,ncol
         if (state%crmrank0(i) .ne. -1) then
-          !write (iulog,*) 'MDEBUG npes=',npes --> note this is GCM npes, e.g.
+          write (iulog,*) 'MDEBUG npes=',npes !--> note this is GCM npes, e.g.
           !validated at 50.
-          dest = npes+state%crmrank0(i)
+          dest = npes+state%crmrank0(i)*rank_offset
           gcmrank(1) = iam
           write (iulog,*) 'MDEBUG trying to send to CRM on global rank=',dest
           call MPI_Send(gcmrank,1,MPI_INTEGER,dest,54321,MPI_COMM_WORLD,ierr)

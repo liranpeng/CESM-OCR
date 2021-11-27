@@ -7,14 +7,14 @@ set queue          = development
 set account        = ATM20009
 set run_start_date = "0001-01-01"
 set pcount         = 50
-set CRM_pcount     = 6
-set NPNN           = 56
+set CRM_pcount     = 12          
 @ NPNN = $pcount +  $CRM_pcount
+set NNODE = 2
 ## ====================================================================
 #   define case
 ## ====================================================================
 setenv CCSMTAG     CESM-OCR
-setenv CASE        SPdev_liran_1mom_v129
+setenv CASE        SPdev_liran_1mom_v170
 #bloss(2021-01-22): Revert to basic case for testing
 #setenv CASESET     HIST_CAM%SPCAMS_CLM50%SP_CICE%PRES_DOCN%DOM_RTM_SGLC_SWAV
 #setenv CASERES     f19_f19_mg17
@@ -29,7 +29,7 @@ setenv PROJECT     ATM20009
 setenv JOB_QUEUE   $queue
 setenv SCRIPTDIR   $HOME/repositories/$CCSMTAG/CRM-orchestrator/runscript
 ### GRID OPTIONS <Liran>
-set crm_nx         = 128         # <<< change this one!
+set crm_nx         = 32         # <<< change this one!
 set crm_ny         = 1
 set crm_dx         = 4000
 set crm_dt         = 1
@@ -73,8 +73,9 @@ cd $CCSMROOT/cime/scripts
 #./create_newcase --case $CASEROOT --pecount $pcount --pesfile ./pelayout_frontera01.xml --res $CASERES --machine $MACH --compset $CASESET --input-dir $DATADIR --output-root $CASEROOT --run-unsupported
 ./create_newcase --case $CASEROOT  --pecount $pcount --res $CASERES --machine $MACH --compset $CASESET --input-dir $DATADIR --output-root $CASEROOT  --run-unsupported
 cd  $CASEROOT
-sed -e "s/NPN/$NPNN/g; s/CASE_FOLDER/$CASE/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.sample > $CASEROOT/.case.run
+sed -e "s/NPN/$NPNN/g; s/NNODE/$NNODE/g; s/CASE_FOLDER/$CASE/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.sample > $CASEROOT/.case.run
 sed -e "s/GCM_pcount/$pcount/g; s/CRM_pcount/$CRM_pcount/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/env_mach_specific.sample  > $CASEROOT/env_mach_specific.xml
+sed -e "s/NXX/$crm_nx/g; s/NYY/$crm_ny/g; s/DXX/$crm_dx/g; s/DTT/$crm_dt/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/config_component.sample > $HOME/repositories/CESM-OCR/components/cam/cime_config/config_component.xml
 #cat <<EOF >> user_nl_cam
 #nhtfrq =   1
 #mfilt  = 1
@@ -87,11 +88,9 @@ xmlchange --file env_workflow.xml --id JOB_WALLCLOCK_TIME --val $run_time
 xmlchange --file env_run.xml --id STOP_OPTION --val nhour
 xmlchange --file env_run.xml --id STOP_N --val 10
 xmlchange --file env_run.xml --id ATM_NCPL --val 432
-set cam_opt = "-DSPCAM_NX=$crm_nx -DSPCAM_NY=$crm_ny -DSPCAM_NZ=$crm_nz -DSPCAM_DX=$crm_dx -DSPCAM_DT=$crm_dt -DYES3DVAL=0 -DCRM   -Dsam1mom -DPLON=72 -DPLAT=46 -DNUM_COMP_INST_ATM=1 -DNUM_COMP_INST_LND=1 -DNUM_COMP_INST_OCN=1 -DNUM_COMP_INST_ICE=1 -DNUM_COMP_INST_GLC=1 -DNUM_COMP_INST_ROF=1 -DNUM_COMP_INST_WAV=1 -DNUM_COMP_INST_IAC=1 -DNUM_COMP_INST_ESP=1 -DPLEV=26 -DPCNST=3 -DPCOLS=16 -DPSUBCOLS=1 -DN_RAD_CNST=30 -DPTRM=1 -DPTRN=1 -DPTRK=1 -DSPMD " 
-xmlchange --file env_run.xml --id CAM_CPPDEFS --val "$cam_opt"
+./case.setup
 #xmlchange --file env_run.xml --id run_data_archive --val "FALSE"
 #xmlchange --file env_run.xml --id RESUBMIT --val 4
-./case.setup
 cp $SCRIPTDIR/src.cam/*F90 SourceMods/src.cam/.
 ./case.build
 pwd

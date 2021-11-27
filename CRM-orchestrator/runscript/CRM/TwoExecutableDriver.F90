@@ -12,15 +12,15 @@ program TwoExecutableDriver
   !--------------------------------------------------------------------------
   !bloss: MPI-related variables
   !--------------------------------------------------------------------------
-  integer :: crm_comm
-  integer :: myrank_global, numproc_global
-  integer :: myrank_crm, numproc_crm
+  integer :: crm_comm,crm_comm_in
+  integer :: myrank_global, numproc_global,crm_comm_color
+  integer :: myrank_crm, numproc_crm,myrank_crm_in, numproc_crm_in
   integer :: ierr,status
   integer, parameter :: nmicro_fields = 2   ! total number of prognostic water vars
   integer, parameter :: pcols = 16
   integer, parameter :: pver = 26
   integer :: i,from,EndFlag
-  integer, dimension(1) :: destGCM = -999
+  integer, dimension(1) :: destGCM0 = -999
   CHARACTER(LEN=6) :: crm_number
   integer gcolindex(pcols)  ! array of global latitude indices
   ! local copies of input ingredients to CRM ( to be received)
@@ -55,6 +55,7 @@ program TwoExecutableDriver
   integer,parameter :: flen2      = 17*crm_nx*crm_nz*crm_nz + crm_nx*crm_ny*crm_nz*nmicro_fields+crm_nx*crm_ny
   integer,parameter :: structleno = 37
   integer,parameter :: singleleno = 22
+  integer,parameter :: rank_offset=2
   integer,parameter :: fleno      = structleno*pver+singleleno+1+20
   real(r8),dimension(flen ) :: inp_Var_Flat
   real(r8),dimension(flen2) :: inp_Var_Flat2
@@ -91,31 +92,39 @@ program TwoExecutableDriver
   call mpi_comm_rank(crm_comm, myrank_crm, ierr)
  
  ! ---------- basic comm pool size sanity checks by bloss -------------
- 
   923 format(I6.6)
   write(crm_number,923) myrank_crm
   open(unit=13,file='crm.log.'//TRIM(crm_number),form='formatted')
 
-     do i = 0,numproc_crm-1
-        if(i.eq.myrank_crm) then
-           write(13,924) numproc_global, myrank_global, numproc_crm, myrank_crm
-924        format('MPI_COMM_WORLD: size/myrank = ',2i5,', crm_comm: size/myrank = ',2i5) 
+     do i = 1,numproc_crm-1
+        if((myrank_global.lt.(50+i*rank_offset)).and.(myrank_global.ge.(50+(i-1)*rank_offset))) then
+           crm_comm_color = int(myrank_crm/2)+2 
+           write(13,924) numproc_global, myrank_global, numproc_crm,myrank_crm,crm_comm_color
+924        format('MPI_COMM_WORLD: size/myrank = ',2i5,', crm_comm: size/myrank = ',3i5) 
+           call mpi_comm_split(crm_comm, crm_comm_color, 0, crm_comm_in, ierr)
+           call mpi_comm_size(crm_comm_in, numproc_crm_in, ierr)
+           call mpi_comm_rank(crm_comm_in, myrank_crm_in, ierr)
+!           open(unit=13,file='crm.log.'//TRIM(crm_number),form='formatted')    
+           write(13,*) 'Liran Check:', myrank_crm, myrank_global, numproc_crm_in, myrank_crm_in
+           call MPI_Barrier(crm_comm,ierr)
         end if
-        call MPI_Barrier(crm_comm,ierr)
      end do
 
   ! ----------- GCM handshake from spcam_drivers --------------
-
-  ! Recieve rank of host GCM column linked to this CRM, for eventual MPI_Send
-  call MPI_Recv(destGCM,1,MPI_INTEGER,MPI_ANY_SOURCE,54321,MPI_COMM_WORLD,status,ierr)
-  if (ierr.eq.0) then
-    write(13,*) 'CRM rank',myrank_crm,' got handshake; its GCM dest rank=',destGCM
-  else 
-    write (13,*) 'MPI_Recv from spcam_driver handshake failed for CRM rank ',myrank_crm,',ierr=',ierr
-  end if
-
-  allocate(out_Var_Flat(fleno+nflat))
-  EndFlag  = 0
+  EndFlag  = 1
+  do i = 1,numproc_crm-1
+    if(myrank_global.eq.(50+(i-1)*rank_offset)) then
+      ! Recieve rank of host GCM column linked to this CRM, for eventual MPI_Send
+      call MPI_Recv(destGCM0,1,MPI_INTEGER,MPI_ANY_SOURCE,54321,MPI_COMM_WORLD,status,ierr)
+      if (ierr.eq.0) then
+        write(13,*) 'CRM rank',myrank_crm,' got handshake; its GCM dest rank=',destGCM0
+      else 
+        write (13,*) 'MPI_Recv from spcam_driver handshake failed for CRM rank ',myrank_crm,',ierr=',ierr
+      end if
+      EndFlag  = 0
+      allocate(out_Var_Flat(fleno+nflat))
+     end if
+  end do
   do while (EndFlag.eq.0)
   ! ----------- Receive from cesm.exe/crm_physics inputs to CRM right before call to crm() ----------------
   chnksz = crm_nx*crm_nz*crm_nz
@@ -206,7 +215,6 @@ program TwoExecutableDriver
   out04_sltend(1:pver)= inp_Var_Flat(48*pver+2+singlelen:49*pver+singlelen+1)
   qtotcrm(1:20)       = inp_Var_Flat(49*pver+2+singlelen:49*pver+21+singlelen)
   gcolindex(1:pcols)  = inp_Var_Flat(49*pver+22+singlelen:49*pver+21+singlelen+pcols)
-  
   fcount = 0
   do ii=1,crm_nx
     do jj=1,crm_ny
@@ -396,7 +404,8 @@ program TwoExecutableDriver
       out_Var_Flat(fcount) = outin11_prec_crm(ii,jj)
     end do
   end do
-  call MPI_Send(out_Var_Flat,fleno+nflat,MPI_REAL8,destGCM,8006,MPI_COMM_WORLD,ierr)
+  write(13,*) 'CRM chunk,i',myrank_crm, destGCM0,inp01_lchnk,inp02_i
+  call MPI_Send(out_Var_Flat,fleno+nflat,MPI_REAL8,destGCM0,8006,MPI_COMM_WORLD,ierr)
  end do
   call MPI_comm_free(crm_comm, ierr)
   call MPI_barrier(MPI_COMM_WORLD, ierr)

@@ -1086,6 +1086,7 @@ end subroutine crm_init_cnst
    real(r8), allocatable :: flattened_crm_inout(:)
    real(r8),dimension(flen) :: Var_Flat
    real(r8),dimension(flen2) :: Var_Flat2
+   integer,parameter :: rank_offset=2
    integer,parameter :: structleno = 37
    integer,parameter :: singleleno = 22
    integer,parameter :: fleno      = structleno*pver+singleleno+1+20
@@ -1619,7 +1620,7 @@ end subroutine crm_init_cnst
           ! =================================================
           ! Start to flatten the arry and send it to CRM. 
           ! =================================================
-          dest = npes+state%crmrank0(i)
+          dest = npes+state%crmrank0(i)*rank_offset
           chnksz = crm_nx*crm_nz*crm_nz
           call get_gcol_all_p(lchnk, pcols, gcolindex)
           latitude0 = get_rlat_p(lchnk, i)*57.296_r8
@@ -1748,8 +1749,8 @@ end subroutine crm_init_cnst
               Var_Flat2(fcount) = prec_crm(i,ii,jj)
             end do
           end do
-          write (iulog,9999),lchnk,i,latitude0,longitude0
-          9999  format ('lon-lat',2I4,2E15.6)
+          write (iulog,9999),lchnk,i,state%crmrank0(i),dest,latitude0,longitude0
+          9999  format ('lon-lat',4I4,2E15.6)
           call MPI_Send(Var_Flat(:)         ,flen,MPI_REAL8 ,dest,9018,MPI_COMM_WORLD,ierr)
           call MPI_Send(Var_Flat2(:)         ,flen2,MPI_REAL8,dest,9019,MPI_COMM_WORLD,ierr)
 
