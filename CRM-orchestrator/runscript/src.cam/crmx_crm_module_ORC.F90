@@ -14,7 +14,7 @@ public :: crm_orc
 
 contains
 
-subroutine crm_orc     (long,lati,gcolindex,lchnk, icol, &
+subroutine crm_orc     (npro,ntask,long,lati,gcolindex,lchnk, icol, &
                        tl, ql, qccl, qiil, ul, vl, &
                        ps, pmid, pdel, phis, &
                        zmid, zint, dt_gl, plev, &
@@ -335,7 +335,7 @@ subroutine crm_orc     (long,lati,gcolindex,lchnk, icol, &
         real(r8) factor_xy, idt_gl
         real tmp1, tmp2
         real u2z,v2z,w2z
-        integer i,j,k,l,ptop,nn,icyc, nstatsteps
+        integer i,j,k,l,ptop,nn,icyc, nstatsteps,npro,ntask
         integer kx
         real(r8), parameter :: umax = 0.5*crm_dx/crm_dt ! maxumum ampitude of the l.s. wind
         real(r8), parameter :: wmin = 2.   ! minimum up/downdraft velocity for stat
@@ -401,7 +401,8 @@ real(kind=core_rknd), dimension(nzm) :: &
         ! lrestart_clubb = .true.
         !endif
 #endif
-        call task_init ()
+        write(0, *) 'Enter task_init_ORC',npro,ntask
+        call task_init_ORC (npro,ntask)
 
         call setparm()
 

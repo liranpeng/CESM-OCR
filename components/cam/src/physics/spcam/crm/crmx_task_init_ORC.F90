@@ -1,12 +1,12 @@
-subroutine task_init
+subroutine task_init_ORC(npro,ntask)
 		
 !   Check things, initialize multitasking:
 
 use crmx_grid
 implicit none
 
-integer itasks,ntasks
-print *,'Enter task_init'
+integer itasks,ntasks,npro,ntask
+print *,'Enter ORC'
 if(YES3D .ne. 1 .and. YES3D .ne. 0) then
   print*,'YES3D is not 1 or 0. STOP'
   stop
@@ -21,30 +21,31 @@ if(YES3D .eq. 0 .and. ny_gl .ne. 1) then
   print*,'ny_gl should be 1 for a 2D case. STOP'
   stop
 endif
-
+ntasks = ntask
+rank=npro
 if(nsubdomains.eq.1) then
 
   rank =0
   ntasks = 1
   dompi = .false.
-  print *,'rank,ntasks0',rank, ntasks
+  print *,'rank,ntasks1',rank, ntasks
 else
+  print *,'rank,ntasks2',npro,ntask
+  !call task_start(rank, ntasks)
 
-!  call task_start(rank, ntasks)
+  dompi = .true.
 
-!  dompi = .true.
+  !call systemf('hostname')
 
-!  call systemf('hostname')
-
-!  if(ntasks.ne.nsubdomains) then
-!    if(masterproc) print *,'number of processors is not equal to nsubdomains!',&
-!             '  ntasks=',ntasks,'   nsubdomains=',nsubdomains
-!    call task_abort() 
-!  endif
+  if(ntasks.ne.nsubdomains) then
+    if(masterproc) print *,'number of processors is not equal to nsubdomains!',&
+             '  ntasks=',ntasks,'   nsubdomains=',nsubdomains
+   ! call task_abort() 
+  endif
         
-!  call task_barrier()
+  !call task_barrier()
 
-!  call task_ranks()
+  !call task_ranks()
         
 end if ! nsubdomains.eq.1
 

@@ -10,53 +10,118 @@ use modal_aero_data,   only: ntot_amode
 implicit none
 !--------------------------------------------------------------------
 ! prognostic variables:
+real, allocatable, dimension(:,:,:)  :: u
+real, allocatable, dimension(:,:,:)  :: v
+real, allocatable, dimension(:,:,:)  :: w
+real, allocatable, dimension(:,:,:)  :: t
 
-real u   (dimx1_u:dimx2_u, dimy1_u:dimy2_u, nzm) ! x-wind
-real v   (dimx1_v:dimx2_v, dimy1_v:dimy2_v, nzm) ! y-wind
-real w   (dimx1_w:dimx2_w, dimy1_w:dimy2_w, nz ) ! z-wind
-real t   (dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm) ! liquid/ice water static energy 
+allocate (u   (dimx1_u:dimx2_u, dimy1_u:dimy2_u, nzm)) ! x-wind
+allocate (v   (dimx1_v:dimx2_v, dimy1_v:dimy2_v, nzm)) ! y-wind
+allocate (w   (dimx1_w:dimx2_w, dimy1_w:dimy2_w, nz )) ! z-wind
+allocate (t   (dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm)) ! liquid/ice water static energy 
 
 !--------------------------------------------------------------------
 ! diagnostic variables:
+real, allocatable, dimension(:,:,:)  :: p
+real, allocatable, dimension(:,:,:)  :: tabs
+real, allocatable, dimension(:,:,:)  :: qv
+real, allocatable, dimension(:,:,:)  :: qcl
+real, allocatable, dimension(:,:,:)  :: qpl
+real, allocatable, dimension(:,:,:)  :: qci
+real, allocatable, dimension(:,:,:)  :: qpi
+real, allocatable, dimension(:,:,:)  :: tke2
+real, allocatable, dimension(:,:,:)  :: tk2
 
-real p      (0:nx, (1-YES3D):ny, nzm)     ! perturbation pressure (from Poison eq)
-real tabs   (nx, ny, nzm)                 ! temperature
-real qv      (nx, ny, nzm)                ! water vapor
-real qcl     (nx, ny, nzm)                ! liquid water  (condensate)
-real qpl     (nx, ny, nzm)                ! liquid water  (precipitation)
-real qci     (nx, ny, nzm)                ! ice water  (condensate)
-real qpi     (nx, ny, nzm)                ! ice water  (precipitation)
+allocate (p      (0:nx, (1-YES3D):ny, nzm))     ! perturbation pressure (from Poison eq)
+allocate (tabs   (nx, ny, nzm)            )     ! temperature
+allocate (qv      (nx, ny, nzm)           )     ! water vapor
+allocate (qcl     (nx, ny, nzm)           )     ! liquid water  (condensate)
+allocate (qpl     (nx, ny, nzm)           )     ! liquid water  (precipitation)
+allocate (qci     (nx, ny, nzm)           )     ! ice water  (condensate)
+allocate (qpi     (nx, ny, nzm)           )     ! ice water  (precipitation)
 
-real tke2(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm)   ! SGS TKE
-real tk2     (0:nxp1, (1-YES3D):nyp1, nzm) ! SGS eddyviscosity
+allocate (tke2(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm))   ! SGS TKE
+allocate (tk2     (0:nxp1, (1-YES3D):nyp1, nzm)) ! SGS eddyviscosity
         
 !--------------------------------------------------------------------
 ! time-tendencies for prognostic variables
+real, allocatable, dimension(:,:,:,:)  :: dudt
+real, allocatable, dimension(:,:,:,:)  :: dvdt
+real, allocatable, dimension(:,:,:,:)  :: dwdt
 
-real dudt   (nxp1, ny, nzm, 3)
-real dvdt   (nx, nyp1, nzm, 3)
-real dwdt   (nx, ny, nz,  3)
+allocate ( dudt   (nxp1, ny, nzm, 3))
+allocate ( dvdt   (nx, nyp1, nzm, 3))
+allocate ( dwdt   (nx, ny, nz,  3))
 
 !----------------------------------------------------------------
 ! Temporary storage array:
-
-	real misc(nx, ny, nz)
+real, allocatable, dimension(:,:,:)  :: misc
+allocate ( misc(nx, ny, nz))
 !------------------------------------------------------------------
 ! fluxes at the top and bottom of the domain:
+real, allocatable, dimension(:,:)  :: fluxbu
+real, allocatable, dimension(:,:)  :: fluxbv
+real, allocatable, dimension(:,:)  :: fluxbt
+real, allocatable, dimension(:,:)  :: fluxbq
+real, allocatable, dimension(:,:)  :: fluxtu
+real, allocatable, dimension(:,:)  :: fluxtv
+real, allocatable, dimension(:,:)  :: fluxtt
+real, allocatable, dimension(:,:)  :: fluxtq
+real, allocatable, dimension(:,:)  :: fzero
+real, allocatable, dimension(:,:)  :: precsfc
+real, allocatable, dimension(:,:)  :: precssfc
 
-real fluxbu (nx, ny), fluxbv (nx, ny), fluxbt (nx, ny)
-real fluxbq (nx, ny), fluxtu (nx, ny), fluxtv (nx, ny)
-real fluxtt (nx, ny), fluxtq (nx, ny), fzero  (nx, ny)
-real precsfc(nx,ny) ! surface precip. rate
-real precssfc(nx,ny) ! surface ice precip. rate
+allocate ( fluxbu (nx, ny))
+allocate ( fluxbv (nx, ny))
+allocate ( fluxbt (nx, ny))
+allocate ( fluxbq (nx, ny))
+allocate ( fluxtu (nx, ny))
+allocate ( fluxtv (nx, ny))
+allocate ( fluxtt (nx, ny))
+allocate ( fluxtq (nx, ny))
+allocate ( fzero  (nx, ny))
+allocate ( precsfc(nx,ny) ) ! surface precip. rate
+allocate ( precssfc(nx,ny)) ! surface ice precip. rate
                 
 !-----------------------------------------------------------------
 ! profiles 
+real, allocatable, dimension(:)  :: t0
+real, allocatable, dimension(:)  :: q0
+real, allocatable, dimension(:)  :: qv0
+real, allocatable, dimension(:)  :: tabs0
+real, allocatable, dimension(:)  :: tl0
+real, allocatable, dimension(:)  :: tv0         
+real, allocatable, dimension(:)  :: u0
+real, allocatable, dimension(:)  :: v0
+real, allocatable, dimension(:)  :: tg0
+real, allocatable, dimension(:)  :: qg0
+real, allocatable, dimension(:)  :: ug0
+real, allocatable, dimension(:)  :: vg0
+real, allocatable, dimension(:)  :: p0
+real, allocatable, dimension(:)  :: tke0
+real, allocatable, dimension(:)  :: t01
+real, allocatable, dimension(:)  :: q01
+real, allocatable, dimension(:)  :: qp0
+real, allocatable, dimension(:)  :: qn0
 
-real   t0(nzm), q0(nzm), qv0(nzm), tabs0(nzm), tl0(nzm), &
-       tv0(nzm), u0(nzm), v0(nzm), &
-       tg0(nzm), qg0(nzm), ug0(nzm), vg0(nzm), p0(nzm), &
-       tke0(nzm), t01(nzm), q01(nzm), qp0(nzm), qn0(nzm)
+allocate ( t0(nzm))
+allocate ( q0(nzm))
+allocate ( qv0(nzm))
+allocate ( tabs0(nzm))
+allocate ( tl0(nzm))
+allocate ( tv0(nzm))
+allocate ( u0(nzm))
+allocate ( v0(nzm))
+allocate ( tg0(nzm))
+allocate ( qg0(nzm))
+allocate ( ug0(nzm))
+allocate ( vg0(nzm))
+allocate ( p0(nzm))
+allocate (tke0(nzm))
+allocate ( t01(nzm))
+allocate ( q01(nzm))
+allocate ( qp0(nzm))
+allocate ( qn0(nzm))
 !----------------------------------------------------------------
 ! "observed" (read from snd file) surface characteristics 
 
@@ -69,17 +134,27 @@ real   gamq0    ! gradient of q() at the top,g/g/m
 
 !-----------------------------------------------------------------
 ! reference vertical profiles:
+real, allocatable, dimension(:)  :: prespot
+real, allocatable, dimension(:)  :: rho
+real, allocatable, dimension(:)  :: rhow
+real, allocatable, dimension(:)  :: bet
+real, allocatable, dimension(:)  :: gamaz
+real, allocatable, dimension(:)  :: wsub
+real, allocatable, dimension(:)  :: qtend
+real, allocatable, dimension(:)  :: ttend
+real, allocatable, dimension(:)  :: utend
+real, allocatable, dimension(:)  :: vtend
  
-real   prespot(nzm)  ! (1000./pres)**R/cp
-real   rho(nzm)	  ! air density at pressure levels,kg/m3 
-real   rhow(nz)   ! air density at vertical velocity levels,kg/m3
-real   bet(nzm)	  ! = ggr/tv0
-real   gamaz(nzm) ! ggr/cp*z
-real   wsub(nz)   ! Large-scale subsidence velocity,m/s
-real   qtend(nzm) ! Large-scale tendency for total water
-real   ttend(nzm) ! Large-scale tendency for temp.
-real   utend(nzm) ! Large-scale tendency for u
-real   vtend(nzm) ! Large-scale tendency for v
+allocate ( prespot(nzm))  ! (1000./pres)**R/cp
+allocate (  rho(nzm))	  ! air density at pressure levels,kg/m3 
+allocate (  rhow(nz))   ! air density at vertical velocity levels,kg/m3
+allocate (  bet(nzm))	  ! = ggr/tv0
+allocate (  gamaz(nzm)) ! ggr/cp*z
+allocate (  wsub(nz))   ! Large-scale subsidence velocity,m/s
+allocate (  qtend(nzm)) ! Large-scale tendency for total water
+allocate (  ttend(nzm)) ! Large-scale tendency for temp.
+allocate (  utend(nzm)) ! Large-scale tendency for u
+allocate (  vtend(nzm)) ! Large-scale tendency for v
 
 
 !---------------------------------------------------------------------
@@ -121,59 +196,171 @@ real, allocatable :: daysnd(:) ! number of sounding samples
 !---------------------------------------------------------------------
 !  Horizontally varying stuff (as a function of xy)
 !
-real sstxy(0:nx,(1-YES3D):ny)	!  surface temperature xy-distribution
-real fcory(0:ny)      !  Coriolis parameter xy-distribution
-real fcorzy(ny)      !  z-Coriolis parameter xy-distribution
-real latitude(nx,ny)	     ! latitude (degrees)
-real longitude(nx,ny)	     ! longitude(degrees)
-real prec_xy(nx,ny) ! mean precip. rate for outout
-real shf_xy(nx,ny) ! mean precip. rate for outout
-real lhf_xy(nx,ny) ! mean precip. rate for outout
-real lwns_xy(nx,ny) ! mean net lw at SFC
-real swns_xy(nx,ny) ! mean net sw at SFC
-real lwnsc_xy(nx,ny) ! clear-sky mean net lw at SFC
-real swnsc_xy(nx,ny) ! clear-sky mean net sw at SFC
-real lwnt_xy(nx,ny) ! mean net lw at TOA
-real swnt_xy(nx,ny) ! mean net sw at TOA
-real lwntc_xy(nx,ny) ! clear-sky mean net lw at TOA
-real swntc_xy(nx,ny) ! clear-sky mean net sw at TOA
-real solin_xy(nx,ny) ! solar TOA insolation
-real pw_xy(nx,ny)   ! precipitable water
-real cw_xy(nx,ny)   ! cloud water path
-real iw_xy(nx,ny)   ! ice water path
-real cld_xy(nx,ny)   ! cloud frequency
-real u200_xy(nx,ny) ! u-wind at 200 mb
-real usfc_xy(nx,ny) ! u-wind at at the surface
-real v200_xy(nx,ny) ! v-wind at 200 mb
-real vsfc_xy(nx,ny) ! v-wind at the surface
-real w500_xy(nx,ny) ! w at 500 mb
-real qocean_xy(nx,ny) ! ocean cooling in W/m2
+real, allocatable ::  sstxy(:,:)	!  surface temperature xy-distribution
+real, allocatable ::  fcory(:)      !  Coriolis parameter xy-distribution
+real, allocatable ::  fcorzy(:)      !  z-Coriolis parameter xy-distribution
+real, allocatable ::  latitude(:,:)	     ! latitude (degrees)
+real, allocatable ::  longitude(:,:)	     ! longitude(degrees)
+real, allocatable ::  prec_xy(:,:) ! mean precip. rate for outout
+real, allocatable ::  shf_xy(:,:) ! mean precip. rate for outout
+real, allocatable ::  lhf_xy(:,:) ! mean precip. rate for outout
+real, allocatable ::  lwns_xy(:,:) ! mean net lw at SFC
+real, allocatable ::  swns_xy(:,:) ! mean net sw at SFC
+real, allocatable ::  lwnsc_xy(:,:) ! clear-sky mean net lw at SFC
+real, allocatable ::  swnsc_xy(:,:) ! clear-sky mean net sw at SFC
+real, allocatable ::  lwnt_xy(:,:) ! mean net lw at TOA
+real, allocatable ::  swnt_xy(:,:) ! mean net sw at TOA
+real, allocatable ::  lwntc_xy(:,:) ! clear-sky mean net lw at TOA
+real, allocatable ::  swntc_xy(:,:) ! clear-sky mean net sw at TOA
+real, allocatable ::  solin_xy(:,:) ! solar TOA insolation
+real, allocatable ::  pw_xy(:,:)   ! precipitable water
+real, allocatable ::  cw_xy(:,:)   ! cloud water path
+real, allocatable ::  iw_xy(:,:)   ! ice water path
+real, allocatable ::  cld_xy(:,:)   ! cloud frequency
+real, allocatable ::  u200_xy(:,:) ! u-wind at 200 mb
+real, allocatable ::  usfc_xy(:,:) ! u-wind at at the surface
+real, allocatable ::  v200_xy(:,:) ! v-wind at 200 mb
+real, allocatable ::  vsfc_xy(:,:) ! v-wind at the surface
+real, allocatable ::  w500_xy(:,:) ! w at 500 mb
+real, allocatable ::  qocean_xy(:,:) ! ocean cooling in W/m2
+
+allocate ( sstxy(0:nx,(1-YES3D):ny))
+allocate ( fcory(0:ny))
+allocate ( fcorzy(ny) )
+allocate ( latitude(nx,ny))
+allocate ( longitude(nx,ny)) 
+allocate ( prec_xy(nx,ny))
+allocate ( shf_xy(nx,ny) )
+allocate ( lhf_xy(nx,ny))
+allocate ( lwns_xy(nx,ny))
+allocate ( swns_xy(nx,ny))
+allocate ( lwnsc_xy(nx,ny))
+allocate ( swnsc_xy(nx,ny))
+allocate ( lwnt_xy(nx,ny))
+allocate ( swnt_xy(nx,ny))
+allocate ( lwntc_xy(nx,ny))
+allocate ( swntc_xy(nx,ny))
+allocate ( solin_xy(nx,ny))
+allocate ( pw_xy(nx,ny))
+allocate ( cw_xy(nx,ny))
+allocate ( iw_xy(nx,ny))
+allocate ( cld_xy(nx,ny))
+allocate ( u200_xy(nx,ny)) 
+allocate ( usfc_xy(nx,ny))
+allocate ( v200_xy(nx,ny))
+allocate ( vsfc_xy(nx,ny))
+allocate ( w500_xy(nx,ny))
+allocate ( qocean_xy(nx,ny))
 
 !----------------------------------------------------------------------
 !	Vertical profiles of quantities sampled for statitistics purposes:
+real, allocatable ::  twle(:)
+real, allocatable ::  twsb(:)
+real, allocatable ::  precflux(:)
+real, allocatable ::  uwle(:)
+real, allocatable ::  uwsb(:)
+real, allocatable ::  vwle(:)
+real, allocatable ::  vwsb(:)
+real, allocatable ::  radlwup(:)
+real, allocatable ::  radlwdn(:)
+real, allocatable ::  radswup(:)
+real, allocatable ::  radswdn(:)
+real, allocatable ::  radqrlw(:)
+real, allocatable ::  radqrsw(:)  
+real, allocatable ::  tkeleadv(:)
+real, allocatable ::  tkelepress(:)
+real, allocatable ::  tkelediss(:)
+real, allocatable ::  tkelediff(:)
+real, allocatable ::  tkelebuoy(:)
+real, allocatable ::  t2leadv(:)
+real, allocatable ::  t2legrad(:)
+real, allocatable ::  t2lediff(:)
+real, allocatable ::  t2leprec(:)
+real, allocatable ::  t2lediss(:)
+real, allocatable ::  q2leadv(:)
+real, allocatable ::  q2legrad(:)
+real, allocatable ::  q2lediff(:)
+real, allocatable ::  q2leprec(:)
+real, allocatable ::  q2lediss(:)
+real, allocatable ::  twleadv(:)
+real, allocatable ::  twlediff(:)
+real, allocatable ::  twlepres(:)
+real, allocatable ::  twlebuoy(:)
+real, allocatable ::  twleprec(:)
+real, allocatable ::  qwleadv(:)
+real, allocatable ::  qwlediff(:)
+real, allocatable ::  qwlepres(:)
+real, allocatable ::  qwlebuoy(:)
+real, allocatable ::  qwleprec(:)
+real, allocatable ::  momleadv(:,:)
+real, allocatable ::  momlepress(:,:)
+real, allocatable ::  momlebuoy(:,:)
+real, allocatable ::  momlediff(:,:)
+real, allocatable ::  tadv(:)
+real, allocatable ::  tdiff(:)
+real, allocatable ::  tlat(:)
+real, allocatable ::  tlatqi(:)
+real, allocatable ::  qifall(:)
+real, allocatable ::  qpfall(:)
+real, allocatable ::  tdiff_xy(:)
+real, allocatable ::  tdiff_z(:)
+real, allocatable ::  ttest0(:)
+real, allocatable ::  ttest1(:)
+real, allocatable ::  ttest2(:,:)
 
-real &
-    twle(nz), twsb(nz), precflux(nz), &
-    uwle(nz), uwsb(nz), vwle(nz), vwsb(nz), &
-    radlwup(nz), radlwdn(nz), radswup(nz), radswdn(nz), &
-    radqrlw(nz), radqrsw(nz), w_max, u_max, s_acld, s_acldcold, s_ar, s_arthr, s_sst, &
-    s_acldl, s_acldm, s_acldh,  ncmn, nrmn, z_inv, z_cb, z_ct, z_cbmn, z_ctmn, &
-    z2_inv, z2_cb, z2_ct, cwpmean, cwp2, precmean, prec2, precmax, nrainy, ncloudy, &
-    s_acldisccp, s_acldlisccp, s_acldmisccp, s_acldhisccp, s_ptopisccp, &
-    s_acldmodis, s_acldlmodis, s_acldmmodis, s_acldhmodis, s_ptopmodis, &
-    s_acldmisr, s_ztopmisr, s_relmodis, s_reimodis, s_lwpmodis, s_iwpmodis, &
-    s_tbisccp, s_tbclrisccp, s_acldliqmodis, s_acldicemodis, &
-    s_cldtauisccp,s_cldtaumodis,s_cldtaulmodis,s_cldtauimodis,s_cldalbisccp, &
-    s_flns,s_flnt,s_flntoa,s_flnsc,s_flntoac,s_flds,s_fsns, &
-    s_fsnt,s_fsntoa,s_fsnsc,s_fsntoac,s_fsds,s_solin, & 
-    tkeleadv(nz), tkelepress(nz), tkelediss(nz), tkelediff(nz),tkelebuoy(nz), &
-    t2leadv(nz),t2legrad(nz),t2lediff(nz),t2leprec(nz),t2lediss(nz), &
-    q2leadv(nz),q2legrad(nz),q2lediff(nz),q2leprec(nz),q2lediss(nz), &
-    twleadv(nz),twlediff(nz),twlepres(nz),twlebuoy(nz),twleprec(nz), &
-    qwleadv(nz),qwlediff(nz),qwlepres(nz),qwlebuoy(nz),qwleprec(nz), &
-    momleadv(nz,3),momlepress(nz,3),momlebuoy(nz,3), &
-    momlediff(nz,3),tadv(nz),tdiff(nz),tlat(nz), tlatqi(nz),qifall(nz),qpfall(nz)
-real tdiff_xy(nz), tdiff_z(nz), ttest0(nzm), ttest1(nz), ttest2(nz, 10)  !+++mhwang test
+allocate ( twle(nz))
+allocate ( twsb(nz))
+allocate ( precflux(nz))
+allocate ( uwle(nz))
+allocate ( uwsb(nz))
+allocate ( vwle(nz))
+allocate ( vwsb(nz))
+allocate ( radlwup(nz))
+allocate ( radlwdn(nz))
+allocate ( radswup(nz))
+allocate ( radswdn(nz))
+allocate ( radqrlw(nz))
+allocate ( radqrsw(nz))
+allocate ( tkeleadv(nz))
+allocate ( tkelepress(nz))
+allocate ( tkelediss(nz))
+allocate ( tkelediff(nz))
+allocate (tkelebuoy(nz))
+allocate ( t2leadv(nz))
+allocate (t2legrad(nz))
+allocate (t2lediff(nz))
+allocate (t2leprec(nz))
+allocate (t2lediss(nz))
+allocate ( q2leadv(nz))
+allocate (q2legrad(nz))
+allocate (q2lediff(nz))
+allocate (q2leprec(nz))
+allocate (q2lediss(nz))
+allocate ( twleadv(nz))
+allocate (twlediff(nz))
+allocate (twlepres(nz))
+allocate (twlebuoy(nz))
+allocate (twleprec(nz))
+allocate ( qwleadv(nz))
+allocate (qwlediff(nz))
+allocate (qwlepres(nz))
+allocate (qwlebuoy(nz))
+allocate (qwleprec(nz))
+allocate (  momleadv(nz,3))
+allocate (momlepress(nz,3))
+allocate (momlebuoy(nz,3))
+allocate (  momlediff(nz,3))
+allocate (tadv(nz))
+allocate (tdiff(nz))
+allocate (tlat(nz))
+allocate ( tlatqi(nz))
+allocate (qifall(nz))
+allocate (qpfall(nz))
+allocate (tdiff_xy(nz))
+allocate ( tdiff_z(nz))
+allocate ( ttest0(nzm))
+allocate ( ttest1(nz))
+allocate ( ttest2(nz, 10))  !+++mhwang test
 
 
 ! register functions:
@@ -206,41 +393,71 @@ real, allocatable :: condavg_mask(:,:,:,:) ! indicator array for various conditi
 character(LEN=8), allocatable :: condavgname(:) ! array of short names
 character(LEN=25), allocatable :: condavglongname(:) ! array of long names
 
-real   qlsvadv(nzm) ! Large-scale vertical advection tendency for total water
-real   tlsvadv(nzm) ! Large-scale vertical advection tendency for temperature
-real   ulsvadv(nzm) ! Large-scale vertical advection tendency for zonal velocity
-real   vlsvadv(nzm) ! Large-scale vertical advection tendency for meridional velocity
+real, allocatable :: qlsvadv(:)
+real, allocatable :: tlsvadv(:)
+real, allocatable :: ulsvadv(:)
+real, allocatable :: vlsvadv(:)
 
-real   qnudge(nzm) ! Nudging of horiz.-averaged total water profile
-real   tnudge(nzm) ! Nudging of horiz.-averaged temperature profile
-real   unudge(nzm) ! Nudging of horiz.-averaged zonal velocity
-real   vnudge(nzm) ! Nudging of horiz.-averaged meridional velocity
+real, allocatable :: qnudge(:)
+real, allocatable :: tnudge(:)
+real, allocatable :: unudge(:)
+real, allocatable :: vnudge(:)
 
-real   qstor(nzm) ! Storage of horiz.-averaged total water profile
-real   tstor(nzm) ! Storage of horiz.-averaged temperature profile
-real   ustor(nzm) ! Storage of horiz.-averaged zonal velocity
-real   vstor(nzm) ! Storage of horiz.-averaged meridional velocity
-real   qtostor(nzm) ! Storage of horiz.-averaged total water profile (vapor + liquid)
+real, allocatable :: qstor(:)
+real, allocatable :: tstor(:)
+real, allocatable :: ustor(:)
+real, allocatable :: vstor(:)
+real, allocatable :: qtostor(:)
 
-real   utendcor(nzm) ! coriolis acceleration of zonal velocity
-real   vtendcor(nzm) ! coriolis acceleration of meridional velocity
+real, allocatable :: utendcor(:)
+real, allocatable :: vtendcor(:)
 
-real   CF3D(1:nx, 1:ny, 1:nzm)  ! Cloud fraction 
+real, allocatable :: CF3D(:,:,:)
+
+allocate (  qlsvadv(nzm)) ! Large-scale vertical advection tendency for total water
+allocate (  tlsvadv(nzm)) ! Large-scale vertical advection tendency for temperature
+allocate (  ulsvadv(nzm)) ! Large-scale vertical advection tendency for zonal velocity
+allocate (  vlsvadv(nzm)) ! Large-scale vertical advection tendency for meridional velocity
+
+allocate (  qnudge(nzm)) ! Nudging of horiz.-averaged total water profile
+allocate (  tnudge(nzm)) ! Nudging of horiz.-averaged temperature profile
+allocate (  unudge(nzm)) ! Nudging of horiz.-averaged zonal velocity
+allocate (  vnudge(nzm)) ! Nudging of horiz.-averaged meridional velocity
+
+allocate (  qstor(nzm)) ! Storage of horiz.-averaged total water profile
+allocate (  tstor(nzm)) ! Storage of horiz.-averaged temperature profile
+allocate (  ustor(nzm)) ! Storage of horiz.-averaged zonal velocity
+allocate (  vstor(nzm)) ! Storage of horiz.-averaged meridional velocity
+allocate (  qtostor(nzm)) ! Storage of horiz.-averaged total water profile (vapor + liquid)
+
+allocate (  utendcor(nzm)) ! coriolis acceleration of zonal velocity
+allocate (  vtendcor(nzm)) ! coriolis acceleration of meridional velocity
+
+allocate (  CF3D(1:nx, 1:ny, 1:nzm))  ! Cloud fraction 
                                 ! =1.0 when there is no fractional cloudiness scheme
                                 ! = cloud fraction produced by fractioal cloudiness scheme when avaiable
 
 ! 850 mbar horizontal winds
-real u850_xy(nx,ny) ! zonal velocity at 850 mb
-real v850_xy(nx,ny) ! meridional velocity at 850 mb
+real, allocatable :: u850_xy(:,:)
+real, allocatable :: v850_xy(:,:)
+allocate ( u850_xy(nx,ny)) ! zonal velocity at 850 mb
+allocate ( v850_xy(nx,ny)) ! meridional velocity at 850 mb
 
 ! Surface pressure
-real psfc_xy(nx,ny) ! pressure (in millibar) at lowest grid point
+real, allocatable :: psfc_xy(:,:)
+allocate ( psfc_xy(nx,ny)) ! pressure (in millibar) at lowest grid point
 
 ! Saturated water vapor path, useful for computing column relative humidity
-real swvp_xy(nx,ny)  ! saturated water vapor path (wrt water)
+real, allocatable :: swvp_xy(:,:)
+allocate ( swvp_xy(nx,ny))  ! saturated water vapor path (wrt water)
 
 ! Cloud and echo top heights, and cloud top temperature (instantaneous)
-real cloudtopheight(nx,ny), echotopheight(nx,ny), cloudtoptemp(nx,ny)
+real, allocatable :: cloudtopheight(:,:)
+real, allocatable :: echotopheight(:,:)
+real, allocatable :: cloudtoptemp(:,:)
+allocate ( cloudtopheight(nx,ny))
+allocate (  echotopheight(nx,ny))
+allocate (   cloudtoptemp(nx,ny))
 
 ! END UW ADDITIONS
 !===========================================================================

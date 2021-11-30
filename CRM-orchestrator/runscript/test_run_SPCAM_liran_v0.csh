@@ -14,7 +14,7 @@ set NNODE = 2
 #   define case
 ## ====================================================================
 setenv CCSMTAG     CESM-OCR
-setenv CASE        SPdev_liran_1mom_v170
+setenv CASE        SPdev_liran_1mom_v188
 #bloss(2021-01-22): Revert to basic case for testing
 #setenv CASESET     HIST_CAM%SPCAMS_CLM50%SP_CICE%PRES_DOCN%DOM_RTM_SGLC_SWAV
 #setenv CASERES     f19_f19_mg17
@@ -65,6 +65,7 @@ setenv DATADIR   /scratch1/07088/tg863871/inputdata # pritch, link to bloss' dow
 rm -rf $CASEROOT
 rm -rf $PTMP/$CASE
 cp $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/TwoExecutableDriver.F90 $HOME/repositories/CESM-OCR/components/cam/src/physics/spcam/crm/
+cp $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/src.cam/crmx_crm_module_ORC.F90 $HOME/repositories/CESM-OCR/components/cam/src/physics/spcam/crm/
 #------------------
 ## create new case
 #------------------
@@ -96,13 +97,14 @@ cp $SCRIPTDIR/src.cam/*F90 SourceMods/src.cam/.
 pwd
 cp -R $SCRIPTDIR/CRM/ CRM/
 cd CRM
+cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_task_init_ORC.o .
 cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/TwoExecutableDriver.o . 
 cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_crm_module_ORC.o .
 cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/crmdims.o .
 cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/ppgrid.o .
 cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/phys_grid.o .
 cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/mct/noesmf/c1a1l1i1o1r1g1w1i1e1/csm_share/shr_kind_mod.o .
-mpif90  -o /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/crm.exe crmdims.o ppgrid.o crmx_crm_module_ORC.o  shr_kind_mod.o phys_grid.o TwoExecutableDriver.o -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -latm -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lice  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/mct/noesmf/lib/ -lclm  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -locn  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lrof  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lglc  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lwav  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lesp  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -liac -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/mct/noesmf/c1a1l1i1o1r1g1w1i1e1/lib -lcsm_share -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/lib -lpiof -lpioc -lgptl -lmct -lmpeu  -lpthread   -mkl=cluster   -L/opt/apps/intel19/impi19_0/parallel-netcdf/4.7.4/x86_64 -lnetcdff -Wl,--as-needed,-L/opt/apps/intel19/impi19_0/parallel-netcdf/4.7.4/x86_64/lib -lnetcdff -lnetcdf  -L/opt/apps/intel19/impi19_0/pnetcdf/1.11.2/lib -lpnetcdf
+mpif90  -o /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/crm.exe crmx_task_init_ORC.o crmdims.o ppgrid.o crmx_crm_module_ORC.o  shr_kind_mod.o phys_grid.o TwoExecutableDriver.o -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -latm -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lice  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/mct/noesmf/lib/ -lclm  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -locn  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lrof  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lglc  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lwav  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lesp  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -liac -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/mct/noesmf/c1a1l1i1o1r1g1w1i1e1/lib -lcsm_share -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/lib -lpiof -lpioc -lgptl -lmct -lmpeu  -lpthread   -mkl=cluster   -L/opt/apps/intel19/impi19_0/parallel-netcdf/4.7.4/x86_64 -lnetcdff -Wl,--as-needed,-L/opt/apps/intel19/impi19_0/parallel-netcdf/4.7.4/x86_64/lib -lnetcdff -lnetcdf  -L/opt/apps/intel19/impi19_0/pnetcdf/1.11.2/lib -lpnetcdf
 cd  $CASEROOT
 ./case.submit
 sbatch --time 0:30:00 -p development --account ATM20009 .case.run --resubmit

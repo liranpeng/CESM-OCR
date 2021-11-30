@@ -95,21 +95,19 @@ program TwoExecutableDriver
   923 format(I6.6)
   write(crm_number,923) myrank_crm
   open(unit=13,file='crm.log.'//TRIM(crm_number),form='formatted')
-
      do i = 1,numproc_crm-1
         if((myrank_global.lt.(50+i*rank_offset)).and.(myrank_global.ge.(50+(i-1)*rank_offset))) then
-           crm_comm_color = int(myrank_crm/2)+2 
+           crm_comm_color = int(myrank_crm/2)+2
            write(13,924) numproc_global, myrank_global, numproc_crm,myrank_crm,crm_comm_color
-924        format('MPI_COMM_WORLD: size/myrank = ',2i5,', crm_comm: size/myrank = ',3i5) 
+924        format('MPI_COMM_WORLD: size/myrank = ',2i5,', crm_comm: size/myrank = ',3i5)
            call mpi_comm_split(crm_comm, crm_comm_color, 0, crm_comm_in, ierr)
            call mpi_comm_size(crm_comm_in, numproc_crm_in, ierr)
            call mpi_comm_rank(crm_comm_in, myrank_crm_in, ierr)
 !           open(unit=13,file='crm.log.'//TRIM(crm_number),form='formatted')    
-           write(13,*) 'Liran Check:', myrank_crm, myrank_global, numproc_crm_in, myrank_crm_in
+           write(13,*) 'Liran Check:', myrank_crm, myrank_global,numproc_crm_in, myrank_crm_in
            call MPI_Barrier(crm_comm,ierr)
         end if
      end do
-
   ! ----------- GCM handshake from spcam_drivers --------------
   EndFlag  = 1
   do i = 1,numproc_crm-1
@@ -117,7 +115,7 @@ program TwoExecutableDriver
       ! Recieve rank of host GCM column linked to this CRM, for eventual MPI_Send
       call MPI_Recv(destGCM0,1,MPI_INTEGER,MPI_ANY_SOURCE,54321,MPI_COMM_WORLD,status,ierr)
       if (ierr.eq.0) then
-        write(13,*) 'CRM rank',myrank_crm,' got handshake; its GCM dest rank=',destGCM0
+        write(13,*) 'CRM rank',myrank_crm,' got handshake; its GCM dest rank=',destGCM0,myrank_global
       else 
         write (13,*) 'MPI_Recv from spcam_driver handshake failed for CRM rank ',myrank_crm,',ierr=',ierr
       end if
@@ -260,9 +258,10 @@ program TwoExecutableDriver
       outin11_prec_crm(ii,jj) = inp_Var_Flat2(fcount)
     end do
   end do
+! Preparing to call the CRM
 
-! Preparing to call the CRM 
-  call crm_orc (lon,lat,gcolindex,inp01_lchnk, inp02_i,                            &
+  write(13,*) 'Liran Check again:', myrank_crm, myrank_global, numproc_crm_in,myrank_crm_in 
+  call crm_orc (numproc_crm_in,myrank_crm_in,lon,lat,gcolindex,inp01_lchnk, inp02_i,                            &
             inp03_tl(:),inp04_ql(:),inp05_qccl(:),inp06_qiil(:), &
             inp07_ul(:),inp08_vl(:),inp09_ps,inp10_pmid(:),inp11_pdel(:), &
             inp12_phis,inp13_zm(:),inp14_zi(:),inp15_ztodt,pver, &

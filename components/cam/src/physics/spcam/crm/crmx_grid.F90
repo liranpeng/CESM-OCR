@@ -5,55 +5,58 @@ use crmx_advection, only: NADV, NADVS
 
 implicit none
 
-character(6), parameter :: version = '6.10.4'
-character(8), parameter :: version_date = 'Feb 2013'
+character(6) :: version = '6.10.4'
+character(8) :: version_date = 'Feb 2013'
         
-integer, parameter :: nx = nx_gl/nsubdomains_x
-integer, parameter :: ny = ny_gl/nsubdomains_y 
-integer, parameter :: nz = nz_gl+1
-integer, parameter :: nzm = nz-1
+integer :: nx = nx_gl/nsubdomains_x
+integer :: ny = ny_gl/nsubdomains_y 
+integer :: nz = nz_gl+1
+integer :: nzm = nz-1
         
-integer, parameter :: nsubdomains = nsubdomains_x * nsubdomains_y
+integer :: nsubdomains = nsubdomains_x * nsubdomains_y
 
-logical, parameter :: RUN3D = ny_gl.gt.1
-logical, parameter :: RUN2D = .not.RUN3D
+logical :: RUN3D = ny_gl.gt.1
+logical :: RUN2D = .not.RUN3D
 
-integer, parameter :: nxp1 = nx + 1
-integer, parameter :: nyp1 = ny + 1 * YES3D
-integer, parameter :: nxp2 = nx + 2
-integer, parameter :: nyp2 = ny + 2 * YES3D
-integer, parameter :: nxp3 = nx + 3
-integer, parameter :: nyp3 = ny + 3 * YES3D
-integer, parameter :: nxp4 = nx + 4
-integer, parameter :: nyp4 = ny + 4 * YES3D
+integer :: nxp1 = nx + 1
+integer :: nyp1 = ny + 1 * YES3D
+integer :: nxp2 = nx + 2
+integer :: nyp2 = ny + 2 * YES3D
+integer :: nxp3 = nx + 3
+integer :: nyp3 = ny + 3 * YES3D
+integer :: nxp4 = nx + 4
+integer :: nyp4 = ny + 4 * YES3D
 
-integer, parameter :: dimx1_u = -1                !!-1        -1        -1        -1
-integer, parameter :: dimx2_u = nxp3              !!nxp3      nxp3      nxp3      nxp3
-integer, parameter :: dimy1_u = 1-(2+NADV)*YES3D  !!1-5*YES3D 1-4*YES3D 1-3*YES3D 1-2*YES3D
-integer, parameter :: dimy2_u = nyp2+NADV         !!nyp5      nyp4      nyp3      nyp2
-integer, parameter :: dimx1_v = -1-NADV           !!-4        -3        -2        -1
-integer, parameter :: dimx2_v = nxp2+NADV         !!nxp5      nxp4      nxp3      nxp2
-integer, parameter :: dimy1_v = 1-2*YES3D         !!1-2*YES3D 1-2*YES3D 1-2*YES3D 1-2*YES3D
-integer, parameter :: dimy2_v = nyp3              !!nyp3       nyp3      nyp3      nyp3
-integer, parameter :: dimx1_w = -1-NADV           !!-4        -3        -2        -1
-integer, parameter :: dimx2_w = nxp2+NADV         !!nxp5      nxp4      nxp3      nxp2
-integer, parameter :: dimy1_w = 1-(2+NADV)*YES3D  !!1-5*YES3D 1-4*YES3D 1-3*YES3D 1-2*YES3D
-integer, parameter :: dimy2_w = nyp2+NADV         !!nyp5      nyp4      nyp3      nyp2
-integer, parameter :: dimx1_s = -2-NADVS          !!-4        -3        -2        -2
-integer, parameter :: dimx2_s = nxp3+NADVS        !!nxp5      nxp4      nxp3      nxp3
-integer, parameter :: dimy1_s = 1-(3+NADVS)*YES3D !!1-5*YES3D 1-4*YES3D 1-3*YES3D 1-3*YES3D
-integer, parameter :: dimy2_s = nyp3+NADVS        !!nyp5      nyp4      nyp3      nyp3
+integer :: dimx1_u = -1                !!-1        -1        -1        -1
+integer :: dimx2_u = nxp3              !!nxp3      nxp3      nxp3      nxp3
+integer :: dimy1_u = 1-(2+NADV)*YES3D  !!1-5*YES3D 1-4*YES3D 1-3*YES3D 1-2*YES3D
+integer :: dimy2_u = nyp2+NADV         !!nyp5      nyp4      nyp3      nyp2
+integer :: dimx1_v = -1-NADV           !!-4        -3        -2        -1
+integer :: dimx2_v = nxp2+NADV         !!nxp5      nxp4      nxp3      nxp2
+integer :: dimy1_v = 1-2*YES3D         !!1-2*YES3D 1-2*YES3D 1-2*YES3D 1-2*YES3D
+integer :: dimy2_v = nyp3              !!nyp3       nyp3      nyp3      nyp3
+integer :: dimx1_w = -1-NADV           !!-4        -3        -2        -1
+integer :: dimx2_w = nxp2+NADV         !!nxp5      nxp4      nxp3      nxp2
+integer :: dimy1_w = 1-(2+NADV)*YES3D  !!1-5*YES3D 1-4*YES3D 1-3*YES3D 1-2*YES3D
+integer :: dimy2_w = nyp2+NADV         !!nyp5      nyp4      nyp3      nyp2
+integer :: dimx1_s = -2-NADVS          !!-4        -3        -2        -2
+integer :: dimx2_s = nxp3+NADVS        !!nxp5      nxp4      nxp3      nxp3
+integer :: dimy1_s = 1-(3+NADVS)*YES3D !!1-5*YES3D 1-4*YES3D 1-3*YES3D 1-3*YES3D
+integer :: dimy2_s = nyp3+NADVS        !!nyp5      nyp4      nyp3      nyp3
 
-integer, parameter :: ncols = nx*ny
-integer, parameter :: nadams = 3
+integer :: ncols = nx*ny
+integer :: nadams = 3
 
 ! Vertical grid parameters:
-real z(nz)      ! height of the pressure levels above surface,m
-real pres(nzm)  ! pressure,mb at scalar levels
-real zi(nz)     ! height of the interface levels
-real presi(nz)  ! pressure,mb at interface levels
-real adz(nzm)   ! ratio of the thickness of scalar levels to dz 
-real adzw(nz)	! ratio of the thinckness of w levels to dz
+real, allocatable, dimension(:)  :: nz,pres,zi,presi,adz,adzw
+
+allocate( z(nz)    )      ! height of the pressure levels above surface,m
+allocate( pres(nzm))  ! pressure,mb at scalar levels
+allocate( zi(nz)   )     ! height of the interface levels
+allocate( presi(nz))  ! pressure,mb at interface levels
+allocate( adz(nzm) )   ! ratio of the thickness of scalar levels to dz 
+allocate( adzw(nz) )	! ratio of the thinckness of w levels to dz
+
 real pres0      ! Reference surface pressure, Pa
 
 integer:: nstep =0! current number of performed time steps 

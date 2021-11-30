@@ -14,7 +14,7 @@ public :: crm_orc
 
 contains
 
-subroutine crm_orc     (lchnk, icol, &
+subroutine crm_orc     (npro,ntask,long,lati,gcolindex,lchnk, icol, &
                        tl, ql, qccl, qiil, ul, vl, &
                        ps, pmid, pdel, phis, &
                        zmid, zint, dt_gl, plev, &
@@ -77,7 +77,7 @@ subroutine crm_orc     (lchnk, icol, &
 #ifdef SPCAM_CLUBB_SGS
         use crmdims, only: nclubbvars
 #endif
-        use phys_grid, only: get_rlon_p, get_rlat_p, get_gcol_all_p
+        !use phys_grid, only: get_rlon_p, get_rlat_p, get_gcol_all_p
  !       use ppgrid, only: pcols
         use crmx_vars
         use crmx_params
@@ -148,8 +148,8 @@ subroutine crm_orc     (lchnk, icol, &
 !         logical, intent(in)  :: doshort ! compute shortwave radiation
 !         logical, intent(in)  :: dolong ! compute longwave radiation
 !         real(r8), intent(in) :: day00 ! initial day
-!         real(r8), intent(in) :: latitude00
-!         real(r8), intent(in) :: longitude00
+         real(r8), intent(in) :: lati
+         real(r8), intent(in) :: long
 !         real(r8), intent(in) :: pres00
 !         real(r8), intent(in) :: tabs_s0
 !         integer , intent(in) :: nrad0
@@ -335,7 +335,7 @@ subroutine crm_orc     (lchnk, icol, &
         real(r8) factor_xy, idt_gl
         real tmp1, tmp2
         real u2z,v2z,w2z
-        integer i,j,k,l,ptop,nn,icyc, nstatsteps
+        integer i,j,k,l,ptop,nn,icyc, nstatsteps,npro,ntask
         integer kx
         real(r8), parameter :: umax = 0.5*crm_dx/crm_dt ! maxumum ampitude of the l.s. wind
         real(r8), parameter :: wmin = 2.   ! minimum up/downdraft velocity for stat
@@ -346,7 +346,10 @@ subroutine crm_orc     (lchnk, icol, &
         real(r8) zs ! surface elevation
         integer igstep    ! GCM time steps
         integer iseed   ! seed for random perturbation
-        integer gcolindex(pcols)  ! array of global latitude indices
+        integer, intent(in) :: gcolindex(pcols)  ! array of global latitude indices
+        integer :: crm_comm
+        integer :: myrank_crm, numproc_crm
+        integer :: ierr,status
 
 #ifdef SPCAM_CLUBB_SGS
 !Array indicies for spurious RTM check
@@ -398,8 +401,8 @@ real(kind=core_rknd), dimension(nzm) :: &
         ! lrestart_clubb = .true.
         !endif
 #endif
-
-        call task_init ()
+        write(0, *) 'Enter task_init_ORC',npro,ntask
+        call task_init_ORC (npro,ntask)
 
         call setparm()
 
@@ -412,17 +415,17 @@ real(kind=core_rknd), dimension(nzm) :: &
 !        tabs_s = tabs_s0
 !        case = case0
 
-        latitude0 = get_rlat_p(lchnk, icol)*57.296_r8
-        longitude0 = get_rlon_p(lchnk, icol)*57.296_r8
+        !latitude0 = get_rlat_p(lchnk, icol)*57.296_r8
+        !longitude0 = get_rlon_p(lchnk, icol)*57.296_r8
 !        pi = acos(-1.)
-        if(fcor.eq.-999.) fcor= 4*pi/86400.*sin(latitude0*pi/180.)
+        if(fcor.eq.-999.) fcor= 4*pi/86400.*sin(lati*pi/180.)
         fcorz = sqrt(4.*(2*pi/(3600.*24.))**2-fcor**2)
         fcory(:) = fcor
         fcorzy(:) = fcorz
         do j=1,ny
           do i=1,nx
-            latitude(i,j) = latitude0
-            longitude(i,j) = longitude0
+            latitude(i,j) = lati
+            longitude(i,j) = long
           end do
         end do
 
@@ -766,7 +769,7 @@ real(kind=core_rknd), dimension(nzm) :: &
      if(doprecip) call precip_init()
 #endif
 
-        call get_gcol_all_p(lchnk, pcols, gcolindex)
+        !call get_gcol_all_p(lchnk, pcols, gcolindex)
         iseed = gcolindex(icol)
         if(u(1,1,1).eq.u(2,1,1).and.u(3,1,2).eq.u(4,1,2)) &
                     call setperturb(iseed)
