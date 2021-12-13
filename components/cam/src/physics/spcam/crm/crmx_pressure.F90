@@ -13,36 +13,82 @@ use crmx_vars
 use crmx_params, only: dowallx, dowally, docolumn
 implicit none
 	
+integer :: npressureslabs,nzslab,nx2,ny2,n3i,n3j
+real, allocatable, dimension(:,:,:) :: fp
+real, allocatable, dimension(:,:,:) :: ff
+real, allocatable, dimension(:,:,:,:) :: buff_slabs
+real, allocatable, dimension(:,:,:,:) :: buff_subs
+real, allocatable, dimension(:,:,:,:) :: bufp_slabs
+real, allocatable, dimension(:,:,:,:) :: bufp_subs
+real, allocatable, dimension(:,:) :: work
+real, allocatable, dimension(:) :: trigxi
+real, allocatable, dimension(:) :: trigxj
+real(kind=selected_real_kind(12)), allocatable, dimension(:) :: a
+real(kind=selected_real_kind(12)), allocatable, dimension(:) :: c
+real(kind=selected_real_kind(12)), allocatable, dimension(:) :: fff
+real(kind=selected_real_kind(12)), allocatable, dimension(:) :: alfa
+real(kind=selected_real_kind(12)), allocatable, dimension(:) :: beta
+integer, allocatable, dimension(:) :: reqs_in
+integer, allocatable, dimension(:) :: iii
+integer, allocatable, dimension(:) :: jjj
+integer, allocatable, dimension(:) :: flag
 
-integer, parameter :: npressureslabs = nsubdomains
-integer, parameter :: nzslab = max(1,nzm / npressureslabs)
-integer, parameter :: nx2=nx_gl+2, ny2=ny_gl+2*YES3D
-integer, parameter :: n3i=3*nx_gl/2+1,n3j=3*ny_gl/2+1
-
-real f(nx2,ny2,nzslab) ! global rhs and array for FTP coefficeients
-real ff(nx+1,ny+2*YES3D,nzm)	! local (subdomain's) version of f
-real buff_slabs(nxp1,nyp2,nzslab,npressureslabs)
-real buff_subs(nxp1,nyp2,nzslab,nsubdomains) 
-real bufp_slabs(0:nx,1-YES3D:ny,nzslab,npressureslabs)  
-real bufp_subs(0:nx,1-YES3D:ny,nzslab,nsubdomains)  
-common/tmpstack/f,ff,buff_slabs,buff_subs
-equivalence (buff_slabs,bufp_slabs)
-equivalence (buff_subs,bufp_subs)
-
-real work(nx2,ny2),trigxi(n3i),trigxj(n3j) ! FFT stuff
 integer ifaxj(100),ifaxi(100)
 
-real(kind=selected_real_kind(12)) a(nzm),b,c(nzm),e,fff(nzm)	
+real(kind=selected_real_kind(12)) b,e
 real(kind=selected_real_kind(12)) xi,xj,xnx,xny,ddx2,ddy2,pii,factx,facty,eign
-real(kind=selected_real_kind(12)) alfa(nzm-1),beta(nzm-1)
 
-integer reqs_in(nsubdomains)
 integer i, j, k, id, jd, m, n, it, jt, ii, jj, tag, rf
 integer nyp22, n_in, count
-integer iii(0:nx_gl),jjj(0:ny_gl)
-logical flag(nsubdomains)
 integer iwall,jwall
 integer,parameter :: DBL = selected_real_kind(12)
+
+npressureslabs = nsubdomains
+nzslab = max(1,nzm / npressureslabs)
+nx2=nx_gl+2
+ny2=ny_gl+2*YES3D
+n3i=3*nx_gl/2+1
+n3j=3*ny_gl/2+1
+
+ allocate (fp(nx2,ny2,nzslab))  ! global rhs and array for FTP coefficeients
+ allocate (ff(nx+1,ny+2*YES3D,nzm))  ! local (subdomain's) version of f
+ allocate (buff_slabs(nxp1,nyp2,nzslab,npressureslabs))
+ allocate (buff_subs(nxp1,nyp2,nzslab,nsubdomains))
+ allocate (bufp_slabs(nx, (1-YES3D):ny, nzslab,npressureslabs))
+ allocate (bufp_subs(nx, (1-YES3D):ny, nzslab,nsubdomains))
+ allocate (work(nx2,ny2))
+ allocate (trigxi(n3i))
+ allocate (trigxj(n3j))
+ allocate (a(nzm))
+ allocate (c(nzm))
+ allocate (fff(nzm))
+ allocate (alfa(nzm-1))
+ allocate (beta(nzm-1))
+ allocate (reqs_in(nsubdomains))
+ allocate (iii(0:nx_gl))
+ allocate (jjj(0:ny_gl))
+ allocate (flag(nsubdomains))
+
+ fp=0.
+ ff=0.
+ buff_slabs=0.
+ buff_subs=0.
+ bufp_slabs=0.
+ bufp_subs=0.
+ work=0.
+ trigxi=0.
+ trigxj=0.
+ a=0.
+ c=0.
+ fff=0.
+ alfa=0.
+ beta=0.
+ reqs_in=0
+ iii=0
+ jjj=0
+ flag=0
+
+!common/tmpstack/f,ff,buff_slabs,buff_subs
 
 ! check if the grid size allows the computation:
 
@@ -81,13 +127,13 @@ endif
 !  Compute the r.h.s. of the Poisson equation for pressure
 
 call press_rhs()
-
+ 
 
 !-----------------------------------------------------------------	 
 !   Form the horizontal slabs of right-hand-sides of Poisson equation 
 !   for the global domain. Request sending and receiving tasks.
 
-! iNon-blocking receive first:
+!  Non-blocking receive first:
 
 n_in = 0
 do m = 0,nsubdomains-1
@@ -97,6 +143,14 @@ do m = 0,nsubdomains-1
     n_in = n_in + 1
     call task_receive_float(bufp_subs(0,1-YES3D,1,n_in), &
                            nzslab*nxp1*nyp1,reqs_in(n_in))
+     do k = 1,nzslab 
+      do j = 1,nyp2 
+       do i = 1,nxp1 
+         buff_subs(i,j,k,n_in) = bufp_subs(i,j,k,n_in) 
+       end do 
+      end do 
+     end do    
+ 
     flag(n_in) = .false.
  
   endif
@@ -108,7 +162,7 @@ do m = 0,nsubdomains-1
     do k = 1,nzslab
      do j = 1,ny
        do i = 1,nx
-         f(i+it,j+jt,k) = p(i,j,k+n)
+         fp(i+it,j+jt,k) = p(i,j,k+n)
        end do
      end do
     end do
@@ -144,7 +198,7 @@ do while (count .gt. 0)
            do k = 1,nzslab
             do j = 1,ny
              do i = 1,nx
-               f(i+it,j+jt,k) = bufp_subs(i,j,k,m)
+               fp(i+it,j+jt,k) = bufp_subs(i,j,k,m)
              end do
             end do
            end do
@@ -195,7 +249,7 @@ do m = 0, nsubdomains-1
      do k = 1,nzslab
       do j = 1,nyp22-jwall
         do i = 1,nxp1-iwall
-          ff(i,j,k+n) = f(i+it,j+jt,k) 
+          ff(i,j,k+n) = fp(i+it,j+jt,k) 
         end do
       end do
      end do 
@@ -208,6 +262,15 @@ do m = 0, nsubdomains-1
      n_in = n_in + 1
      call task_receive_float(buff_slabs(1,1,1,n_in), &
                                 nzslab*nxp1*nyp22,reqs_in(n_in))
+
+     do k = 1,nzslab
+      do j = 1-YES3D,ny
+       do i = 1,nx
+         bufp_slabs(i,j,k,n_in) = buff_slabs(i,j,k,n_in)
+       end do
+      end do
+     end do
+
      flag(n_in) = .false.	    
    endif
 
@@ -224,7 +287,8 @@ do m = 0, nsubdomains-1
      do k = 1,nzslab
       do j = 1,nyp22
        do i = 1,nxp1
-         buff_subs(i,j,k,1) = f(i+it,j+jt,k)
+         buff_subs(i,j,k,1) = fp(i+it,j+jt,k)
+         bufp_subs(i,j,k,1) = fp(i+it,j+jt,k)
        end do
       end do
      end do
@@ -348,7 +412,7 @@ do m = 0,nsubdomains-1
     do k = 1,nzslab
      do j = 1,nyp22-jwall
        do i = 1,nxp1-iwall
-         f(i+it,j+jt,k) = ff(i,j,k+n)
+         fp(i+it,j+jt,k) = ff(i,j,k+n)
        end do
      end do
     end do
@@ -383,7 +447,7 @@ do while (count .gt. 0)
            do k = 1,nzslab
             do j = 1,nyp22-jwall
              do i = 1,nxp1-iwall
-                f(i+it,j+jt,k) = buff_subs(i,j,k,m)
+                fp(i+it,j+jt,k) = buff_subs(i,j,k,m)
              end do
             end do
            end do
@@ -436,6 +500,13 @@ do m = 0, nsubdomains-1
      n_in = n_in + 1
      call task_receive_float(bufp_slabs(0,1-YES3D,1,n_in), &
                                 nzslab*nxp1*nyp1, reqs_in(n_in))
+     do k = 1,nzslab 
+      do j = 1-YES3D,ny 
+       do i = 0,nx 
+         buff_slabs(i,j,k,n_in) = bufp_slabs(i,j,k,n_in) 
+       end do 
+      end do 
+     end do 
      flag(n_in) = .false.    
 
    endif
@@ -448,7 +519,7 @@ do m = 0, nsubdomains-1
        jj=jjj(j+jt)
         do i = 0,nx
 	 ii=iii(i+it)
-          p(i,j,k+n) = f(ii,jj,k) 
+          p(i,j,k+n) = fp(ii,jj,k) 
         end do
       end do
      end do 
@@ -471,7 +542,8 @@ do m = 0, nsubdomains-1
        jj=jjj(j+jt)
        do i = 0,nx
          ii=iii(i+it)
-         bufp_subs(i,j,k,1) = f(ii,jj,k)
+         bufp_subs(i,j,k,1) = fp(ii,jj,k)
+         buff_subs(i,j,k,1) = bufp_subs(i,j,k,1)
        end do
       end do
      end do
@@ -510,6 +582,26 @@ call task_barrier()
 !  Add pressure gradient term to the rhs of the momentum equation:
 
 call press_grad()
+
+
+ deallocate (fp)  ! global rhs and array for FTP coefficeients
+ deallocate (ff)  ! local (subdomain's) version of f
+ deallocate (buff_slabs)
+ deallocate (buff_subs)
+ deallocate (bufp_slabs)
+ deallocate (bufp_subs)
+ deallocate (work)
+ deallocate (trigxi)
+ deallocate (trigxj)
+ deallocate (a)
+ deallocate (c)
+ deallocate (fff)
+ deallocate (alfa)
+ deallocate (beta)
+ deallocate (reqs_in)
+ deallocate (iii)
+ deallocate (jjj)
+ deallocate (flag)
 
 end 
 

@@ -1,17 +1,13 @@
 
-subroutine advect_scalar3D (f, u, v, w, rho, rhow, flux)
+subroutine advect_scalar3D (rho, rhow, flux)
  	
 !     positively definite monotonic advection with non-oscillatory option
-
+use crmx_vars, only:f,u,v,w
 use crmx_grid
 use crmx_params, only: dowallx, dowally
 implicit none
 
 
-real f(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm)
-real u(dimx1_u:dimx2_u, dimy1_u:dimy2_u, nzm)
-real v(dimx1_v:dimx2_v, dimy1_v:dimy2_v, nzm)
-real w(dimx1_w:dimx2_w, dimy1_w:dimy2_w, nz )
 real rho(nzm)
 real rhow(nz)
 real flux(nz)

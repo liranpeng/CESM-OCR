@@ -10,7 +10,8 @@ use crmx_grid, only: output_sep
 ! Input:
 
 integer nx,ny,nz
-real f(nx,ny,nz)
+!real f(nx,ny,nz)
+real, allocatable, dimension(:,:,:)  :: f
 character*(*) name,long_name,units
 integer rank,rrr,ttt,irank,nsubdomains
 logical savebin, dompi
@@ -31,7 +32,7 @@ integer i,j,k,req
 
 
 ! Allocate byte array:
-
+allocate ( f(nx,ny,nz))
 size=nx*ny*nz
 if(savebin) then
   allocate (byte4(size))

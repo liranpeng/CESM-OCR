@@ -1,10 +1,8 @@
 
-subroutine shear_prod2D(def2)
+subroutine shear_prod2D()
 	
 use crmx_vars
 implicit none
-	
-real def2(nx,ny,nzm)
 	
 real rdx0,rdx,rdx_up,rdx_dn
 real rdz,rdzw_up,rdzw_dn
@@ -45,10 +43,9 @@ do k=2,nzm-1
               (w(i ,j,k )-w(ib,j,k ))*rdx_dn )**2 + &
             ( (v(i,j ,kc)-v0(kc)-v(i,j , k)+v0(k))*rdzw_up )**2 + &
             ( (v(i,j ,k )-v0(k)-v(i,j ,kb)+v0(kb))*rdzw_dn )**2 )
-
+!print *,'def2',i,k,u(i,j,k),w(i,j,k),def2(i,j,k)
   end do
 end do ! k
-
 
 k=1
 kc=k+1

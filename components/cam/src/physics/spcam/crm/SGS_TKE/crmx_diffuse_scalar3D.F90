@@ -1,24 +1,36 @@
-subroutine diffuse_scalar3D (field,fluxb,fluxt,tkh,rho,rhow,flux)
-
+subroutine diffuse_scalar3D (rho,rhow,flux)
+use crmx_vars, only: fluxb,fluxt,f,tkh
 use crmx_grid
 use crmx_params, only: docolumn,dowallx,dowally,dosgs
 use crmx_sgs, only: grdf_x,grdf_y,grdf_z
 implicit none
 ! input	
-real field(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm)	! scalar
-real tkh(0:nxp1,1-YES3D:nyp1,nzm)	! eddy conductivity
-real fluxb(nx,ny)		! bottom flux
-real fluxt(nx,ny)		! top flux
+!real field(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm)	! scalar
+!real tkh(0:nxp1,1-YES3D:nyp1,nzm)	! eddy conductivity
+!real fluxb(nx,ny)		! bottom flux
+!real fluxt(nx,ny)		! top flux
+
+real, allocatable, dimension(:,:,:)  :: field
+!real, allocatable, dimension(:,:,:)  :: tkh
+
 real rho(nzm)
 real rhow(nz)
 real flux(nz)
 ! local        
-real flx(0:nx,0:ny,0:nzm)
-real dfdt(nx,ny,nz)
+!real flx(0:nx,0:ny,0:nzm)
+!real dfdt(nx,ny,nz)
+real, allocatable, dimension(:,:,:)  :: flx
+real, allocatable, dimension(:,:,:)  :: dfdt
 real rdx2,rdy2,rdz2,rdz,rdx5,rdy5,rdz5,tmp
 real dxy,dxz,dyx,dyz,dzx,dzy,tkx,tky,tkz,rhoi
 integer i,j,k,ib,ic,jb,jc,kc,kb
 
+allocate ( field(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm))
+!allocate ( tkh(0:nxp1, 1-YES3D:nyp1, nzm))
+allocate ( flx(0:nx,0:ny,0:nzm))
+allocate ( dfdt(nx,ny,nzm) )
+
+field(:,:,:) = f(:,:,:)
 
 if(.not.dosgs) return
 
@@ -173,5 +185,9 @@ do k=1,nzm
   end do 
  end do 	 
 end do 
+
+deallocate ( flx  )
+deallocate ( dfdt )
+deallocate ( field )
 
 end subroutine diffuse_scalar3D

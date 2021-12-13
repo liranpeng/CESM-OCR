@@ -1,15 +1,14 @@
 
-subroutine advect_scalar (f,fadv,flux,f2leadv,f2legrad,fwleadv,doit)
+subroutine advect_scalar (fadv,flux,f2leadv,f2legrad,fwleadv,doit)
  	
 !     positively definite monotonic advection with non-oscillatory option
 
 use crmx_grid
-use crmx_vars, only: u, v, w, rho, rhow
+use crmx_vars, only: u, v, w, rho, rhow, f
 use crmx_params, only: docolumn
 
 implicit none
 
-real f(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm)
 real flux(nz), fadv(nz)
 real f2leadv(nz),f2legrad(nz),fwleadv(nz)
 logical doit
@@ -27,9 +26,9 @@ end if
  df(:,:,:) = f(:,:,:)
 
 if(RUN3D) then
-  call advect_scalar3D(f, u, v, w, rho, rhow, flux)
+  call advect_scalar3D(rho, rhow, flux)
 else
-  call advect_scalar2D(f, u, w, rho, rhow, flux)	  
+  call advect_scalar2D(rho, rhow, flux)	  
 endif
 
   do k=1,nzm

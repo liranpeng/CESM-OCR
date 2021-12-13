@@ -3,9 +3,9 @@ module crmx_sgs
 ! module for original SAM subgrid-scale SGS closure (Smagorinsky or 1st-order TKE)
 ! Marat Khairoutdinov, 2012
 
-use crmx_grid, only: nx,nxp1,ny,nyp1,YES3D,nzm,nz,dimx1_s,dimx2_s,dimy1_s,dimy2_s 
+use crmx_grid, only: nx,nxp1,ny,nyp1,YES3D,nzm,nz,dimx1_s,dimx2_s,dimy1_s,dimy2_s, dimx1_d, dimx2_d, dimy1_d, dimy2_d 
 use crmx_params, only: dosgs
-use crmx_vars, only: tke2, tk2
+use crmx_vars, only: tke2, tk2, tke, tk, tkh
 implicit none
 
 !----------------------------------------------------------------------
@@ -14,17 +14,15 @@ implicit none
 !!! prognostic scalar (need to be advected arround the grid):
 
 integer, parameter :: nsgs_fields = 1   ! total number of prognostic sgs vars
-
-real sgs_field(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm, nsgs_fields)
+real, allocatable, dimension(:,:,:,:) ::sgs_field
 
 !!! sgs diagnostic variables that need to exchange boundary information (via MPI):
 
 integer, parameter :: nsgs_fields_diag = 2   ! total number of diagnostic sgs vars
 
 ! diagnostic fields' boundaries:
-integer, parameter :: dimx1_d=0, dimx2_d=nxp1, dimy1_d=1-YES3D, dimy2_d=nyp1
-
-real sgs_field_diag(dimx1_d:dimx2_d, dimy1_d:dimy2_d, nzm, nsgs_fields_diag)
+!integer :: dimx1_d, dimx2_d, dimy1_d, dimy2_d
+real, allocatable, dimension(:,:,:,:) ::sgs_field_diag
 
 logical:: advect_sgs = .false. ! advect prognostics or not, default - not (Smagorinsky)
 logical, parameter:: do_sgsdiag_bound = .true.  ! exchange boundaries for diagnostics fields
@@ -33,42 +31,32 @@ logical, parameter:: do_sgsdiag_bound = .true.  ! exchange boundaries for diagno
 integer, parameter :: flag_sgs3Dout(nsgs_fields) = (/0/)
 integer, parameter :: flag_sgsdiag3Dout(nsgs_fields_diag) = (/0,0/)
 
-real fluxbsgs (nx, ny, 1:nsgs_fields) ! surface fluxes 
-real fluxtsgs (nx, ny, 1:nsgs_fields) ! top boundary fluxes 
+real, allocatable, dimension(:,:,:) :: fluxbsgs
+real, allocatable, dimension(:,:,:) :: fluxtsgs
 
 !!! these arrays may be needed for output statistics:
 
-real sgswle(nz,1:nsgs_fields)  ! resolved vertical flux
-real sgswsb(nz,1:nsgs_fields)  ! SGS vertical flux
-real sgsadv(nz,1:nsgs_fields)  ! tendency due to vertical advection
-real sgslsadv(nz,1:nsgs_fields)  ! tendency due to large-scale vertical advection
-real sgsdiff(nz,1:nsgs_fields)  ! tendency due to vertical diffusion
+real, allocatable, dimension(:,:) :: sgswle
+real, allocatable, dimension(:,:) :: sgswsb
+real, allocatable, dimension(:,:) :: sgsadv
+real, allocatable, dimension(:,:) :: sgslsadv
+real, allocatable, dimension(:,:) :: sgsdiff
 
 !------------------------------------------------------------------
 ! internal (optional) definitions:
 
-! make aliases for prognostic variables:
-
-real tke(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm)   ! SGS TKE
-equivalence (tke(dimx1_s,dimy1_s,1),sgs_field(dimx1_s,dimy1_s,1,1))
-
-! make aliases for diagnostic variables:
-
-real tk  (dimx1_d:dimx2_d, dimy1_d:dimy2_d, nzm) ! SGS eddy viscosity
-real tkh (dimx1_d:dimx2_d, dimy1_d:dimy2_d, nzm) ! SGS eddy conductivity
-equivalence (tk(dimx1_d,dimy1_d,1), sgs_field_diag(dimx1_d, dimy1_d,1,1))
-equivalence (tkh(dimx1_d,dimy1_d,1), sgs_field_diag(dimx1_d, dimy1_d,1,2))
-
-
-real grdf_x(nzm)! grid factor for eddy diffusion in x
-real grdf_y(nzm)! grid factor for eddy diffusion in y
-real grdf_z(nzm)! grid factor for eddy diffusion in z
+real, allocatable, dimension(:) :: grdf_x 
+real, allocatable, dimension(:) :: grdf_y
+real, allocatable, dimension(:) :: grdf_z
 
 logical:: dosmagor   ! if true, then use Smagorinsky closure
 
 ! Local diagnostics:
 
-real tkesbbuoy(nz), tkesbshear(nz),tkesbdiss(nz), tkesbdiff(nz)
+real, allocatable, dimension(:) :: tkesbbuoy
+real, allocatable, dimension(:) :: tkesbshear
+real, allocatable, dimension(:) :: tkesbdiss
+real, allocatable, dimension(:) :: tkesbdiff
 
 CONTAINS
 
@@ -119,13 +107,48 @@ end subroutine sgs_setparm
 
 !----------------------------------------------------------------------
 !!! Initialize sgs:
+subroutine sgs_deallocate
+deallocate (sgs_field )
+deallocate (sgs_field_diag)
+deallocate (fluxbsgs  )!
+deallocate (fluxtsgs  )!
+deallocate (sgswle ) ! resolved
+deallocate (sgswsb) ! SGS
+deallocate (sgsadv ) ! tendency
+deallocate (sgslsadv ) !
+deallocate (sgsdiff  )! tendency
+deallocate (grdf_x )! grid factor for eddy
+deallocate (grdf_y )! grid factor for eddy
+deallocate (grdf_z )! grid factor for eddy
+deallocate (tkesbbuoy)
+deallocate (tkesbshear)
+deallocate (tkesbdiss)
+deallocate (tkesbdiff)
 
+end subroutine sgs_deallocate
 
 subroutine sgs_init()
 
   use crmx_grid, only: nrestart, dx, dy, dz, adz, masterproc
   use crmx_params, only: LES
   integer k
+
+ if (.not. allocated(sgs_field)) allocate (sgs_field(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm, nsgs_fields) )
+ if (.not. allocated(sgs_field_diag)) allocate (sgs_field_diag(dimx1_d:dimx2_d, dimy1_d:dimy2_d, nzm, nsgs_fields_diag) )
+ if (.not. allocated(fluxbsgs)) allocate (fluxbsgs (nx, ny, 1:nsgs_fields) )! surface fluxes
+ if (.not. allocated(fluxtsgs)) allocate (fluxtsgs (nx, ny, 1:nsgs_fields) )! top boundary fluxes 
+ if (.not. allocated(sgswle)) allocate (sgswle(nz,1:nsgs_fields) ) ! resolved vertical flux 
+ if (.not. allocated(sgswsb)) allocate (sgswsb(nz,1:nsgs_fields) ) ! SGS vertical flux 
+ if (.not. allocated(sgsadv)) allocate (sgsadv(nz,1:nsgs_fields) ) ! tendency due to vertical advection 
+ if (.not. allocated(sgslsadv)) allocate (sgslsadv(nz,1:nsgs_fields) ) ! tendency due to large-scale vertical advection 
+ if (.not. allocated(sgsdiff)) allocate (sgsdiff(nz,1:nsgs_fields)  )! tendency due to vertical diffusion
+ if (.not. allocated(grdf_x)) allocate (grdf_x(nzm) )! grid factor for eddy diffusion in x
+ if (.not. allocated(grdf_y)) allocate (grdf_y(nzm) )! grid factor for eddy diffusion in y
+ if (.not. allocated(grdf_z)) allocate (grdf_z(nzm) )! grid factor for eddy diffusion in z 
+ if (.not. allocated(tkesbbuoy)) allocate (tkesbbuoy(nz))
+ if (.not. allocated(tkesbshear)) allocate (tkesbshear(nz))
+ if (.not. allocated(tkesbdiss)) allocate (tkesbdiss(nz))
+ if (.not. allocated(tkesbdiff)) allocate (tkesbdiff(nz)) 
 
   if(nrestart.eq.0) then
 
@@ -279,6 +302,7 @@ real tkhmax(nz)
 
 do k = 1,nzm
  tkhmax(k) = maxval(tkh(1:nx,1:ny,k))
+ !print *,'tkhmax',tkhmax(k)
 end do
 
 cfl = 0.
@@ -313,16 +337,43 @@ subroutine sgs_scalars()
   implicit none
 
     real dummy(nz)
-    real fluxbtmp(nx,ny), fluxttmp(nx,ny) !bloss
-    integer k
+    !real fluxbtmp(nx,ny), fluxttmp(nx,ny) !bloss
+    real, allocatable, dimension(:,:)  :: fluxbtmp,fluxttmp 
 
+    integer i,j,k,kk
 
-      call diffuse_scalar(t,fluxbt,fluxtt,tdiff,twsb, &
+     allocate ( fluxbtmp(nx,ny))
+     allocate ( fluxttmp(nx,ny))
+
+do k=1,nzm
+   do j=1,ny
+    do i=1,nx
+      f(i,j,k)=t(i,j,k)
+    end do
+   end do
+end do
+   do j=1,ny
+    do i=1,nx
+      fluxb(i,j) = fluxbt(i,j)
+      fluxt(i,j) = fluxtt(i,j) 
+    end do
+   end do
+      call diffuse_scalar(tdiff,twsb, &
                            t2lediff,t2lediss,twlediff,.true.)
     
       if(advect_sgs) then
-         call diffuse_scalar(tke,fzero,fzero,dummy,sgswsb, &
+         f(1:nx,1:ny,1:nzm) = tke(1:nx,1:ny,1:nzm)
+         fluxb(1:nx,1:ny) = fzero(1:nx,1:ny)
+         fluxt(1:nx,1:ny) = fzero(1:nx,1:ny)
+         call diffuse_scalar(dummy,sgswsb, &
                                     dummy,dummy,dummy,.false.)
+        do k=1,nzm
+         do j=1,ny
+          do i=1,nx
+            sgs_field(i,j,k,1) = tke(i,j,k)
+          end do
+         end do
+        end do
       end if
 
 
@@ -339,8 +390,21 @@ subroutine sgs_scalars()
          .or. doprecip.and.flag_precip(k).eq.1 ) then
            fluxbtmp(1:nx,1:ny) = fluxbmk(1:nx,1:ny,k)
            fluxttmp(1:nx,1:ny) = fluxtmk(1:nx,1:ny,k)
-           call diffuse_scalar(micro_field(:,:,:,k),fluxbtmp,fluxttmp, &
-                mkdiff(:,k),mkwsb(:,k), dummy,dummy,dummy,.false.)
+           f(:,:,:) = micro_field(:,:,:,k)
+do kk=1,nzm
+   do j=1,ny
+    do i=1,nx
+      f(i,j,kk)=micro_field(i,j,kk,k)
+    end do
+   end do
+end do
+   do j=1,ny
+    do i=1,nx
+      fluxb(i,j) = fluxbtmp(i,j)
+      fluxt(i,j) = fluxttmp(i,j)
+    end do
+   end do
+           call diffuse_scalar(mkdiff(:,k),mkwsb(:,k), dummy,dummy,dummy,.false.)
        end if
       end do
 
@@ -356,8 +420,10 @@ subroutine sgs_scalars()
 
           fluxbtmp = fluxbtr(:,:,k)
           fluxttmp = fluxttr(:,:,k)
-          call diffuse_scalar(tracer(:,:,:,k),fluxbtmp,fluxttmp, &
-               trdiff(:,k),trwsb(:,k), &
+          f(:,:,:) = tracer(:,:,:,k)
+          fluxb(1:nx,1:ny) = fluxbtmp(1:nx,1:ny)
+          fluxt(1:nx,1:ny) = fluxttmp(1:nx,1:ny)
+          call diffuse_scalar(trdiff(:,k),trwsb(:,k), &
                dummy,dummy,dummy,.false.)
 !!$          call diffuse_scalar(tracer(:,:,:,k),fluxbtr(:,:,k),fluxttr(:,:,k),trdiff(:,k),trwsb(:,k), &
 !!$                           dummy,dummy,dummy,.false.)
@@ -377,7 +443,7 @@ subroutine sgs_proc()
 
    use crmx_grid, only: nstep,dt,icycle
    use crmx_params, only: dosmoke
-
+   integer i,j,k
 !    SGS TKE equation:
 
      if(dosgs) call tke_full()

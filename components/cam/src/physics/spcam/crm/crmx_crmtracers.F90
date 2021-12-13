@@ -15,16 +15,17 @@ module crmx_crmtracers
  use crmx_grid
  implicit none
 
- real tracer  (dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm, 0:ntracers) 
- real fluxbtr (nx, ny, 0:ntracers) ! surface flux of tracers
- real fluxttr (nx, ny, 0:ntracers) ! top boundary flux of tracers
- real trwle(nz,0:ntracers)  ! resolved vertical flux 
- real trwsb(nz,0:ntracers)  ! SGS vertical flux 
- real tradv(nz,0:ntracers)  ! tendency due to vertical advection 
- real trdiff(nz,0:ntracers)  ! tendency due to vertical diffusion 
- real trphys(nz,0:ntracers)  ! tendency due to physics 
- character *4 tracername(0:ntracers)
- character *10 tracerunits(0:ntracers)
+ real, allocatable, dimension(:,:,:,:) :: tracer  
+ real, allocatable, dimension(:,:,:)   :: fluxbtr 
+ real, allocatable, dimension(:,:,:)   :: fluxttr 
+ real, allocatable, dimension(:,:)     :: trwle
+ real, allocatable, dimension(:,:)     :: trwsb
+ real, allocatable, dimension(:,:)     :: tradv
+ real, allocatable, dimension(:,:)     :: trdiff
+ real, allocatable, dimension(:,:)     :: trphys
+
+ character *4, allocatable, dimension(:) :: tracername
+ character *10, allocatable, dimension(:) :: tracerunits
 
 CONTAINS
 
@@ -34,9 +35,25 @@ CONTAINS
   character *2 ntrchar
   integer, external :: lenstr
 
+ allocate (tracer  (dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm, 0:ntracers))
+ allocate (fluxbtr (nx, ny, 0:ntracers)) ! surface flux of tracers
+ allocate (fluxttr (nx, ny, 0:ntracers)) ! top boundary flux of tracers
+ allocate (trwle(nz,0:ntracers))  ! resolved vertical flux 
+ allocate (trwsb(nz,0:ntracers))  ! SGS vertical flux 
+ allocate (tradv(nz,0:ntracers))  ! tendency due to vertical advection 
+ allocate (trdiff(nz,0:ntracers))  ! tendency due to vertical diffusion 
+ allocate (trphys(nz,0:ntracers))  ! tendency due to physics 
+ allocate (tracername(0:ntracers))
+ allocate (tracerunits(0:ntracers))
+
  tracer = 0.
  fluxbtr = 0.
  fluxttr = 0.
+ trwle = 0.
+ trwsb = 0.
+ tradv = 0.
+ trdiff = 0.
+ trphys = 0.
 
 ! Add your initialization code here. Default is to set to 0 in setdata.f90.
 

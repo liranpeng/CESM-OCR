@@ -77,12 +77,17 @@ real*4 gamr1      ! Gamma function of (3 + b_rain)
 real*4 gamr2      ! Gamma function of (5 + b_rain)/2
 real*4 gamr3      ! Gamma function of (4 + b_rain)
       
-real accrsc(nzm),accrsi(nzm),accrrc(nzm),coefice(nzm)
-real accrgc(nzm),accrgi(nzm)
-real evaps1(nzm),evaps2(nzm),evapr1(nzm),evapr2(nzm)
-real evapg1(nzm),evapg2(nzm)
-            
+real, allocatable, dimension(:)  :: accrsc
+real, allocatable, dimension(:)  :: accrsi
+real, allocatable, dimension(:)  :: accrrc
+real, allocatable, dimension(:)  :: coefice
+real, allocatable, dimension(:)  :: accrgc
+real, allocatable, dimension(:)  :: accrgi
+real, allocatable, dimension(:)  :: evaps1
+real, allocatable, dimension(:)  :: evaps2
+real, allocatable, dimension(:)  :: evapr1
+real, allocatable, dimension(:)  :: evapr2
+real, allocatable, dimension(:)  :: evapg1
+real, allocatable, dimension(:)  :: evapg2            
 real a_bg, a_pr, a_gr 
-
-
 end module crmx_micro_params

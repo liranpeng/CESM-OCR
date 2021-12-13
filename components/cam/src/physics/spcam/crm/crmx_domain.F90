@@ -9,7 +9,7 @@ module crmx_domain
        integer :: nx_gl = crm_nx ! Number of grid points in X
        integer :: ny_gl = crm_ny ! Number of grid points in Y
        integer :: nz_gl = crm_nz ! Number of pressure (scalar) levels
-       integer :: nsubdomains_x  = 2 ! No of subdomains in x
+       integer :: nsubdomains_x  = 1 ! No of subdomains in x
        integer :: nsubdomains_y  = 1 ! No of subdomains in y
 
 

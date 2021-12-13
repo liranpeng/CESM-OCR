@@ -1,10 +1,8 @@
 
-subroutine shear_prod3D(def2)
+subroutine shear_prod3D()
 	
 use crmx_vars
 implicit none
-	
-real def2(nx,ny,nzm)
 	
 real rdx0,rdx,rdx_up,rdx_dn
 real rdy0,rdy,rdy_up,rdy_dn

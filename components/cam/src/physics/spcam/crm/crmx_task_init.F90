@@ -1,12 +1,17 @@
 subroutine task_init
 		
 !   Check things, initialize multitasking:
-
 use crmx_grid
 implicit none
 
-integer itasks,ntasks
-print *,'Enter task_init'
+integer itasks,ntasks,numproc_global,myrank_global,ierr
+
+include 'mpif.h'
+
+call mpi_comm_size(MPI_COMM_WORLD, numproc_global, ierr)
+call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+
+print *,'Enter task_init',numproc_global,myrank_global
 if(YES3D .ne. 1 .and. YES3D .ne. 0) then
   print*,'YES3D is not 1 or 0. STOP'
   stop
@@ -27,12 +32,13 @@ if(nsubdomains.eq.1) then
   rank =0
   ntasks = 1
   dompi = .false.
-  print *,'rank,ntasks0',rank, ntasks
 else
 
-!  call task_start(rank, ntasks)
+  call task_start_ORC(rank, ntasks)
 
-!  dompi = .true.
+  dompi = .true.
+
+  print *,'Enter task_init MPI',rank, ntasks
 
 !  call systemf('hostname')
 

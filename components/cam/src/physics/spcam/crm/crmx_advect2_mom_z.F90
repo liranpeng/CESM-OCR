@@ -8,9 +8,19 @@ use crmx_vars
 implicit none
 
 
-real fuz(nx,ny,nz),fvz(nx,ny,nz),fwz(nx,ny,nzm)
+!real fuz(nx,ny,nz),fvz(nx,ny,nz),fwz(nx,ny,nzm)
+real, allocatable, dimension(:,:,:)  :: fuz,fvz,fwz
+
 integer i, j, k, kc, kb
 real dz2, dz25, www, rhoi
+
+allocate ( fuz(nx,ny,nz) )
+allocate ( fvz(nx,ny,nz) )
+allocate ( fwz(nx,ny,nzm))
+
+fuz=0.
+fvz=0.
+fwz=0.
 
 dz25=1./(4.*dz)
 dz2=dz25*2.
@@ -88,6 +98,10 @@ do k=2,nzm
   end do
  end do
 end do ! k
+
+deallocate ( fuz )
+deallocate ( fvz )
+deallocate ( fwz )
 
 end subroutine advect2_mom_z
 

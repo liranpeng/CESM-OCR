@@ -11,13 +11,19 @@ subroutine advect_all_scalars()
 #endif
   implicit none
   real dummy(nz)
-  integer k
+  integer i,j,kk,k
 
 
 !---------------------------------------------------------
 !      advection of scalars :
-
-     call advect_scalar(t,tadv,twle,t2leadv,t2legrad,twleadv,.true.)
+do k=1,nzm
+   do j=1,ny
+    do i=1,nx
+      f(i,j,k)=t(i,j,k)
+    end do
+   end do
+end do
+     call advect_scalar(tadv,twle,t2leadv,t2legrad,twleadv,.true.)
     
 !
 !    Advection of microphysics prognostics:
@@ -31,8 +37,16 @@ subroutine advect_all_scalars()
 #else
          .or. docloud.and.flag_precip(k).ne.1    & ! transport non-precipitation vars
 #endif
-         .or. doprecip.and.flag_precip(k).eq.1 ) &
-           call advect_scalar(micro_field(:,:,:,k),mkadv(:,k),mkwle(:,k),dummy,dummy,dummy,.false.)
+         .or. doprecip.and.flag_precip(k).eq.1 ) then
+do kk=1,nzm
+   do j=1,ny
+    do i=1,nx
+      f(i,j,kk)=micro_field(i,j,kk,k)
+    end do
+   end do
+end do
+           call advect_scalar(mkadv(:,k),mkwle(:,k),dummy,dummy,dummy,.false.)
+        end if
      end do
 
 !
@@ -41,7 +55,14 @@ subroutine advect_all_scalars()
 
      if(dosgs.and.advect_sgs) then
        do k = 1,nsgs_fields
-           call advect_scalar(sgs_field(:,:,:,k),sgsadv(:,k),sgswle(:,k),dummy,dummy,dummy,.false.)
+do kk=1,nzm
+   do j=1,ny
+    do i=1,nx
+      f(i,j,kk)=sgs_field(i,j,kk,k)
+    end do
+   end do
+end do
+           call advect_scalar(sgsadv(:,k),sgswle(:,k),dummy,dummy,dummy,.false.)
        end do
      end if
 
@@ -65,7 +86,14 @@ subroutine advect_all_scalars()
      if(dotracers) then
 
         do k = 1,ntracers
-         call advect_scalar(tracer(:,:,:,k),tradv(:,k),trwle(:,k),dummy,dummy,dummy,.false.)
+do kk=1,nzm
+   do j=1,ny
+    do i=1,nx
+      f(i,j,kk)=tracer(i,j,kk,k)
+    end do
+   end do
+end do
+         call advect_scalar(tradv(:,k),trwle(:,k),dummy,dummy,dummy,.false.)
         end do
 
      end if

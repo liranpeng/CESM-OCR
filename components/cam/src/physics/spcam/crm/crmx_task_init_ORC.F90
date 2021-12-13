@@ -30,8 +30,8 @@ if(nsubdomains.eq.1) then
   dompi = .false.
   print *,'rank,ntasks1',rank, ntasks
 else
-  print *,'rank,ntasks2',npro,ntask
-  !call task_start(rank, ntasks)
+
+  call task_start_ORC(rank, ntasks)
 
   dompi = .true.
 
@@ -40,12 +40,12 @@ else
   if(ntasks.ne.nsubdomains) then
     if(masterproc) print *,'number of processors is not equal to nsubdomains!',&
              '  ntasks=',ntasks,'   nsubdomains=',nsubdomains
-   ! call task_abort() 
+    call task_abort_ORC() 
   endif
         
-  !call task_barrier()
+  call task_barrier_ORC()
 
-  !call task_ranks()
+  call task_ranks_ORC()
         
 end if ! nsubdomains.eq.1
 

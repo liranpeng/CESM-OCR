@@ -8,54 +8,31 @@ implicit none
 character(6) :: version = '6.10.4'
 character(8) :: version_date = 'Feb 2013'
         
-integer :: nx = nx_gl/nsubdomains_x
-integer :: ny = ny_gl/nsubdomains_y 
-integer :: nz = nz_gl+1
-integer :: nzm = nz-1
-        
-integer :: nsubdomains = nsubdomains_x * nsubdomains_y
+integer :: nx ,ny ,nz ,nzm 
 
-logical :: RUN3D = ny_gl.gt.1
-logical :: RUN2D = .not.RUN3D
+integer :: nsubdomains 
 
-integer :: nxp1 = nx + 1
-integer :: nyp1 = ny + 1 * YES3D
-integer :: nxp2 = nx + 2
-integer :: nyp2 = ny + 2 * YES3D
-integer :: nxp3 = nx + 3
-integer :: nyp3 = ny + 3 * YES3D
-integer :: nxp4 = nx + 4
-integer :: nyp4 = ny + 4 * YES3D
+logical :: RUN3D 
+logical :: RUN2D 
 
-integer :: dimx1_u = -1                !!-1        -1        -1        -1
-integer :: dimx2_u = nxp3              !!nxp3      nxp3      nxp3      nxp3
-integer :: dimy1_u = 1-(2+NADV)*YES3D  !!1-5*YES3D 1-4*YES3D 1-3*YES3D 1-2*YES3D
-integer :: dimy2_u = nyp2+NADV         !!nyp5      nyp4      nyp3      nyp2
-integer :: dimx1_v = -1-NADV           !!-4        -3        -2        -1
-integer :: dimx2_v = nxp2+NADV         !!nxp5      nxp4      nxp3      nxp2
-integer :: dimy1_v = 1-2*YES3D         !!1-2*YES3D 1-2*YES3D 1-2*YES3D 1-2*YES3D
-integer :: dimy2_v = nyp3              !!nyp3       nyp3      nyp3      nyp3
-integer :: dimx1_w = -1-NADV           !!-4        -3        -2        -1
-integer :: dimx2_w = nxp2+NADV         !!nxp5      nxp4      nxp3      nxp2
-integer :: dimy1_w = 1-(2+NADV)*YES3D  !!1-5*YES3D 1-4*YES3D 1-3*YES3D 1-2*YES3D
-integer :: dimy2_w = nyp2+NADV         !!nyp5      nyp4      nyp3      nyp2
-integer :: dimx1_s = -2-NADVS          !!-4        -3        -2        -2
-integer :: dimx2_s = nxp3+NADVS        !!nxp5      nxp4      nxp3      nxp3
-integer :: dimy1_s = 1-(3+NADVS)*YES3D !!1-5*YES3D 1-4*YES3D 1-3*YES3D 1-3*YES3D
-integer :: dimy2_s = nyp3+NADVS        !!nyp5      nyp4      nyp3      nyp3
+integer :: nxp1 ,nyp1 ,nxp2 ,nyp2 ,nxp3 ,nyp3 ,nxp4 ,nyp4 
 
-integer :: ncols = nx*ny
-integer :: nadams = 3
+integer :: dimx1_u ,dimx2_u ,dimy1_u ,dimy2_u 
+integer :: dimx1_v ,dimx2_v ,dimy1_v ,dimy2_v
+integer :: dimx1_w ,dimx2_w ,dimy1_w ,dimy2_w 
+integer :: dimx1_s ,dimx2_s ,dimy1_s ,dimy2_s 
+integer :: dimx1_d, dimx2_d, dimy1_d, dimy2_d
+
+integer :: ncols 
+integer, parameter :: nadams = 3
 
 ! Vertical grid parameters:
-real, allocatable, dimension(:)  :: nz,pres,zi,presi,adz,adzw
-
-allocate( z(nz)    )      ! height of the pressure levels above surface,m
-allocate( pres(nzm))  ! pressure,mb at scalar levels
-allocate( zi(nz)   )     ! height of the interface levels
-allocate( presi(nz))  ! pressure,mb at interface levels
-allocate( adz(nzm) )   ! ratio of the thickness of scalar levels to dz 
-allocate( adzw(nz) )	! ratio of the thinckness of w levels to dz
+real, allocatable, dimension(:)  :: z
+real, allocatable, dimension(:)  :: pres
+real, allocatable, dimension(:)  :: zi
+real, allocatable, dimension(:)  :: presi
+real, allocatable, dimension(:)  :: adz
+real, allocatable, dimension(:)  :: adzw
 
 real pres0      ! Reference surface pressure, Pa
 

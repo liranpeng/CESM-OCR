@@ -7,9 +7,12 @@ use crmx_sgs, only: kurant_sgs
 implicit none
 
 integer i, j, k, ncycle1(1),ncycle2(1)
-real wm(nz)  ! maximum vertical wind velocity
-real uhm(nz) ! maximum horizontal wind velocity
-real cfl, cfl_sgs
+real, allocatable, dimension(:)  :: wm
+real, allocatable, dimension(:)  :: uhm
+real cfl, cfl_sgs,w_max,u_max
+
+allocate ( wm(nz) ) ! maximum vertical wind velocity
+allocate ( uhm(nz) ) ! maximum horizontal wind velocity
 
 ncycle = 1
 	

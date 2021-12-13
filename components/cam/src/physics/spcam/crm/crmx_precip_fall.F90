@@ -1,4 +1,4 @@
-subroutine precip_fall(qp, term_vel, hydro_type, omega, ind)
+subroutine precip_fall(term_vel, hydro_type, omega, ind)
 
 !     positively definite monotonic advection with non-oscillatory option
 !     and gravitational sedimentation 
@@ -9,9 +9,12 @@ implicit none
 
 
 
-real qp(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm) ! falling hydrometeor
+!real qp(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm) ! falling hydrometeor
+!real, allocatable, dimension(:,:,:)  :: qp
+!real,allocatable, intent(in) :: qp
 integer hydro_type   ! 0 - all liquid, 1 - all ice, 2 - mixed
 real omega(nx,ny,nzm)   !  = 1: liquid, = 0: ice;  = 0-1: mixed : used only when hydro_type=2
+
 integer ind
 
 ! Terminal velocity fnction 	
@@ -23,7 +26,8 @@ real, external :: term_vel  ! terminal velocity function
 
 real mx(nzm),mn(nzm), lfac(nz)
 real www(nz),fz(nz)
-real df(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm)
+!real df(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm)
+real, allocatable, dimension(:,:,:)  :: df
 real f0(nzm),df0(nzm)
 real eps
 integer i,j,k,kc,kb
@@ -40,9 +44,10 @@ integer nprec, iprec
 real  flagstat
 
 !--------------------------------------------------------
-
+!allocate (qp(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm))
+allocate (df(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm))
 !call t_startf ('precip_fall')
-
+df=0.
 eps = 1.e-10
 nonos = .true.
   
@@ -221,9 +226,8 @@ do j=1,ny
   end do
 end do	
 	 
-
 !call t_stopf ('precip_fall')
-
+deallocate (df)
 end subroutine precip_fall
 
 

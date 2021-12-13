@@ -123,7 +123,6 @@ do k=1,nzm
     dq = qp(i,j,k)
     qp(i,j,k)=max(0.,qp(i,j,k))
     q(i,j,k) = q(i,j,k) + (dq-qp(i,j,k))
-
   end do
  enddo
 enddo

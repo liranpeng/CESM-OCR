@@ -14,6 +14,32 @@ real pratio, coef1, coef2,estw,esti,rrr1,rrr2
 real*4 gammafff
 external gammafff
 integer k 
+ allocate (accrsc(nzm)) 
+ allocate (accrsi(nzm)) 
+ allocate (accrrc(nzm))
+ allocate (coefice(nzm))
+ allocate (accrgc(nzm))
+ allocate (accrgi(nzm))
+ allocate (evaps1(nzm))
+ allocate (evaps2(nzm))
+ allocate (evapr1(nzm))
+ allocate (evapr2(nzm))
+ allocate (evapg1(nzm))
+ allocate (evapg2(nzm))
+
+accrsc=0.
+accrsi=0.
+accrrc=0.
+coefice=0.
+accrgc=0.
+accrgi=0.
+evaps1=0.
+evaps2=0.
+evapr1=0.
+evapr2=0.
+evapg1=0.
+evapg2=0.
+
 
 gam3 = 3. 
 gamr1 = 3.+b_rain
@@ -67,7 +93,6 @@ do k=1,nzm
   coefice(k) =  coef2
           
 ! evaporation of snow:
- 
   coef1  =(lsub/(tabs0(k)*rv)-1.)*lsub/(therco*rrr1*tabs0(k))
   coef2  = rv*tabs0(k)/(diffelq*rrr2*esti)
   evaps1(k)  =  0.65*4.*nzeros/sqrt(pi*rhos*nzeros)/(coef1+coef2)/sqrt(rho(k)) 
@@ -111,6 +136,18 @@ do k=1,nzm
 
 end do
 
+ deallocate (accrsc)                           
+ deallocate (accrsi)                           
+ deallocate (accrrc)
+ deallocate (coefice)
+ deallocate (accrgc)
+ deallocate (accrgi)
+ deallocate (evaps1)
+ deallocate (evaps2)
+ deallocate (evapr1)
+ deallocate (evapr2)
+ deallocate (evapg1)
+ deallocate (evapg2)
            
 end subroutine precip_init
 

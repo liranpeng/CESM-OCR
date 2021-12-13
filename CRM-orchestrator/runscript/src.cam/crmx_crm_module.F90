@@ -324,9 +324,11 @@ subroutine crm        (lchnk, icol, &
 
 !  Local space:
         real dummy(nz), t00(nz)
-        real fluxbtmp(nx,ny), fluxttmp(nx,ny) !bloss
+        !real fluxbtmp(nx,ny), fluxttmp(nx,ny) !bloss
+        real, allocatable, dimension(:,:)  :: fluxbtmp,fluxttmp
         real tln(plev), qln(plev), qccln(plev), qiiln(plev), uln(plev), vln(plev)
-        real cwp(nx,ny), cwph(nx,ny), cwpm(nx,ny), cwpl(nx,ny)
+        !real cwp(nx,ny), cwph(nx,ny), cwpm(nx,ny), cwpl(nx,ny)
+        real, allocatable, dimension(:,:)  :: cwp,cwph,cwpm,cwpl
         real(r8) factor_xy, idt_gl
         real tmp1, tmp2
         real u2z,v2z,w2z
@@ -335,7 +337,8 @@ subroutine crm        (lchnk, icol, &
         real(r8), parameter :: umax = 0.5*crm_dx/crm_dt ! maxumum ampitude of the l.s. wind
         real(r8), parameter :: wmin = 2.   ! minimum up/downdraft velocity for stat
         real, parameter :: cwp_threshold = 0.001 ! threshold for cloud condensate for shaded fraction calculation
-        logical flag_top(nx,ny)
+        !logical flag_top(nx,ny)
+        logical, allocatable, dimension(:,:)  :: flag_top
         real ustar, bflx, wnd, z0_est, qsat, omg
         real colprec,colprecs
         real(r8) zs ! surface elevation
@@ -356,13 +359,34 @@ real(kind=core_rknd), dimension(nzm) :: &
   rtm_column ! Total water (vapor + liquid)     [kg/kg]
 #endif
 
-        real  cltemp(nx,ny), cmtemp(nx,ny), chtemp(nx, ny), cttemp(nx, ny)
-
+        !real  cltemp(nx,ny), cmtemp(nx,ny), chtemp(nx, ny), cttemp(nx, ny)
+        real, allocatable, dimension(:,:)  :: cltemp,cmtemp,chtemp,cttemp
         real(r8), intent(inout) :: qtot(20)
         real ntotal_step
+integer numproc_global,myrank_global,ierr,rankprint
+
+include 'mpif.h'
+
+nsubdomains_x  = 1
+call crm_define_grid()
+
+rankprint = 30
+call mpi_comm_size(MPI_COMM_WORLD, numproc_global, ierr)
+call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 
 !-----------------------------------------------
-
+        allocate ( cltemp (nx, ny))
+        allocate ( cmtemp (nx, ny))
+        allocate ( chtemp (nx, ny))
+        allocate ( cttemp (nx, ny))
+        allocate ( fluxbtmp (nx, ny))
+        allocate ( fluxttmp (nx, ny))
+        allocate ( cwp (nx, ny))
+        allocate ( cwph (nx, ny))
+        allocate ( cwpm (nx, ny))
+        allocate ( cwpl (nx, ny))
+        allocate (flag_top(nx, ny))
+        call crm_allocate()
         dostatis = .false.    ! no statistics are collected. 
         idt_gl = 1._r8/dt_gl
         ptop = plev-nzm+1
@@ -437,7 +461,6 @@ real(kind=core_rknd), dimension(nzm) :: &
            prespot(k)=(1000./pres(k))**(rgas/cp)
            bet(k) = ggr/tl(plev-k+1)
            gamaz(k)=ggr/cp*z(k)
-
         end do ! k
 !        zi(nz) =  zint(plev-nz+2)
         zi(nz) = zint(plev-nz+2)-zint(plev+1) !+++mhwang, 2012-02-04
@@ -504,7 +527,9 @@ real(kind=core_rknd), dimension(nzm) :: &
         v(1:nx,1:ny,1:nzm) = v_crm(1:nx,1:ny,1:nzm)*YES3D
         w(1:nx,1:ny,1:nzm) = w_crm(1:nx,1:ny,1:nzm)
         tabs(1:nx,1:ny,1:nzm) = t_crm(1:nx,1:ny,1:nzm)
+
         micro_field(1:nx,1:ny,1:nzm,1:nmicro_fields) = micro_fields_crm(1:nx,1:ny,1:nzm,1:nmicro_fields)
+
 #ifdef sam1mom
         qn(1:nx,1:ny,1:nzm) =  micro_fields_crm(1:nx,1:ny,1:nzm,3)
 #endif
@@ -537,6 +562,7 @@ real(kind=core_rknd), dimension(nzm) :: &
 
         w(:,:,nz)=0.
         wsub (:) = 0.      !used in clubb, +++mhwang
+
         dudt(:,:,:,1:3) = 0.
         dvdt(:,:,:,1:3) = 0.
         dwdt(1:nx,1:ny,1:nz,1:3) = 0.
@@ -544,7 +570,7 @@ real(kind=core_rknd), dimension(nzm) :: &
         tk(1:nx,1:ny,1:nzm) = 0.
         tkh(1:nx,1:ny,1:nzm) = 0.
         p(1:nx,1:ny,1:nzm) = 0.
-
+        qp(1:nx,1:ny,1:nzm) = 0.
         CF3D(1:nx,1:ny,1:nzm) = 1.
 
         call micro_init
@@ -968,9 +994,24 @@ do while(nstep.lt.nstop)
 
 !-----------------------------------------------------------
 !  SGS physics:
+   
+    if (dosgs) call sgs_proc()
 
-     if (dosgs) call sgs_proc()
-        
+
+         do k=1,nzm
+          do j=1,ny
+           do i=1,nx
+             print *,'u=',i,j,k,u(i,j,k)
+             print *,'v=',i,j,k,v(i,j,k)
+             print *,'w=',i,j,k,w(i,j,k)
+             print *,'t=',i,j,k,tabs(i,j,k)
+             print *,'tk=',i,j,k,tk(i,j,k)
+             print *,'tkh=',i,j,k,tkh(i,j,k)
+             print *,'tke=',i,j,k,tke(i,j,k)
+           end do
+          end do
+         end do
+   
 #ifdef CLUBB_CRM_OLD   
 !----------------------------------------------------------
 !     Do a timestep with CLUBB if enabled:
@@ -1033,7 +1074,6 @@ do while(nstep.lt.nstop)
 !       advection of momentum:
 
      call advect_mom()
-
 !----------------------------------------------------------
 !	SGS effects on momentum:
 
@@ -1060,7 +1100,6 @@ do while(nstep.lt.nstop)
 !  Note that at the end of the call, the velocities are in nondimensional form.
 	 
      call adams()
-
 !----------------------------------------------------------
 !     Update boundaries for all prognostic scalar fields for advection:
 
@@ -1070,7 +1109,6 @@ do while(nstep.lt.nstop)
 !      advection of scalars :
 
      call advect_all_scalars()
-
 !-----------------------------------------------------------
 !    Convert velocity back from nondimensional form:
 
@@ -1080,12 +1118,10 @@ do while(nstep.lt.nstop)
 !     Update boundaries for scalars to prepare for SGS effects:
 
      call boundaries(3)
-
 !---------------------------------------------------------
 !      SGS effects on scalars :
 
      if (dosgs) call sgs_scalars()
-
 #ifdef CLUBB_CRM_OLD
       ! Re-compute q/qv/qcl based on values computed in CLUBB
      if ( doclubb ) then
@@ -1788,6 +1824,8 @@ do while(nstep.lt.nstop)
 ! Deallocate ECPP variables
        call ecpp_crm_cleanup ()
 #endif /*ECPP*/
-        
+    !call sgs_deallocate()
+    call crm_deallocate()        
+    !call micro_deallocate()
 end subroutine crm
 end module crmx_crm_module

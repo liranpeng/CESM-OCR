@@ -13,7 +13,14 @@ real dxz,dzx
 
 integer i,j,k,ic,ib,kc,kcu
 real tkx, tkz, rhoi, iadzw, iadz
-real fu(0:nx,1,nz),fv(0:nx,1,nz),fw(0:nx,1,nz)
+real, allocatable, dimension(:,:,:)  :: fu,fv,fw
+
+allocate ( fu(nx,ny,nz))
+allocate ( fv(nx,ny,nz))
+allocate ( fw(nx,ny,nz))
+fu= 0.
+fv= 0.
+fw= 0.
 
 rdx2=1./dx/dx
 rdx25=0.25*rdx2
@@ -32,7 +39,6 @@ do k=1,nzm
  dxz=dx/(dz*adzw(kc))
  rdx21=rdx2 * grdf_x(k)
  rdx251=rdx25 * grdf_x(k)
- 
    do i=0,nx
     ic=i+1
     tkx=rdx21*tk(i,j,k)
@@ -47,7 +53,6 @@ do k=1,nzm
     dvdt(i,j,k,na)=dvdt(i,j,k,na)-(fv(i,j,k)-fv(ib,j,k))
     dwdt(i,j,kc,na)=dwdt(i,j,kc,na)-(fw(i,j,k)-fw(ib,j,k))
    end do  
-
 end do 
 
 end if 
@@ -108,7 +113,9 @@ do k=2,nzm
   end do
 end do ! k
 
-
+deallocate(fu)
+deallocate(fv)
+deallocate(fw)
 end subroutine diffuse_mom2D
 
 

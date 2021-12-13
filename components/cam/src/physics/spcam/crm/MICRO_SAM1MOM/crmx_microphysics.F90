@@ -2,7 +2,7 @@ module crmx_microphysics
 
 ! module for original SAM bulk microphysics
 ! Marat Khairoutdinov, 2006
-
+use crmx_vars, only: nmicro_fields,micro_field,qn,qp
 use crmx_grid, only: nx,ny,nzm,nz, dimx1_s,dimx2_s,dimy1_s,dimy2_s ! subdomain grid information 
 use crmx_params, only: doprecip, docloud, doclubb
 use crmx_micro_params
@@ -11,11 +11,11 @@ implicit none
 !----------------------------------------------------------------------
 !!! required definitions:
 
-integer, parameter :: nmicro_fields = 2   ! total number of prognostic water vars
+!integer, parameter :: nmicro_fields = 2   ! total number of prognostic water vars
 
 !!! microphysics prognostic variables are storred in this array:
 
-real micro_field(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm, nmicro_fields)
+!real, allocatable, dimension(:,:,:,:)  :: micro_field
 
 integer, parameter :: flag_wmass(nmicro_fields) = (/1,1/)
 integer, parameter :: index_water_vapor = 1 ! index for variable that has water vapor
@@ -28,18 +28,16 @@ integer, parameter :: flag_number(nmicro_fields) = (/0,0/)
 ! SAM1MOM 3D microphysical fields are output by default.
 integer, parameter :: flag_micro3Dout(nmicro_fields) = (/0,0/)
 
-real fluxbmk (nx, ny, 1:nmicro_fields) ! surface flux of tracers
-real fluxtmk (nx, ny, 1:nmicro_fields) ! top boundary flux of tracers
+real, allocatable, dimension(:,:,:)  :: fluxbmk
+real, allocatable, dimension(:,:,:)  :: fluxtmk
 
-!!! these arrays are needed for output statistics:
-
-real mkwle(nz,1:nmicro_fields)  ! resolved vertical flux
-real mkwsb(nz,1:nmicro_fields)  ! SGS vertical flux
-real mkadv(nz,1:nmicro_fields)  ! tendency due to vertical advection
-real mklsadv(nz,1:nmicro_fields)  ! tendency due to large-scale vertical advection
-real mkdiff(nz,1:nmicro_fields)  ! tendency due to vertical diffusion
-real mstor(nz,1:nmicro_fields)  ! storage terms of microphysical variables
-
+!!! these arrays are needed for output statistics
+real, allocatable, dimension(:,:)  :: mkwle
+real, allocatable, dimension(:,:)  :: mkwsb
+real, allocatable, dimension(:,:)  :: mkadv
+real, allocatable, dimension(:,:)  :: mklsadv
+real, allocatable, dimension(:,:)  :: mkdiff
+real, allocatable, dimension(:,:)  :: mstor
 !======================================================================
 ! UW ADDITIONS
 
@@ -58,15 +56,11 @@ real, dimension(nmicro_fields) :: mkoutputscale
 ! make aliases for prognostic variables:
 ! note that the aliases should be local to microphysics
 
-real q(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm)   ! total nonprecipitating water
-real qp(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm)  ! total precipitating water
-equivalence (q(dimx1_s,dimy1_s,1),micro_field(dimx1_s,dimy1_s,1,1))
-equivalence (qp(dimx1_s,dimy1_s,1),micro_field(dimx1_s,dimy1_s,1,2))
-
-real qn(nx,ny,nzm)  ! cloud condensate (liquid + ice)
-
-real qpsrc(nz)  ! source of precipitation microphysical processes
-real qpevp(nz)  ! sink of precipitating water due to evaporation
+real, allocatable, dimension(:,:,:)  :: q
+!real, allocatable, dimension(:,:,:)  :: qp
+!real, allocatable, dimension(:,:,:)  :: qn ! cloud condensate (liquid + ice)
+real, allocatable, dimension(:)      :: qpsrc ! source of precipitation microphysical processes
+real, allocatable, dimension(:)      :: qpevp ! sink of precipitating water due to evaporation
 
 real vrain, vsnow, vgrau, crain, csnow, cgrau  ! precomputed coefs for precip terminal velocity
 
@@ -80,6 +74,22 @@ subroutine micro_setparm()
   ! no user-definable options in SAM1MOM microphysics.
 end subroutine micro_setparm
 
+subroutine micro_deallocate()
+
+deallocate(q) 
+deallocate(fluxbmk) 
+deallocate(fluxtmk) !
+deallocate( mkwle)  ! resolved
+deallocate( mkwsb)  ! SGS
+deallocate( mkadv)  ! tendency
+deallocate( mklsadv)  !
+deallocate( mkdiff)  ! tendency
+deallocate( mstor)  ! storage
+deallocate( qpsrc)
+deallocate( qpevp)
+
+end subroutine micro_deallocate
+
 !----------------------------------------------------------------------
 !!! Initialize microphysics:
 
@@ -91,9 +101,9 @@ subroutine micro_init()
   use crmx_params, only: nclubb
 #endif
   use crmx_grid, only: nrestart
-  use crmx_vars, only: q0
+  use crmx_vars, only: q0,qp
   use crmx_params, only: dosmoke
-  integer k, n
+  integer i,j,k, n
 #ifdef CLUBB_CRM  
 !  if ( nclubb /= 1 ) then
 !    write(0,*) "The namelist parameter nclubb is not equal to 1,",  &
@@ -103,6 +113,32 @@ subroutine micro_init()
 !    call task_abort()
 !  end if
 #endif
+  !allocate(micro_field(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm, nmicro_fields))
+   if (.not. allocated(q)) allocate(q(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm)) ! total nonprecipitating water
+  !allocate(qp(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm)) ! total precipitating water
+  if (.not. allocated(fluxbmk)) allocate(fluxbmk (nx, ny, 1:nmicro_fields)) ! surface flux of tracers
+  if (.not. allocated(fluxtmk)) allocate(fluxtmk (nx, ny, 1:nmicro_fields)) ! top boundary flux of tracers
+  if (.not. allocated(mkwle)) allocate( mkwle(nz,1:nmicro_fields))  ! resolved vertical flux
+  if (.not. allocated(mkwsb)) allocate( mkwsb(nz,1:nmicro_fields))  ! SGS vertical flux
+  if (.not. allocated(mkadv)) allocate( mkadv(nz,1:nmicro_fields))  ! tendency due to vertical advection
+  if (.not. allocated(mklsadv)) allocate( mklsadv(nz,1:nmicro_fields))  ! tendency due to large-scale vertical advection
+  if (.not. allocated(mkdiff)) allocate( mkdiff(nz,1:nmicro_fields))  ! tendency due to vertical diffusion
+  if (.not. allocated(mstor))allocate( mstor(nz,1:nmicro_fields))  ! storage terms of microphysical variables
+  !allocate( qn(nx,ny,nzm))
+  if (.not. allocated(qpsrc)) allocate( qpsrc(nz))
+  if (.not. allocated(qpevp)) allocate( qpevp(nz))
+
+ q=0.
+fluxbmk=0.
+fluxtmk=0.
+mkwle=0.
+mkwsb=0
+mkadv=0.
+mklsadv=0
+mkdiff=0.
+mstor=0.
+qpsrc=0.
+                            
 
   a_bg = 1./(tbgmax-tbgmin)
   a_pr = 1./(tprmax-tprmin)
@@ -145,7 +181,6 @@ subroutine micro_init()
   mkdiff = 0.
   mklsadv = 0.
   mstor = 0.
-
   qpsrc = 0.
   qpevp = 0.
 
@@ -201,9 +236,18 @@ subroutine micro_proc()
 #ifdef CLUBB_CRM
    use crmx_params, only: doclubb, doclubbnoninter ! dschanen UWM 21 May 2008
    use crmx_clubbvars, only: cloud_frac
-   use crmx_vars, only:  CF3D
+   use crmx_vars, only:  CF3D,qp
    use crmx_grid, only: nzm
 #endif
+   integer i,j,k
+   do k=1,nzm
+    do j=1,ny
+     do i=1,nx
+       q(i,j,k)  = micro_field(i,j,k,1)
+       qn(i,j,k) = micro_field(i,j,k,2) 
+     end do
+    end do
+   end do
 
    ! Update bulk coefficient
    if(doprecip.and.icycle.eq.1) call precip_init() 
@@ -225,6 +269,15 @@ subroutine micro_proc()
      call micro_diagnose()
    end if
 #endif /*CLUBB_CRM*/
+
+   do k=1,nzm
+    do j=1,ny
+     do i=1,nx
+       micro_field(i,j,k,1) = q(i,j,k)
+       micro_field(i,j,k,2) = qn(i,j,k)
+     end do
+    end do
+   end do
 
 end subroutine micro_proc
 
@@ -248,6 +301,8 @@ subroutine micro_diagnose()
        omp = max(0.,min(1.,(tabs(i,j,k)-tprmin)*a_pr))
        qpl(i,j,k) = qp(i,j,k)*omp
        qpi(i,j,k) = qp(i,j,k)*(1.-omp)
+       micro_field(i,j,k,1) = q(i,j,k)
+       micro_field(i,j,k,2) = qn(i,j,k)
      end do
     end do
    end do
@@ -389,9 +444,23 @@ subroutine micro_precip_fall()
   use crmx_vars
   use crmx_params, only : pi
 
-  real omega(nx,ny,nzm)
+  !real omega(nx,ny,nzm)
+  real, allocatable, dimension(:,:,:)  :: omega
+
   integer ind
   integer i,j,k
+
+  allocate (  omega(nx,ny,nzm))
+
+   do k=1,nzm
+    do j=1,ny
+     do i=1,nx
+       q(i,j,k)  = micro_field(i,j,k,1) 
+       qn(i,j,k) = micro_field(i,j,k,2) 
+     end do
+    end do
+   end do
+
 
   crain = b_rain / 4.
   csnow = b_snow / 4.
@@ -408,7 +477,17 @@ subroutine micro_precip_fall()
   end do
  end do
 
- call precip_fall(qp, term_vel_qp, 2, omega, ind)
+ call precip_fall(term_vel_qp, 2, omega, ind)
+
+
+   do k=1,nzm
+    do j=1,ny
+     do i=1,nx
+       micro_field(i,j,k,1) = q(i,j,k)
+       micro_field(i,j,k,2) = qn(i,j,k)
+     end do
+    end do
+   end do
 
 
 end subroutine micro_precip_fall

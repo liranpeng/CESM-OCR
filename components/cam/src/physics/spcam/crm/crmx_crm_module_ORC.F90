@@ -14,7 +14,7 @@ public :: crm_orc
 
 contains
 
-subroutine crm_orc     (npro,ntask,long,lati,gcolindex,lchnk, icol, &
+subroutine crm_orc     (numproc_crm_in,myrank_crm_in,long,lati,gcolindex,lchnk, icol, &
                        tl, ql, qccl, qiil, ul, vl, &
                        ps, pmid, pdel, phis, &
                        zmid, zint, dt_gl, plev, &
@@ -329,9 +329,11 @@ subroutine crm_orc     (npro,ntask,long,lati,gcolindex,lchnk, icol, &
 
 !  Local space:
         real dummy(nz), t00(nz)
-        real fluxbtmp(nx,ny), fluxttmp(nx,ny) !bloss
+        !real fluxbtmp(nx,ny), fluxttmp(nx,ny) !bloss
+        real, allocatable, dimension(:,:)  :: fluxbtmp,fluxttmp
         real tln(plev), qln(plev), qccln(plev), qiiln(plev), uln(plev), vln(plev)
-        real cwp(nx,ny), cwph(nx,ny), cwpm(nx,ny), cwpl(nx,ny)
+        !real cwp(nx,ny), cwph(nx,ny), cwpm(nx,ny), cwpl(nx,ny)
+        real, allocatable, dimension(:,:)  :: cwp,cwph,cwpm,cwpl
         real(r8) factor_xy, idt_gl
         real tmp1, tmp2
         real u2z,v2z,w2z
@@ -340,7 +342,8 @@ subroutine crm_orc     (npro,ntask,long,lati,gcolindex,lchnk, icol, &
         real(r8), parameter :: umax = 0.5*crm_dx/crm_dt ! maxumum ampitude of the l.s. wind
         real(r8), parameter :: wmin = 2.   ! minimum up/downdraft velocity for stat
         real, parameter :: cwp_threshold = 0.001 ! threshold for cloud condensate for shaded fraction calculation
-        logical flag_top(nx,ny)
+        !logical flag_top(nx,ny)
+        logical, allocatable, dimension(:,:)  :: flag_top
         real ustar, bflx, wnd, z0_est, qsat, omg
         real colprec,colprecs
         real(r8) zs ! surface elevation
@@ -348,7 +351,7 @@ subroutine crm_orc     (npro,ntask,long,lati,gcolindex,lchnk, icol, &
         integer iseed   ! seed for random perturbation
         integer, intent(in) :: gcolindex(pcols)  ! array of global latitude indices
         integer :: crm_comm
-        integer :: myrank_crm, numproc_crm
+        integer :: numproc_crm_in,myrank_crm_in,crm_comm_in
         integer :: ierr,status
 
 #ifdef SPCAM_CLUBB_SGS
@@ -364,13 +367,26 @@ real(kind=core_rknd), dimension(nzm) :: &
   rtm_column ! Total water (vapor + liquid)     [kg/kg]
 #endif
 
-        real  cltemp(nx,ny), cmtemp(nx,ny), chtemp(nx, ny), cttemp(nx, ny)
-
+        !real  cltemp(nx,ny), cmtemp(nx,ny), chtemp(nx, ny), cttemp(nx, ny)
+        real, allocatable, dimension(:,:)  :: cltemp,cmtemp,chtemp,cttemp
         real(r8), intent(inout) :: qtot(20)
         real ntotal_step
 
+        nsubdomains_x  = 1
+        call crm_define_grid()
 !-----------------------------------------------
-
+        allocate ( cltemp (nx, ny))
+        allocate ( cmtemp (nx, ny))
+        allocate ( chtemp (nx, ny))
+        allocate ( cttemp (nx, ny))
+        allocate ( fluxbtmp (nx, ny))
+        allocate ( fluxttmp (nx, ny))
+        allocate ( cwp (nx, ny))
+        allocate ( cwph (nx, ny))
+        allocate ( cwpm (nx, ny))
+        allocate ( cwpl (nx, ny))
+        allocate (flag_top(nx, ny))
+        call crm_allocate()
         dostatis = .false.    ! no statistics are collected. 
         idt_gl = 1._r8/dt_gl
         ptop = plev-nzm+1
@@ -401,9 +417,9 @@ real(kind=core_rknd), dimension(nzm) :: &
         ! lrestart_clubb = .true.
         !endif
 #endif
-        write(0, *) 'Enter task_init_ORC',npro,ntask
-        call task_init_ORC (npro,ntask)
-
+        write(0, *) 'Enter task_init_ORC',crm_comm_in,numproc_crm_in,myrank_crm_in
+        call task_init (npro,ntask)
+        write(0, *) 'Enter task_init_ORC2',npro,ntask
         call setparm()
 
 !        doshortwave = doshort
@@ -445,9 +461,14 @@ real(kind=core_rknd), dimension(nzm) :: &
            prespot(k)=(1000./pres(k))**(rgas/cp)
            bet(k) = ggr/tl(plev-k+1)
            gamaz(k)=ggr/cp*z(k)
-
+           !write(0, *) 'Liran Debug0',zi(k)
         end do ! k
 !        zi(nz) =  zint(plev-nz+2)
+        !write(0, *) 'Liran Debug1',plev,nzm
+        !write(0, *) 'Liran Debug2',nz
+        !write(0, *) 'Liran Debug3',zint(plev+1)
+        !write(0, *) 'Liran Debug4',zint(plev-nz+2)
+        !write(0, *) 'Liran Debug5',zi(nz)
         zi(nz) = zint(plev-nz+2)-zint(plev+1) !+++mhwang, 2012-02-04
 
         dz = 0.5*(z(1)+z(2))
@@ -500,6 +521,7 @@ real(kind=core_rknd), dimension(nzm) :: &
          do k=1,nzm
           do j=1,ny
            do i=1,nx
+             !write(0, *) 'Liran Debug0_0',qcl(i,j,k)
              u_crm(i,j,k) = min( umax, max(-umax,u_crm(i,j,k)) )
              v_crm(i,j,k) = min( umax, max(-umax,v_crm(i,j,k)) )*YES3D
            end do
@@ -512,10 +534,16 @@ real(kind=core_rknd), dimension(nzm) :: &
         v(1:nx,1:ny,1:nzm) = v_crm(1:nx,1:ny,1:nzm)*YES3D
         w(1:nx,1:ny,1:nzm) = w_crm(1:nx,1:ny,1:nzm)
         tabs(1:nx,1:ny,1:nzm) = t_crm(1:nx,1:ny,1:nzm)
+
         micro_field(1:nx,1:ny,1:nzm,1:nmicro_fields) = micro_fields_crm(1:nx,1:ny,1:nzm,1:nmicro_fields)
-#ifdef sam1mom
-        qn(1:nx,1:ny,1:nzm) =  micro_fields_crm(1:nx,1:ny,1:nzm,3)
+
+#ifdef sam1mom  
+        qn(1:nx,1:ny,1:nzm) =  micro_fields_crm(1:nx,1:ny,1:nzm,3) 
 #endif
+        !micro_field(1:nx,1:ny,1:nzm,1:nmicro_fields) = micro_fields_crm(1:nx,1:ny,1:nzm,1:nmicro_fields)
+!!#ifdef sam1mom
+        !qn(1:nx,1:ny,1:nzm) =  micro_fields_crm(1:nx,1:ny,1:nzm,3)
+!!#endif
 
 #ifdef m2005
         cloudliq(1:nx,1:ny,1:nzm) = micro_fields_crm(1:nx,1:ny,1:nzm,11)
@@ -545,6 +573,7 @@ real(kind=core_rknd), dimension(nzm) :: &
 
         w(:,:,nz)=0.
         wsub (:) = 0.      !used in clubb, +++mhwang
+
         dudt(:,:,:,1:3) = 0.
         dvdt(:,:,:,1:3) = 0.
         dwdt(1:nx,1:ny,1:nz,1:3) = 0.
@@ -552,7 +581,7 @@ real(kind=core_rknd), dimension(nzm) :: &
         tk(1:nx,1:ny,1:nzm) = 0.
         tkh(1:nx,1:ny,1:nzm) = 0.
         p(1:nx,1:ny,1:nzm) = 0.
-
+        qp(1:nx,1:ny,1:nzm) = 0.
         CF3D(1:nx,1:ny,1:nzm) = 1.
 
         call micro_init
@@ -907,7 +936,6 @@ do while(nstep.lt.nstop)
      dtn = dt/ncycle
      dt3(na) = dtn
      dtfactor = dtn/dt
-
 !---------------------------------------------
 !  	the Adams-Bashforth scheme in time
 
@@ -1132,8 +1160,7 @@ do while(nstep.lt.nstop)
                                   qcl(i,j,1:nzm), qpl(i,j,1:nzm), &
                                   qci(i,j,1:nzm), qpi(i,j,1:nzm), &
                                   prespot(1:nzm) )
-
-           thlm_integral_after(i,j) = vertical_integral( (nz - 2 + 1), rho_ds_zt(2:nz), &
+           ihlm_integral_after(i,j) = vertical_integral( (nz - 2 + 1), rho_ds_zt(2:nz), &
                                                       thlm_after(1:nzm), gr%invrs_dzt(2:nz))
                                          
            thlm_spurious_source(i,j) = calculate_spurious_source( thlm_integral_after(i,j), &
@@ -1154,12 +1181,10 @@ do while(nstep.lt.nstop)
 #else
       if(docloud.or.dosmoke) call micro_proc()
 #endif /*CLUBB_SGS*/
-
 !-----------------------------------------------------------
 !    Compute diagnostics fields:
 
       call diagnose()
-
 !----------------------------------------------------------
 ! Rotate the dynamic tendency arrays for Adams-bashforth scheme:
 
@@ -1218,7 +1243,7 @@ do while(nstep.lt.nstop)
 !hm           crm_ns(l) = crm_ns(l) + micro_field(i,j,k,ins)
 
 !hm#endif
-
+!write(0, *) 'Liran Debug10_111',i,k,qcl(1,2,k)
            tmp1 = rho(nz-k)*adz(nz-k)*dz*(qcl(i,j,nz-k)+qci(i,j,nz-k))
            cwp(i,j) = cwp(i,j)+tmp1
            cttemp(i,j) = max(CF3D(i,j,nz-k), cttemp(i,j))
@@ -1239,9 +1264,20 @@ do while(nstep.lt.nstop)
 
       !     qsat = qsatw_crm(tabs(i,j,k),pres(k))
       !     if(qcl(i,j,k)+qci(i,j,k).gt.min(1.e-5,0.01*qsat)) then
+!                write(0, *) 'Liran Debug10_0',adz(k)
+!                write(0, *) 'Liran Debug10_1',dz
+!                write(0, *) 'Liran Debug10_2',rho(k)
+!                write(0, *) 'Liran Debug10_3',tmp1
            tmp1 = rho(k)*adz(k)*dz
+!                write(0, *) 'Liran Debug10_4',i,k,tmp1
+!                write(0, *) 'Liran Debug10_5',i,k,qcl(i,j,k)
+!                write(0, *) 'Liran Debug10_6',qci(i,j,k)
+!                write(0, *) 'Liran Debug10_7',cwp_threshold
            if(tmp1*(qcl(i,j,k)+qci(i,j,k)).gt.cwp_threshold) then
                 cld(l) = cld(l) + CF3D(i,j,k)
+!                write(0, *) 'Liran Debug10',qcl(i,j,k)
+!                write(0, *) 'Liran Debug11',cld(l)
+!                write(0, *) 'Liran Debug12',w(i,j,k)
                 if(w(i,j,k+1)+w(i,j,k).gt.2*wmin) then
                   mcup(l) = mcup(l) + rho(k)*0.5*(w(i,j,k+1)+w(i,j,k)) * CF3D(i,j,k)
                   mcuup(l) = mcuup(l) + rho(k)*0.5*(w(i,j,k+1)+w(i,j,k)) * (1.0 - CF3D(i,j,k))
@@ -1258,10 +1294,14 @@ do while(nstep.lt.nstop)
                   mcudn(l) = mcudn(l) + rho(k)*0.5*(w(i,j,k+1)+w(i,j,k))
                 end if
            end if
-           
+!           write(0, *) 'Liran Debug13_0',qv(i,j,k) 
+!           write(0, *) 'Liran Debug13_1',t_rad (i,j,k)
+!           write(0, *) 'Liran Debug13_2',tabs(i,j,k)
            t_rad (i,j,k) = t_rad (i,j,k)+tabs(i,j,k)
            qv_rad(i,j,k) = qv_rad(i,j,k)+max(0.,qv(i,j,k))
            qc_rad(i,j,k) = qc_rad(i,j,k)+qcl(i,j,k)
+!           write(0, *) 'Liran Debug13',qci(i,j,k)
+!           write(0, *) 'Liran Debug14',qi_rad(i,j,k)
            qi_rad(i,j,k) = qi_rad(i,j,k)+qci(i,j,k)
            cld_rad(i,j,k) = cld_rad(i,j,k) +  CF3D(i,j,k)
 #ifdef m2005
@@ -1272,7 +1312,8 @@ do while(nstep.lt.nstop)
 #endif 
            gliqwp(l)=gliqwp(l)+qcl(i,j,k)
            gicewp(l)=gicewp(l)+qci(i,j,k)
-          
+
+!write(0, *) 'Liran Debug10_1122',i,k,qcl(i,j,k)          
           end do
          end do
         end do
@@ -1796,6 +1837,9 @@ do while(nstep.lt.nstop)
 ! Deallocate ECPP variables
        call ecpp_crm_cleanup ()
 #endif /*ECPP*/
+!call sgs_deallocate()
+call crm_deallocate()
+!call micro_deallocate()
         
 end subroutine crm_orc
 end module crmx_crm_module_orc

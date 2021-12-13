@@ -14,8 +14,12 @@ implicit none
 integer i,j,k, kb, kc, kmax, kmin, ici
 real coef,dqi,lat_heat,vt_ice
 real omnu, omnc, omnd, qiu, qic, qid, tmp_theta, tmp_phi
-real fz(nx,ny,nz)
+!real fz(nx,ny,nz)
+real, allocatable, dimension(:,:,:)  :: fz
 
+allocate ( fz(nx,ny,nz))
+
+fz=0.
 kmax=0
 kmin=nzm+1
 
@@ -119,6 +123,6 @@ do j=1,ny
 end do
 
 !call t_stopf ('ice_fall')
-
+deallocate ( fz )
 end subroutine ice_fall
 

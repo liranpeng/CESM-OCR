@@ -7,12 +7,20 @@ use crmx_vars
 
 implicit none
 	
-real fu(0:nx,1-YES3D:ny,nzm) 
-real fv(0:nx,1-YES3D:ny,nzm)
-real fw(0:nx,1-YES3D:ny,nzm)
+real, allocatable, dimension(:,:,:) :: fu
+real, allocatable, dimension(:,:,:) :: fv
+real, allocatable, dimension(:,:,:) :: fw
 real dx25, dy25, irho
 
 integer i, j, k, kc, kcu, ic, jb, ib, jc
+
+allocate ( fu(0:nx,1-YES3D:ny,nzm))
+allocate ( fv(0:nx,1-YES3D:ny,nzm))
+allocate ( fw(0:nx,1-YES3D:ny,nzm))
+
+fu=0.
+fv=0.
+fw=0.
 
 dx25 = 0.25 / dx
 dy25 = 0.25 / dy
@@ -90,6 +98,10 @@ do k = 1,nzm
 end do ! k
 
 endif
+
+deallocate(fu)
+deallocate(fv)
+deallocate(fw)
 
 end subroutine advect2_mom_xy
 

@@ -8,7 +8,6 @@ use crmx_sgs
 use crmx_params
 implicit none
 
-real def2(nx,ny,nzm)	
 real grd,betdz,Ck,Ce,Ces,Ce1,Ce2,smix,Pr,Cee,Cs
 real buoy_sgs,ratio,a_prod_sh,a_prod_bu,a_diss
 real lstarn, lstarp, bbb, omn, omp
@@ -24,9 +23,9 @@ Ce=Ck**3/Cs**4
 Ces=Ce/0.7*3.0	
 
 if(RUN3D) then
-  call shear_prod3D(def2)
+  call shear_prod3D()
 else
-  call shear_prod2D(def2)
+  call shear_prod2D()
 endif
 
 do k=1,nzm      
@@ -113,7 +112,9 @@ do k=1,nzm
      a_prod_sh=(tk(i,j,k)+0.001)*def2(i,j,k)
      a_prod_bu=-(tk(i,j,k)+0.001)*Pr*buoy_sgs
      a_diss=a_prod_sh+a_prod_bu
-
+     print *,'sh=',i,j,k,a_prod_sh,def2(i,j,k)
+     print *,'bu=',i,j,k,a_prod_bu,buoy_sgs
+     print *,'tkkk=',i,j,k,tke(i,j,k),tk(i,j,k)
    else
 
      tke(i,j,k)=max(0.,tke(i,j,k))
@@ -139,7 +140,6 @@ do k=1,nzm
 
 
 end do ! k
-
 !call t_stopf('tke_full')
 
 end
