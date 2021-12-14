@@ -218,10 +218,10 @@ if(rank.lt.npressureslabs) then
 
  do k=1,nzslab
 
-   call fft991_crm(f(1,1,k),work,trigxi,ifaxi,1,nx2,nx_gl,ny_gl,-1)
+   call fft991_crm(fp(1,1,k),work,trigxi,ifaxi,1,nx2,nx_gl,ny_gl,-1)
 
   if(RUN3D) then
-     call fft991_crm(f(1,1,k),work,trigxj,ifaxj,nx2,1,ny_gl,nx_gl+1,-1)
+     call fft991_crm(fp(1,1,k),work,trigxj,ifaxj,nx2,1,ny_gl,nx_gl+1,-1)
   end if
 
  end do 
