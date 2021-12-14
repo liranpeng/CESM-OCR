@@ -28,7 +28,8 @@ integer i,j,k
 !if (.not. allocated(fluxb)) allocate ( fluxb(nx,ny))
 !if (.not. allocated(fluxt)) allocate ( fluxt(nx,ny))
 !if (.not. allocated(f)) allocate ( f(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm))
-allocate ( df(nx, ny, nzm))
+!allocate ( df(nx, ny, nzm))
+allocate ( df(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm))
 
 do k=1,nzm
    do j=1,ny

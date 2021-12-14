@@ -14,18 +14,31 @@ real pratio, coef1, coef2,estw,esti,rrr1,rrr2
 real*4 gammafff
 external gammafff
 integer k 
- allocate (accrsc(nzm)) 
- allocate (accrsi(nzm)) 
- allocate (accrrc(nzm))
- allocate (coefice(nzm))
- allocate (accrgc(nzm))
- allocate (accrgi(nzm))
- allocate (evaps1(nzm))
- allocate (evaps2(nzm))
- allocate (evapr1(nzm))
- allocate (evapr2(nzm))
- allocate (evapg1(nzm))
- allocate (evapg2(nzm))
+if (.not. allocated(accrsc)) allocate (accrsc(nzm)) 
+if (.not. allocated(accrsi)) allocate (accrsi(nzm)) 
+if (.not. allocated(accrrc)) allocate (accrrc(nzm))
+if (.not. allocated(coefice)) allocate (coefice(nzm))
+if (.not. allocated(accrgc)) allocate (accrgc(nzm))
+if (.not. allocated(accrgi)) allocate (accrgi(nzm))
+if (.not. allocated(evaps1)) allocate (evaps1(nzm))
+if (.not. allocated(evaps2)) allocate (evaps2(nzm))
+if (.not. allocated(evapr1)) allocate (evapr1(nzm))
+if (.not. allocated(evapr2)) allocate (evapr2(nzm))
+if (.not. allocated(evapg1)) allocate (evapg1(nzm))
+if (.not. allocated(evapg2)) allocate (evapg2(nzm))
+
+ !allocate (accrsc(nzm)) 
+ !allocate (accrsi(nzm)) 
+ !allocate (accrrc(nzm))
+ !allocate (coefice(nzm))
+ !allocate (accrgc(nzm))
+ !allocate (accrgi(nzm))
+ !allocate (evaps1(nzm))
+ !allocate (evaps2(nzm))
+ !allocate (evapr1(nzm))
+ !allocate (evapr2(nzm))
+ !allocate (evapg1(nzm))
+ !allocate (evapg2(nzm))
 
 accrsc=0.
 accrsi=0.
@@ -136,18 +149,18 @@ do k=1,nzm
 
 end do
 
- deallocate (accrsc)                           
- deallocate (accrsi)                           
- deallocate (accrrc)
- deallocate (coefice)
- deallocate (accrgc)
- deallocate (accrgi)
- deallocate (evaps1)
- deallocate (evaps2)
- deallocate (evapr1)
- deallocate (evapr2)
- deallocate (evapg1)
- deallocate (evapg2)
+ !deallocate (accrsc)                           
+ !deallocate (accrsi)                           
+ !deallocate (accrrc)
+ !deallocate (coefice)
+ !deallocate (accrgc)
+ !deallocate (accrgi)
+ !deallocate (evaps1)
+ !deallocate (evaps2)
+ !deallocate (evapr1)
+ !deallocate (evapr2)
+ !deallocate (evapg1)
+ !deallocate (evapg2)
            
 end subroutine precip_init
 

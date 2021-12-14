@@ -112,9 +112,9 @@ do k=1,nzm
      a_prod_sh=(tk(i,j,k)+0.001)*def2(i,j,k)
      a_prod_bu=-(tk(i,j,k)+0.001)*Pr*buoy_sgs
      a_diss=a_prod_sh+a_prod_bu
-     print *,'sh=',i,j,k,a_prod_sh,def2(i,j,k)
-     print *,'bu=',i,j,k,a_prod_bu,buoy_sgs
-     print *,'tkkk=',i,j,k,tke(i,j,k),tk(i,j,k)
+     !print *,'sh=',i,j,k,a_prod_sh,def2(i,j,k)
+     !print *,'bu=',i,j,k,a_prod_bu,buoy_sgs,tabs(i,j,k),qv(i,j,k)
+     !print *,'tkkk=',i,j,k,tke(i,j,k),tk(i,j,k)
    else
 
      tke(i,j,k)=max(0.,tke(i,j,k))

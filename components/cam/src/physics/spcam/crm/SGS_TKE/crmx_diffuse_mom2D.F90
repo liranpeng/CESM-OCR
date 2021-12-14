@@ -15,9 +15,10 @@ integer i,j,k,ic,ib,kc,kcu
 real tkx, tkz, rhoi, iadzw, iadz
 real, allocatable, dimension(:,:,:)  :: fu,fv,fw
 
-allocate ( fu(nx,ny,nz))
-allocate ( fv(nx,ny,nz))
-allocate ( fw(nx,ny,nz))
+allocate ( fu(0:nx,1,nz))
+allocate ( fv(0:nx,1,nz))
+allocate ( fw(0:nx,1,nz))
+
 fu= 0.
 fv= 0.
 fw= 0.

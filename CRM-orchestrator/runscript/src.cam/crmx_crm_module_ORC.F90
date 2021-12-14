@@ -1160,7 +1160,7 @@ do while(nstep.lt.nstop)
                                   qcl(i,j,1:nzm), qpl(i,j,1:nzm), &
                                   qci(i,j,1:nzm), qpi(i,j,1:nzm), &
                                   prespot(1:nzm) )
-           ihlm_integral_after(i,j) = vertical_integral( (nz - 2 + 1), rho_ds_zt(2:nz), &
+           thlm_integral_after(i,j) = vertical_integral( (nz - 2 + 1), rho_ds_zt(2:nz), &
                                                       thlm_after(1:nzm), gr%invrs_dzt(2:nz))
                                          
            thlm_spurious_source(i,j) = calculate_spurious_source( thlm_integral_after(i,j), &

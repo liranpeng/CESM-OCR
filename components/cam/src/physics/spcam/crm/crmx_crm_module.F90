@@ -345,7 +345,7 @@ subroutine crm        (lchnk, icol, &
         integer igstep    ! GCM time steps
         integer iseed   ! seed for random perturbation
         integer gcolindex(pcols)  ! array of global latitude indices
-
+        CHARACTER(LEN=6) :: crm_number
 #ifdef SPCAM_CLUBB_SGS
 !Array indicies for spurious RTM check
 
@@ -373,6 +373,9 @@ call crm_define_grid()
 rankprint = 30
 call mpi_comm_size(MPI_COMM_WORLD, numproc_global, ierr)
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+923 format(I6.6)
+  write(crm_number,923) myrank_global
+  open(unit=16,file='debug.log.'//TRIM(crm_number),form='formatted')
 
 !-----------------------------------------------
         allocate ( cltemp (nx, ny))
@@ -547,6 +550,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
          vaer(k, 1:ntot_amode) = vaerosol(l, 1:ntot_amode)
          hgaer(k, 1:ntot_amode) = hygro(l, 1:ntot_amode)
 #endif
+
          do j=1, ny
           do i=1, nx
 !            if(micro_field(i,j,k,iqcl).gt.0) then
@@ -917,6 +921,19 @@ do while(nstep.lt.nstop)
 
   ncycle = 1
 
+        do k=1,nzm
+          do j=1,ny
+           do i=1,nx
+             write(18,*) 'u=',i,j,k,u(i,j,k)
+             write(18,*) 'v=',i,j,k,v(i,j,k)
+             write(18,*) 'w=',i,j,k,w(i,j,k)
+             write(18,*) 'tabs=',i,j,k,tabs(i,j,k)
+           end do
+          end do
+         end do
+
+print *,'Liran Here'
+
   call kurant()
 
   do icyc=1,ncycle
@@ -1001,13 +1018,13 @@ do while(nstep.lt.nstop)
          do k=1,nzm
           do j=1,ny
            do i=1,nx
-             print *,'u=',i,j,k,u(i,j,k)
-             print *,'v=',i,j,k,v(i,j,k)
-             print *,'w=',i,j,k,w(i,j,k)
-             print *,'t=',i,j,k,tabs(i,j,k)
-             print *,'tk=',i,j,k,tk(i,j,k)
-             print *,'tkh=',i,j,k,tkh(i,j,k)
-             print *,'tke=',i,j,k,tke(i,j,k)
+             write(18,*) 'u=',i,j,k,u(i,j,k)
+             write(18,*) 'v=',i,j,k,v(i,j,k)
+             write(18,*) 'w=',i,j,k,w(i,j,k)
+             write(18,*) 't=',i,j,k,tabs(i,j,k)
+             write(18,*) 'tk=',i,j,k,tk(i,j,k)
+             write(18,*) 'tkh=',i,j,k,tkh(i,j,k)
+             write(18,*) 'tke=',i,j,k,tke(i,j,k)
            end do
           end do
          end do
