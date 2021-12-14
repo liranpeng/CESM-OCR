@@ -373,10 +373,10 @@ call crm_define_grid()
 rankprint = 30
 call mpi_comm_size(MPI_COMM_WORLD, numproc_global, ierr)
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+
 923 format(I6.6)
   write(crm_number,923) myrank_global
-  open(unit=16,file='debug.log.'//TRIM(crm_number),form='formatted')
-
+  open(unit=13,file='debug.log.'//TRIM(crm_number),form='formatted')
 !-----------------------------------------------
         allocate ( cltemp (nx, ny))
         allocate ( cmtemp (nx, ny))
@@ -550,7 +550,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
          vaer(k, 1:ntot_amode) = vaerosol(l, 1:ntot_amode)
          hgaer(k, 1:ntot_amode) = hygro(l, 1:ntot_amode)
 #endif
-
          do j=1, ny
           do i=1, nx
 !            if(micro_field(i,j,k,iqcl).gt.0) then
@@ -577,11 +576,52 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
         qp(1:nx,1:ny,1:nzm) = 0.
         CF3D(1:nx,1:ny,1:nzm) = 1.
 
+         do k=1,nzm
+          do j=1,ny
+           do i=1,nx
+             write(13, *) 'u01=',i,j,k,u(i,j,k)
+             write(13, *) 'v01=',i,j,k,v(i,j,k)
+             write(13, *) 'w01=',i,j,k,w(i,j,k)
+             write(13, *) 't01=',i,j,k,tabs(i,j,k)
+             write(13, *) 'tk01=',i,j,k,tk(i,j,k)
+             write(13, *) 'tkh01=',i,j,k,tkh(i,j,k)
+             write(13, *) 'tke01=',i,j,k,tke(i,j,k)
+           end do
+          end do
+         end do
+
         call micro_init
 
+
+         do k=1,nzm
+          do j=1,ny
+           do i=1,nx
+             write(13, *) 'u02=',i,j,k,u(i,j,k)
+             write(13, *) 'v02=',i,j,k,v(i,j,k)
+             write(13, *) 'w02=',i,j,k,w(i,j,k)
+             write(13, *) 't02=',i,j,k,tabs(i,j,k)
+             write(13, *) 'tk02=',i,j,k,tk(i,j,k)
+             write(13, *) 'tkh02=',i,j,k,tkh(i,j,k)
+             write(13, *) 'tke02=',i,j,k,tke(i,j,k)
+           end do
+          end do
+         end do
 ! initialize sgs fields
         call sgs_init
         
+         do k=1,nzm
+          do j=1,ny
+           do i=1,nx
+             write(13, *) 'u03=',i,j,k,u(i,j,k)
+             write(13, *) 'v03=',i,j,k,v(i,j,k)
+             write(13, *) 'w03=',i,j,k,w(i,j,k)
+             write(13, *) 't03=',i,j,k,tabs(i,j,k)
+             write(13, *) 'tk03=',i,j,k,tk(i,j,k)
+             write(13, *) 'tkh03=',i,j,k,tkh(i,j,k)
+             write(13, *) 'tke03=',i,j,k,tke(i,j,k)
+           end do
+          end do
+         end do
         do k=1,nzm
           
           u0(k)=0.
@@ -919,20 +959,21 @@ do while(nstep.lt.nstop)
 !  to handle the cases when the flow being locally linearly unstable
 !------------------------------------------------------------------
 
-  ncycle = 1
-
-        do k=1,nzm
+         do k=1,nzm
           do j=1,ny
            do i=1,nx
-             write(16,*) 'u=',i,j,k,u(i,j,k)
-             write(16,*) 'v=',i,j,k,v(i,j,k)
-             write(16,*) 'w=',i,j,k,w(i,j,k)
-             write(16,*) 'tabs=',i,j,k,tabs(i,j,k)
+             write(13, *) 'u0=',i,j,k,u(i,j,k)
+             write(13, *) 'v0=',i,j,k,v(i,j,k)
+             write(13, *) 'w0=',i,j,k,w(i,j,k)
+             write(13, *) 't0=',i,j,k,tabs(i,j,k)
+             write(13, *) 'tk0=',i,j,k,tk(i,j,k)
+             write(13, *) 'tkh0=',i,j,k,tkh(i,j,k)
+             write(13, *) 'tke0=',i,j,k,tke(i,j,k)
            end do
           end do
          end do
 
-print *,'Liran Here'
+  ncycle = 1
 
   call kurant()
 
@@ -1018,13 +1059,13 @@ print *,'Liran Here'
          do k=1,nzm
           do j=1,ny
            do i=1,nx
-             write(16,*) 'u=',i,j,k,u(i,j,k)
-             write(16,*) 'v=',i,j,k,v(i,j,k)
-             write(16,*) 'w=',i,j,k,w(i,j,k)
-             write(16,*) 't=',i,j,k,tabs(i,j,k)
-             write(16,*) 'tk=',i,j,k,tk(i,j,k)
-             write(16,*) 'tkh=',i,j,k,tkh(i,j,k)
-             write(16,*) 'tke=',i,j,k,tke(i,j,k)
+             write(13, *) 'u=',i,j,k,u(i,j,k)
+             write(13, *) 'v=',i,j,k,v(i,j,k)
+             write(13, *) 'w=',i,j,k,w(i,j,k)
+             write(13, *) 't=',i,j,k,tabs(i,j,k)
+             write(13, *) 'tk=',i,j,k,tk(i,j,k)
+             write(13, *) 'tkh=',i,j,k,tkh(i,j,k)
+             write(13, *) 'tke=',i,j,k,tke(i,j,k)
            end do
           end do
          end do
@@ -1091,6 +1132,21 @@ print *,'Liran Here'
 !       advection of momentum:
 
      call advect_mom()
+         do k=1,nzm
+          do j=1,ny
+           do i=1,nx
+             write(13, *) 'u1=',i,j,k,u(i,j,k)
+             write(13, *) 'v1=',i,j,k,v(i,j,k)
+             write(13, *) 'w1=',i,j,k,w(i,j,k)
+             write(13, *) 'qpl1=',i,j,k,qpl(i,j,k)
+             write(13, *) 'qci1=',i,j,k,qci(i,j,k)
+             write(13, *) 't1=',i,j,k,tabs(i,j,k)
+             write(13, *) 'tk1=',i,j,k,tk(i,j,k)
+             write(13, *) 'tkh1=',i,j,k,tkh(i,j,k)
+             write(13, *) 'tke1=',i,j,k,tke(i,j,k)
+           end do
+          end do
+         end do
 !----------------------------------------------------------
 !	SGS effects on momentum:
 
@@ -1102,6 +1158,22 @@ print *,'Liran Here'
      endif
 #endif /*CLUBB_CRM_OLD*/
 
+         do k=1,nzm
+          do j=1,ny
+           do i=1,nx
+             write(13, *) 'u2=',i,j,k,u(i,j,k)
+             write(13, *) 'v2=',i,j,k,v(i,j,k)
+             write(13, *) 'w2=',i,j,k,w(i,j,k)
+             write(13, *) 'qpl2=',i,j,k,qpl(i,j,k)
+             write(13, *) 'qci2=',i,j,k,qci(i,j,k)
+             write(13, *) 't2=',i,j,k,tabs(i,j,k)
+             write(13, *) 'tk2=',i,j,k,tk(i,j,k)
+             write(13, *) 'tkh2=',i,j,k,tkh(i,j,k)
+             write(13, *) 'tke2=',i,j,k,tke(i,j,k)
+           end do
+          end do
+         end do
+
 !-----------------------------------------------------------
 !       Coriolis force:
 	     
@@ -1111,7 +1183,21 @@ print *,'Liran Here'
 !       compute rhs of the Poisson equation and solve it for pressure. 
 
      call pressure()
-
+         do k=1,nzm
+          do j=1,ny
+           do i=1,nx
+             write(13, *) 'u3=',i,j,k,u(i,j,k)
+             write(13, *) 'v3=',i,j,k,v(i,j,k)
+             write(13, *) 'w3=',i,j,k,w(i,j,k)
+             write(13, *) 'qpl3=',i,j,k,qpl(i,j,k)
+             write(13, *) 'qci3=',i,j,k,qci(i,j,k)
+             write(13, *) 't3=',i,j,k,tabs(i,j,k)
+             write(13, *) 'tk3=',i,j,k,tk(i,j,k)
+             write(13, *) 'tkh3=',i,j,k,tkh(i,j,k)
+             write(13, *) 'tke3=',i,j,k,tke(i,j,k)
+           end do
+          end do
+         end do
 !---------------------------------------------------------
 !       find velocity field at n+1/2 timestep needed for advection of scalars:
 !  Note that at the end of the call, the velocities are in nondimensional form.
@@ -1130,7 +1216,21 @@ print *,'Liran Here'
 !    Convert velocity back from nondimensional form:
 
       call uvw()
-
+         do k=1,nzm
+          do j=1,ny
+           do i=1,nx
+             write(13, *) 'u4=',i,j,k,u(i,j,k)
+             write(13, *) 'v4=',i,j,k,v(i,j,k)
+             write(13, *) 'w4=',i,j,k,w(i,j,k)
+             write(13, *) 'qpl4=',i,j,k,qpl(i,j,k)
+             write(13, *) 'qci4=',i,j,k,qci(i,j,k)
+             write(13, *) 't4=',i,j,k,tabs(i,j,k)
+             write(13, *) 'tk4=',i,j,k,tk(i,j,k)
+             write(13, *) 'tkh4=',i,j,k,tkh(i,j,k)
+             write(13, *) 'tke4=',i,j,k,tke(i,j,k)
+           end do
+          end do
+         end do
 !----------------------------------------------------------
 !     Update boundaries for scalars to prepare for SGS effects:
 
