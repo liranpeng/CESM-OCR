@@ -345,19 +345,9 @@ subroutine sgs_scalars()
      allocate ( fluxbtmp(nx,ny))
      allocate ( fluxttmp(nx,ny))
 
-do k=1,nzm
-   do j=1,ny
-    do i=1,nx
-      f(i,j,k)=t(i,j,k)
-    end do
-   end do
-end do
-   do j=1,ny
-    do i=1,nx
-      fluxb(i,j) = fluxbt(i,j)
-      fluxt(i,j) = fluxtt(i,j) 
-    end do
-   end do
+     f(:,:,:)=t(:,:,:)
+     fluxb(:,:)=fluxbt(:,:)
+     fluxt(:,:)=fluxtt(:,:)
       call diffuse_scalar(tdiff,twsb, &
                            t2lediff,t2lediss,twlediff,.true.)
     
@@ -391,19 +381,8 @@ end do
            fluxbtmp(1:nx,1:ny) = fluxbmk(1:nx,1:ny,k)
            fluxttmp(1:nx,1:ny) = fluxtmk(1:nx,1:ny,k)
            f(:,:,:) = micro_field(:,:,:,k)
-do kk=1,nzm
-   do j=1,ny
-    do i=1,nx
-      f(i,j,kk)=micro_field(i,j,kk,k)
-    end do
-   end do
-end do
-   do j=1,ny
-    do i=1,nx
-      fluxb(i,j) = fluxbtmp(i,j)
-      fluxt(i,j) = fluxttmp(i,j)
-    end do
-   end do
+           fluxb(:,:)=fluxbtmp(:,:)
+           fluxt(:,:)=fluxttmp(:,:)
            call diffuse_scalar(mkdiff(:,k),mkwsb(:,k), dummy,dummy,dummy,.false.)
        end if
       end do
