@@ -2,7 +2,7 @@ module crmx_microphysics
 
 ! module for original SAM bulk microphysics
 ! Marat Khairoutdinov, 2006
-use crmx_vars, only: nmicro_fields,micro_field,qn,qp
+use crmx_vars, only: nmicro_fields,micro_field,qp,qn
 use crmx_grid, only: nx,ny,nzm,nz, dimx1_s,dimx2_s,dimy1_s,dimy2_s ! subdomain grid information 
 use crmx_params, only: doprecip, docloud, doclubb
 use crmx_micro_params
@@ -77,6 +77,7 @@ end subroutine micro_setparm
 subroutine micro_deallocate()
 
 deallocate(q) 
+deallocate(qn)
 deallocate(fluxbmk) 
 deallocate(fluxtmk) !
 deallocate( mkwle)  ! resolved
@@ -101,7 +102,7 @@ subroutine micro_init()
   use crmx_params, only: nclubb
 #endif
   use crmx_grid, only: nrestart
-  use crmx_vars, only: q0,qp
+  use crmx_vars, only: q0,qp,qn
   use crmx_params, only: dosmoke
   integer i,j,k, n
 #ifdef CLUBB_CRM  
@@ -123,8 +124,8 @@ subroutine micro_init()
   if (.not. allocated(mkadv)) allocate( mkadv(nz,1:nmicro_fields))  ! tendency due to vertical advection
   if (.not. allocated(mklsadv)) allocate( mklsadv(nz,1:nmicro_fields))  ! tendency due to large-scale vertical advection
   if (.not. allocated(mkdiff)) allocate( mkdiff(nz,1:nmicro_fields))  ! tendency due to vertical diffusion
-  if (.not. allocated(mstor))allocate( mstor(nz,1:nmicro_fields))  ! storage terms of microphysical variables
-  !allocate( qn(nx,ny,nzm))
+  if (.not. allocated(mstor)) allocate( mstor(nz,1:nmicro_fields))  ! storage terms of microphysical variables
+  !if (.not. allocated(qn)) allocate( qn(nx,ny,nzm))
   if (.not. allocated(qpsrc)) allocate( qpsrc(nz))
   if (.not. allocated(qpevp)) allocate( qpevp(nz))
 
@@ -236,7 +237,7 @@ subroutine micro_proc()
 #ifdef CLUBB_CRM
    use crmx_params, only: doclubb, doclubbnoninter ! dschanen UWM 21 May 2008
    use crmx_clubbvars, only: cloud_frac
-   use crmx_vars, only:  CF3D,qp
+   use crmx_vars, only:  CF3D,qp,qn
    use crmx_grid, only: nzm
 #endif
    integer i,j,k
