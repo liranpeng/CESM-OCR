@@ -372,7 +372,7 @@ real(kind=core_rknd), dimension(nzm) :: &
         real(r8), intent(inout) :: qtot(20)
         real ntotal_step
 
-        nsubdomains_x  = 1
+        nsubdomains_x  = 2
         call crm_define_grid()
 !-----------------------------------------------
         allocate ( cltemp (nx, ny))
@@ -418,7 +418,7 @@ real(kind=core_rknd), dimension(nzm) :: &
         !endif
 #endif
         write(0, *) 'Enter task_init_ORC',crm_comm_in,numproc_crm_in,myrank_crm_in
-        call task_init (npro,ntask)
+        call task_init_ORC (crm_comm_in,numproc_crm_in,myrank_crm_in)
         write(0, *) 'Enter task_init_ORC2',npro,ntask
         call setparm()
 

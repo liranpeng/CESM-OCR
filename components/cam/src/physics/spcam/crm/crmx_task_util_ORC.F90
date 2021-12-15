@@ -1,19 +1,13 @@
 
-	subroutine task_start_ORC(numproc_global,myrank_global)
+	subroutine task_start_ORC(ncomm_in,numproc_in,myrank_in)
 	integer rank,numtasks
         integer numproc_global,myrank_global,ierr
         integer myrank_crm,numproc_crm,crm_comm	
 
         include 'mpif.h'
         ! get information on MPI_COMM_WORLD
-        call mpi_comm_size(MPI_COMM_WORLD, numproc_global, ierr)
-        call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-        call mpi_comm_split(MPI_COMM_WORLD, 1, 0, crm_comm, ierr)
-        if(ierr.eq.0) then
-          write(13,*) 'CRM: successful call to mpi_split'
-        else
-          STOP 'TwoExecutableDriver.F90: MPI_Split Failed'
-        end if
+        call mpi_comm_size(ncomm_in, numproc_in_check, ierr)
+        call mpi_comm_rank(ncomm_in, myrank_in_check, ierr)
 ! Split MPI_COMM_WORLD into two communicators:
 !  - global_comm: used by CIME for CESM-related communication
 !  - crm_comm: used by CRM routines to receive data from CESM
@@ -22,12 +16,9 @@
 !call mpi_comm_split(MPI_COMM_WORLD, 1, 0, crm_comm, ierr)
 
 ! get information on MPI_COMM_WORLD
-        call mpi_comm_size(crm_comm, numproc_crm, ierr)
-        call mpi_comm_rank(crm_comm, myrank_crm, ierr)
 
-
-	print*, 'Liran Check MPI start1',numproc_global,myrank_global
-        print*, 'Liran Check MPI start2',numproc_crm,myrank_crm
+	print*, 'Liran Check MPI start1',numproc_in,numproc_in_check
+        print*, 'Liran Check MPI start2',myrank_in,myrank_in_check
 	!stop
 	end
 	
