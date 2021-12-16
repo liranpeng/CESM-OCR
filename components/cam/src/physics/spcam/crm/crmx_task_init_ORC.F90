@@ -32,7 +32,7 @@ if(nsubdomains.eq.1) then
   print *,'Something is wrong here',npro,ntask
 else
   print *,'Enter task start ORC',ncomm,npro,ntask
-  call task_start_ORC(rank, ntasks)
+  call task_start_ORC(ncomm,npro,ntask)
 
   dompi = .true.
 

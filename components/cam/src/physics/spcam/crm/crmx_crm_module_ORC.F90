@@ -14,7 +14,7 @@ public :: crm_orc
 
 contains
 
-subroutine crm_orc     (numproc_crm_in,myrank_crm_in,long,lati,gcolindex,lchnk, icol, &
+subroutine crm_orc     (long,lati,gcolindex,lchnk, icol, &
                        tl, ql, qccl, qiil, ul, vl, &
                        ps, pmid, pdel, phis, &
                        zmid, zint, dt_gl, plev, &
@@ -83,6 +83,7 @@ subroutine crm_orc     (numproc_crm_in,myrank_crm_in,long,lati,gcolindex,lchnk, 
         use crmx_params
         use crmx_microphysics
         use crmx_sgs
+        use crmx_mpi
         use crmx_crmtracers
 #ifdef MODAL_AERO
         use modal_aero_data,   only: ntot_amode
@@ -350,9 +351,8 @@ subroutine crm_orc     (numproc_crm_in,myrank_crm_in,long,lati,gcolindex,lchnk, 
         integer igstep    ! GCM time steps
         integer iseed   ! seed for random perturbation
         integer, intent(in) :: gcolindex(pcols)  ! array of global latitude indices
-        integer :: crm_comm
-        integer :: numproc_crm_in,myrank_crm_in,crm_comm_in
-        integer :: ierr,status
+        integer :: ierr, status
+        integer :: myproc_crm_check,myrank_crm_check
 
 #ifdef SPCAM_CLUBB_SGS
 !Array indicies for spurious RTM check
@@ -417,9 +417,11 @@ real(kind=core_rknd), dimension(nzm) :: &
         ! lrestart_clubb = .true.
         !endif
 #endif
-        write(0, *) 'Enter task_init_ORC',crm_comm_in,numproc_crm_in,myrank_crm_in
-        call task_init_ORC (crm_comm_in,numproc_crm_in,myrank_crm_in)
-        write(0, *) 'Enter task_init_ORC2',npro,ntask
+       
+        call mpi_comm_size(crm_comm_in, myproc_crm_check, ierr)
+        call mpi_comm_rank(crm_comm_in, myrank_crm_check, ierr) 
+        write(0, *) 'Enter task_init_ORC',numproc_crm_in,myrank_crm_in,myrank_crm_check
+        call task_init_ORC ()
         call setparm()
 
 !        doshortwave = doshort

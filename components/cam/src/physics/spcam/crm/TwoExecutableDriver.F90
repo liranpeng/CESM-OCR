@@ -5,6 +5,7 @@ program TwoExecutableDriver
 !  use crmx_saturation, only:sat_mixrat_liq
   use crmdims,         only: crm_nx, crm_ny, crm_nz
   use crmx_crm_module_orc,     only: crm_orc
+  use crmx_mpi
 !  use ppgrid,          only: pcols
 !  use spmd_utils, only: npes
   implicit none
@@ -12,9 +13,9 @@ program TwoExecutableDriver
   !--------------------------------------------------------------------------
   !bloss: MPI-related variables
   !--------------------------------------------------------------------------
-  integer :: crm_comm,crm_comm_in
-  integer :: myrank_global, numproc_global,crm_comm_color
-  integer :: myrank_crm, numproc_crm,myrank_crm_in, numproc_crm_in
+  !integer :: crm_comm,crm_comm_in
+  !integer :: myrank_global, numproc_global,crm_comm_color
+  !integer :: myrank_crm, numproc_crm,myrank_crm_in, numproc_crm_in
   integer :: ierr,status
   integer, parameter :: nmicro_fields = 2   ! total number of prognostic water vars
   integer, parameter :: pcols = 16
@@ -274,7 +275,7 @@ program TwoExecutableDriver
 
 
   write(13,*) 'Liran Check again:', myrank_crm, myrank_global, numproc_crm_in,myrank_crm_in 
-  call crm_orc (numproc_crm_in,myrank_crm_in,lon,lat,gcolindex,inp01_lchnk, inp02_i,                            &
+  call crm_orc (lon,lat,gcolindex,inp01_lchnk, inp02_i,                            &
             inp03_tl(:),inp04_ql(:),inp05_qccl(:),inp06_qiil(:), &
             inp07_ul(:),inp08_vl(:),inp09_ps,inp10_pmid(:),inp11_pdel(:), &
             inp12_phis,inp13_zm(:),inp14_zi(:),inp15_ztodt,pver, &
