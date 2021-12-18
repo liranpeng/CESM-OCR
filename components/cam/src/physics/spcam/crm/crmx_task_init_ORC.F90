@@ -2,7 +2,7 @@ subroutine task_init_ORC(ncomm,npro,ntask)
 		
 ! crm_comm_in,numproc_crm_in,myrank_crm_in
 !   Check things, initialize multitasking:
-
+use crmx_mpi
 use crmx_grid
 implicit none
 integer, intent(in) :: ncomm,npro,ntask
@@ -22,8 +22,6 @@ if(YES3D .eq. 0 .and. ny_gl .ne. 1) then
   print*,'ny_gl should be 1 for a 2D case. STOP'
   stop
 endif
-ntasks = ntask
-rank=npro
 if(nsubdomains.eq.1) then
 
   rank =0
@@ -31,7 +29,7 @@ if(nsubdomains.eq.1) then
   dompi = .false.
   print *,'Something is wrong here',npro,ntask
 else
-  print *,'Enter task start ORC',ncomm,npro,ntask
+  print *,'Enter task start ORC',crm_comm_in, numproc_crm_in,myrank_crm_in
   call task_start_ORC(ncomm,npro,ntask)
 
   dompi = .true.
