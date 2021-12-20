@@ -6,7 +6,8 @@ use crmx_mpi
 use crmx_grid
 implicit none
 integer, intent(in) :: ncomm,npro,ntask
-integer itasks,ntasks
+integer itasks,ntasks,numproc_in_check,myrank_in_check,ierr
+include 'mpif.h'
 print *,'Enter ORC'
 if(YES3D .ne. 1 .and. YES3D .ne. 0) then
   print*,'YES3D is not 1 or 0. STOP'
@@ -30,22 +31,26 @@ if(nsubdomains.eq.1) then
   print *,'Something is wrong here',npro,ntask
 else
   print *,'Enter task start ORC',crm_comm_in, numproc_crm_in,myrank_crm_in
-  call task_start_ORC(ncomm,npro,ntask)
+  call mpi_comm_size(crm_comm_in, numproc_in_check, ierr)
+  call mpi_comm_rank(crm_comm_in, myrank_in_check, ierr) 
+  print *,'Liran check888',numproc_in_check,myrank_in_check
 
+  call task_start_ORC(npro,ntask)
+  print *,'start finish',npro,ntask
   dompi = .true.
 
   !call systemf('hostname')
 
-  if(ntasks.ne.nsubdomains) then
+  if(npro.ne.nsubdomains) then
     if(masterproc) print *,'number of processors is not equal to nsubdomains!',&
              '  ntasks=',ntasks,'   nsubdomains=',nsubdomains
     call task_abort_ORC() 
   endif
-        
+  print *,'barrier start',ntasks,nsubdomains      
   call task_barrier_ORC()
-
+print *,'barrier finish'
   call task_ranks_ORC()
-        
+print *,'rank finish'        
 end if ! nsubdomains.eq.1
 
 #ifndef CRM

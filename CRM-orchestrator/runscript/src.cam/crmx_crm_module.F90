@@ -373,10 +373,11 @@ call crm_define_grid()
 rankprint = 30
 call mpi_comm_size(MPI_COMM_WORLD, numproc_global, ierr)
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-
+#ifdef CRM_DEBUG
 923 format(I6.6)
   write(crm_number,923) myrank_global
   open(unit=13,file='debug.log.'//TRIM(crm_number),form='formatted')
+#endif
 !-----------------------------------------------
         allocate ( cltemp (nx, ny))
         allocate ( cmtemp (nx, ny))
@@ -576,6 +577,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
         qp(1:nx,1:ny,1:nzm) = 0.
         CF3D(1:nx,1:ny,1:nzm) = 1.
 
+#ifdef CRM_DEBUG
          do k=1,nzm
           do j=1,ny
            do i=1,nx
@@ -589,10 +591,10 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
            end do
           end do
          end do
-
+#endif
         call micro_init
 
-
+#ifdef CRM_DEBUG
          do k=1,nzm
           do j=1,ny
            do i=1,nx
@@ -606,9 +608,10 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
            end do
           end do
          end do
+#endif
 ! initialize sgs fields
         call sgs_init
-        
+#ifdef CRM_DEBUG        
          do k=1,nzm
           do j=1,ny
            do i=1,nx
@@ -622,6 +625,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
            end do
           end do
          end do
+#endif
         do k=1,nzm
           
           u0(k)=0.
@@ -958,7 +962,7 @@ do while(nstep.lt.nstop)
 !  Check if the dynamical time step should be decreased 
 !  to handle the cases when the flow being locally linearly unstable
 !------------------------------------------------------------------
-
+#ifdef CRM_DEBUG
          do k=1,nzm
           do j=1,ny
            do i=1,nx
@@ -972,7 +976,7 @@ do while(nstep.lt.nstop)
            end do
           end do
          end do
-
+#endif
   ncycle = 1
 
   call kurant()
@@ -1055,7 +1059,7 @@ do while(nstep.lt.nstop)
    
     if (dosgs) call sgs_proc()
 
-
+#ifdef CRM_DEBUG
          do k=1,nzm
           do j=1,ny
            do i=1,nx
@@ -1069,7 +1073,7 @@ do while(nstep.lt.nstop)
            end do
           end do
          end do
-   
+#endif   
 #ifdef CLUBB_CRM_OLD   
 !----------------------------------------------------------
 !     Do a timestep with CLUBB if enabled:
@@ -1132,6 +1136,8 @@ do while(nstep.lt.nstop)
 !       advection of momentum:
 
      call advect_mom()
+
+#ifdef CRM_DEBUG
          do k=1,nzm
           do j=1,ny
            do i=1,nx
@@ -1147,6 +1153,7 @@ do while(nstep.lt.nstop)
            end do
           end do
          end do
+#endif
 !----------------------------------------------------------
 !	SGS effects on momentum:
 
@@ -1158,6 +1165,7 @@ do while(nstep.lt.nstop)
      endif
 #endif /*CLUBB_CRM_OLD*/
 
+#ifdef CRM_DEBUG
          do k=1,nzm
           do j=1,ny
            do i=1,nx
@@ -1173,7 +1181,7 @@ do while(nstep.lt.nstop)
            end do
           end do
          end do
-
+#endif
 !-----------------------------------------------------------
 !       Coriolis force:
 	     
@@ -1183,6 +1191,7 @@ do while(nstep.lt.nstop)
 !       compute rhs of the Poisson equation and solve it for pressure. 
 
      call pressure()
+#ifdef CRM_DEBUG
          do k=1,nzm
           do j=1,ny
            do i=1,nx
@@ -1198,6 +1207,7 @@ do while(nstep.lt.nstop)
            end do
           end do
          end do
+#endif
 !---------------------------------------------------------
 !       find velocity field at n+1/2 timestep needed for advection of scalars:
 !  Note that at the end of the call, the velocities are in nondimensional form.
@@ -1216,6 +1226,7 @@ do while(nstep.lt.nstop)
 !    Convert velocity back from nondimensional form:
 
       call uvw()
+#ifdef CRM_DEBUG
          do k=1,nzm
           do j=1,ny
            do i=1,nx
@@ -1231,6 +1242,7 @@ do while(nstep.lt.nstop)
            end do
           end do
          end do
+#endif
 !----------------------------------------------------------
 !     Update boundaries for scalars to prepare for SGS effects:
 

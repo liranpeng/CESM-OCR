@@ -1,12 +1,23 @@
 
-	subroutine task_start_ORC()
+	subroutine task_start_ORC(numproc_in_check,myrank_in_check)
         use crmx_mpi
-	integer numproc_in_check,myrank_in_check
+	integer numproc_in_check,myrank_in_check,crm_comm_check
+        integer numproc_global_check,myrank_global_check
         include 'mpif.h'
         print*,'Liran check comm',crm_comm_in
+        call mpi_comm_size(MPI_COMM_WORLD, numproc_global_check, ierr)
+        call mpi_comm_rank(MPI_COMM_WORLD, myrank_global_check, ierr)
+        print *,'Liran check985',numproc_global_check,numproc_global
+        print *,'Liran check986',myrank_global_check,myrank_global
+! get information on MPI_COMM_WORLD
+        call mpi_comm_size(crm_comm, numproc_crm_check, ierr)
+        call mpi_comm_rank(crm_comm, myrank_crm_check, ierr)
+        print *,'Liran check987',numproc_crm_check,numproc_crm
+        print *,'Liran check988',myrank_crm_check,myrank_crm
         ! get information on MPI_COMM_WORLD
         call mpi_comm_size(crm_comm_in, numproc_in_check, ierr)
         call mpi_comm_rank(crm_comm_in, myrank_in_check, ierr)
+        print *,'Liran check999',numproc_in_check,myrank_in_check
 ! Split MPI_COMM_WORLD into two communicators:
 !  - global_comm: used by CIME for CESM-related communication
 !  - crm_comm: used by CRM routines to receive data from CESM

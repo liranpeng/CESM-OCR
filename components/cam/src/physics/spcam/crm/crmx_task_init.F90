@@ -11,7 +11,7 @@ include 'mpif.h'
 call mpi_comm_size(MPI_COMM_WORLD, numproc_global, ierr)
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 
-print *,'Enter task_init',numproc_global,myrank_global
+!print *,'Enter task_init',numproc_global,myrank_global
 if(YES3D .ne. 1 .and. YES3D .ne. 0) then
   print*,'YES3D is not 1 or 0. STOP'
   stop
