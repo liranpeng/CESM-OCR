@@ -1,6 +1,21 @@
 ! Non-blocking receives before blocking sends
+module crmx_crm_pressure_ORC
 
-subroutine pressure
+use crmx_vars
+use crmx_params, only: dowallx, dowally, docolumn
+use crmx_grid, only: dompi
+use crmx_task_util_mpi
+use crmx_crm_press_rhs_ORC
+
+implicit none
+private
+save
+
+public :: pressure_ORC
+
+contains
+
+subroutine pressure_ORC
 	
 !       Original pressure solver based on horizontal slabs
 !       (C) 1998, 2002 Marat Khairoutdinov
@@ -9,12 +24,6 @@ subroutine pressure
 !       Also, used for a 2D version 
 !       For more processors for the given number of levels and 3D, use pressure_big
 
-use crmx_vars
-use crmx_params, only: dowallx, dowally, docolumn
-use crmx_grid, only: dompi
-use crmx_task_util_mpi
-
-implicit none
 	
 integer :: npressureslabs,nzslab,nx2,ny2,n3i,n3j
 real, allocatable, dimension(:,:,:) :: fp
@@ -128,8 +137,9 @@ endif
 	
 !-----------------------------------------------------------------
 !  Compute the r.h.s. of the Poisson equation for pressure
-call press_rhs()
-
+print*,'pressure 0'
+call press_rhs_ORC()
+print*,'pressure 1'
 !-----------------------------------------------------------------	 
 !   Form the horizontal slabs of right-hand-sides of Poisson equation 
 !   for the global domain. Request sending and receiving tasks.
@@ -694,7 +704,6 @@ call press_grad()
  deallocate (iii)
  deallocate (jjj)
 
-end 
+end subroutine pressure_ORC
 
-
-
+end module crmx_crm_pressure_ORC

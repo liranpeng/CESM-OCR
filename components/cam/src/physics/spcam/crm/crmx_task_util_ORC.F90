@@ -1,10 +1,48 @@
+module crmx_task_util_mpi
+use crmx_mpi
+use crmx_grid
 
-	subroutine task_start_ORC(numproc_in_check,myrank_in_check)
-        use crmx_mpi
+implicit none
+private
+save
+
+public :: task_start_ORC
+public :: task_abort_ORC
+public :: task_stop_ORC
+public :: task_finish_ORC
+public :: task_bcast_float_ORC
+public :: task_send_float_ORC
+public :: task_send_integer_ORC
+public :: task_send_character_ORC
+public :: task_receive_float_ORC
+public :: task_receive_charcater_ORC
+public :: task_receive_integer_ORC
+public :: task_bsend_float_ORC
+public :: task_wait_ORC
+public :: task_waitall_ORC
+public :: task_test_ORC
+public :: task_sum_real_ORC
+public :: task_sum_real8_ORC
+public :: task_sum_integer_ORC
+public :: task_max_real_ORC
+public :: task_max_integer_ORC
+public :: task_min_real_ORC
+public :: task_min_integer_ORC
+public :: task_receive_character_ORC
+public :: task_rank_to_index_ORC
+public :: task_bound_duvdt_ORC
+public :: task_boundaries_ORC
+public :: task_barrier_ORC
+
+contains
+
+	subroutine task_start_ORC(rank,numtasks)
 	integer numproc_in_check,myrank_in_check,crm_comm_check
         integer numproc_global_check,myrank_global_check
+        integer crm_comm_in_check,numproc_crm_check,myrank_crm_check,ierr
+        integer rank,numtasks
         include 'mpif.h'
-        print*,'Liran check comm',crm_comm_in
+        print *,'Liran check984'
         call mpi_comm_size(MPI_COMM_WORLD, numproc_global_check, ierr)
         call mpi_comm_rank(MPI_COMM_WORLD, myrank_global_check, ierr)
         print *,'Liran check985',numproc_global_check,numproc_global
@@ -14,10 +52,16 @@
         call mpi_comm_rank(crm_comm, myrank_crm_check, ierr)
         print *,'Liran check987',numproc_crm_check,numproc_crm
         print *,'Liran check988',myrank_crm_check,myrank_crm
+        !crm_comm_color = int((myrank_global_check-50)/2)
+!print *,'Liran check987',crm_comm_color
+        !call mpi_comm_split(, crm_comm_color, 0, crm_comm_in_check, ierr)
+        print *,'Liran check989',crm_comm_color,ierr,crm_comm_in
         ! get information on MPI_COMM_WORLD
         call mpi_comm_size(crm_comm_in, numproc_in_check, ierr)
         call mpi_comm_rank(crm_comm_in, myrank_in_check, ierr)
         print *,'Liran check999',numproc_in_check,myrank_in_check
+        rank = myrank_in_check
+        numtasks = numproc_in_check
 ! Split MPI_COMM_WORLD into two communicators:
 !  - global_comm: used by CIME for CESM-related communication
 !  - crm_comm: used by CRM routines to receive data from CESM
@@ -304,14 +348,15 @@
 	end
 
 !----------------------------------------------------------------------
+
         subroutine task_test_ORC(request,flag,rank,tag)
         use crmx_mpi
         implicit none
         include 'mpif.h'
-        integer status(MPI_STATUS_SIZE),request
         integer rank, tag
         logical flag
         integer ierr
+        integer status(MPI_STATUS_SIZE),request
         call MPI_TEST(request,flag,status,ierr)
         if(flag) then
           rank = status(MPI_SOURCE)
@@ -408,15 +453,21 @@
         use crmx_mpi
         implicit none
         include 'mpif.h'        
-        
+       
         integer buffer_in(*)    ! buffer of data
         integer buffer_out(*)   ! buffer of data
         integer length          ! buffers' length
-        integer ierr
-
-        call MPI_ALLREDUCE(buffer_in,buffer_out, &
-                        length,MPI_INTEGER,MPI_MAX,crm_comm_in,ierr)
-
+        integer ierr,numproc_in_check,myrank_in_check
+        integer myrank_global
+        call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+        call mpi_comm_size(crm_comm_in, numproc_in_check, ierr)
+        call mpi_comm_rank(crm_comm_in, myrank_in_check, ierr)
+        print *,'Liran check9790',numproc_in_check,myrank_in_check,myrank_global
+        !if (myrank_in_check.eq.1) then
+          call MPI_ALLREDUCE(buffer_in,buffer_out, &
+                          length,MPI_INTEGER,MPI_MAX,crm_comm_in,ierr)
+        !end if
+        print *,'Liran check9991'
         return
 	end
 !----------------------------------------------------------------------
@@ -452,7 +503,6 @@
         integer buffer_out(*)   ! buffer of data
         integer length          ! buffers' length
         integer ierr
-
         call MPI_ALLREDUCE(buffer_in,buffer_out, &
                   length,MPI_INTEGER,MPI_MIN,crm_comm_in,ierr)
 
@@ -519,7 +569,7 @@
         ! Non-blocking receive first:
 
          do m =  1,nsent
-            call task_receive_float(buff_recv(1,m),bufflen,reqs_in(m))
+            call task_receive_float_ORC(buff_recv(1,m),bufflen,reqs_in(m))
          end do
 
         ! Blocking send second:
@@ -533,7 +583,7 @@
          end do
 
          if(rank.ne.rankww) then
-               call task_bsend_float(rankww, buff_send,n,54)
+               call task_bsend_float_ORC(rankww, buff_send,n,54)
          else
                do i=1,n
                   buff_recv(i,2) = buff_send(i)
@@ -554,7 +604,7 @@
 
 
           if(rank.ne.rankss) then
-             call task_bsend_float(rankss, buff_send, n, 54)
+             call task_bsend_float_ORC(rankss, buff_send, n, 54)
           else
              do i=1,n
                buff_recv(i,2) = buff_send(i)
@@ -694,4 +744,4 @@
 
        end
 
-
+end module crmx_task_util_mpi

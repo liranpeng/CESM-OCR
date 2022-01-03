@@ -2,7 +2,7 @@
 subroutine press_grad
 	
 !       pressure term of the momentum equations
-
+use crmx_task_util_mpi
 use crmx_vars
 use crmx_params, only: dowallx, dowally
 implicit none
@@ -56,13 +56,13 @@ if(dowally.and.RUN3D.and.rank.lt.nsubdomains_x) then
 end if
 
 if(dompi) then
-   call task_bound_duvdt()
+   call task_bound_duvdt_ORC()
+   call task_barrier_ORC()
 else
-   call bound_duvdt()	   
+   call bound_duvdt()	  
+   call task_barrier() 
 endif
 
-call task_barrier()
-	
 end subroutine press_grad
 
 

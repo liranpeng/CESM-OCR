@@ -382,7 +382,7 @@ subroutine tphysbc_spcam (ztodt, state,   &
     type(rad_avgdata_type_sam1mom)   :: rad_avgdata_sam1mom
     type(rad_avgdata_type_m2005)     :: rad_avgdata_m2005
     type(rad_out_t)                  :: rd
-    integer,parameter :: rank_offset = 2
+    integer,parameter :: rank_offset = 1
     integer :: teout_idx, qini_idx, cldliqini_idx, cldiceini_idx
     integer :: ii, jj
     integer :: ierr !bloss MPI Vars
@@ -495,23 +495,24 @@ subroutine tphysbc_spcam (ztodt, state,   &
 #ifdef ORCHESTRATOR
     !if(nstep.eq.1) then
     ! pritch -- default, columns are not orchestrated:
-       state%crmrank0(:ncol) = -1
-       state%crmrank1(:ncol) = -1
+       state%crmrank0(:ncol) = -2
+       state%crmrank1(:ncol) = -2
        if (lchnk .eq. begchunk .and. masterproc) then
          write (iulog,*) 'MDEBUG YO on masterproc lchnk=',begchunk,',ncols',ncol
          ! except (for now) the first six columns on masterproc...
-         do i=1,6
+         do i=1,12
            ! each of which is to be linked (for now) to a single-core CRM in the external
            ! executable.
+           
            state%crmrank0(i) = i-1
-           state%crmrank1(i) = i-1
+           state%crmrank1(i) = mod(i,2)-1
          end do
        end if
 
     ! pritch handshake -- attempt to surgically send lat,lon coords of GCM host
     ! to dedicated CRM rank:
       do i=1,ncol
-        if (state%crmrank0(i) .ne. -1) then
+        if (state%crmrank0(i) .ne. -2) then
           write (iulog,*) 'MDEBUG npes=',npes !--> note this is GCM npes, e.g.
           !validated at 50.
           dest = npes+state%crmrank0(i)*rank_offset

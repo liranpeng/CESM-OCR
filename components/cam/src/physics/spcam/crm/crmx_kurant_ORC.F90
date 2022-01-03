@@ -1,9 +1,17 @@
-
-subroutine kurant
+module crmx_crm_kurant_ORC
 
 use crmx_vars
 use crmx_sgs, only: kurant_sgs
 use crmx_task_util_mpi
+
+implicit none
+private
+save
+
+public :: kurant_ORC
+
+contains
+subroutine kurant_ORC
 
 implicit none
 
@@ -11,6 +19,9 @@ integer i, j, k, ncycle1(1),ncycle2(1)
 real, allocatable, dimension(:)  :: wm
 real, allocatable, dimension(:)  :: uhm
 real cfl, cfl_sgs,w_max,u_max
+integer myrank_global,ierr
+
+include 'mpif.h'
 
 allocate ( wm(nz) ) ! maximum vertical wind velocity
 allocate ( uhm(nz) ) ! maximum horizontal wind velocity
@@ -36,12 +47,15 @@ call kurant_sgs(cfl_sgs)
 cfl = max(cfl,cfl_sgs)
 	
 ncycle = max(1,ceiling(cfl/0.7))
-
+print *,'ncycle',ncycle
 if(dompi) then
   ncycle1(1)=ncycle
-  print *,'Kurant: Somthing wrong here! 001'
-  call task_max_integer_ORC(ncycle1,ncycle2,1)
-  ncycle=ncycle2(1)
+  call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+  print *,'ncycle1',myrank_global,ncycle1(1),ncycle2(1)
+  !call task_max_integer_ORC(ncycle1,ncycle2,1)
+  !ncycle=ncycle2(1)
+  ncycle=ncycle1(1)
+  !print *,'ncycle2',myrank_global,ncycle
 end if
 if(ncycle.gt.4) then
    if(masterproc) print *,'the number of cycles exceeded 4.'
@@ -61,5 +75,6 @@ if(ncycle.gt.4) then
   end if
 end if
 
-end subroutine kurant	
+end subroutine kurant_ORC	
 
+end module crmx_crm_kurant_ORC

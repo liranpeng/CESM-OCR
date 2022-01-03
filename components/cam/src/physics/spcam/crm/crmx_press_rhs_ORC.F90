@@ -1,12 +1,20 @@
-
-subroutine press_rhs
-
-!       right-hand-side of the Poisson equation for pressure
-
+module crmx_crm_press_rhs_ORC
+use crmx_mpi
 use crmx_vars
 use crmx_params, only: dowallx, dowally
 use crmx_task_util_mpi
+
 implicit none
+private
+save
+
+public :: press_rhs_ORC
+
+contains
+
+subroutine press_rhs_ORC
+
+!       right-hand-side of the Poisson equation for pressure
          
 	
 real *8 dta,rdx,rdy,rdz,btat,ctat,rup,rdn
@@ -34,8 +42,9 @@ end if
 
 
 if(dompi) then
-   print *,'pressure rhs 1'
+   print *,'task_bound_duvdt barrier start',rank
    call task_bound_duvdt_ORC()
+   print *,'task_bound_duvdt barrier end',rank
 else
    call bound_duvdt()	   
 endif
@@ -101,9 +110,12 @@ end do
 
 endif
 if(dompi) then
-     print *,'pressure rhs 2'
+  print *,'pressure barrier start',rank
   call task_barrier_ORC()
+  print *,'pressure barrier end'
 else 
   call task_barrier()
 end if
-end subroutine press_rhs
+end subroutine press_rhs_ORC
+
+end module crmx_crm_press_rhs_ORC

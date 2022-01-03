@@ -1069,7 +1069,7 @@ end subroutine crm_init_cnst
    integer gcolindex(pcols)  ! array of global latitude indices
    integer ii, jj,status
    integer iii,FlagEnd
-   integer i, k, m
+   integer i, k, m,lchnk_save,i_save
    integer ifld
    logical :: ls, lu, lv, lq(pcnst)
    integer,parameter :: structlen = 49
@@ -1086,7 +1086,7 @@ end subroutine crm_init_cnst
    real(r8), allocatable :: flattened_crm_inout(:)
    real(r8),dimension(flen) :: Var_Flat
    real(r8),dimension(flen2) :: Var_Flat2
-   integer,parameter :: rank_offset=2
+   integer,parameter :: rank_offset=1
    integer,parameter :: structleno = 37
    integer,parameter :: singleleno = 22
    integer,parameter :: fleno      = structleno*pver+singleleno+1+20
@@ -1123,7 +1123,7 @@ end subroutine crm_init_cnst
 
    lchnk = state%lchnk
    ncol  = state%ncol
-
+   lchnk_save = lchnk
    itim = pbuf_old_tim_idx()
    call pbuf_get_field(pbuf, cldo_idx, cldo, start=(/1,1,itim/), kount=(/pcols,pver,1/))
    call pbuf_get_field(pbuf, cld_idx,  cld,  start=(/1,1,itim/), kount=(/pcols,pver,1/))
@@ -1611,36 +1611,40 @@ end subroutine crm_init_cnst
               ul(:) = state_loc%u(i,:)
               vl(:) = state_loc%v(i,:)
          endif
+       end do ! i (loop over ncol)
 #ifdef ORCHESTRATOR
        ! Outsource the call to CRM to the separate Orchestrator executable by
        ! sending required inputs...
-         if (state%crmrank0(i) .ne. -1) then ! is this column coupled to an external CRM?
+       do i = 1,ncol
+         if (state%crmrank0(i) .ne. -2) then ! is this column coupled to an external CRM?
           ! This part is to test the idear of creating a new data type for MPI
           ! transfer data. 
           ! =================================================
           ! Start to flatten the arry and send it to CRM. 
           ! =================================================
           dest = npes+state%crmrank0(i)*rank_offset
+          write (iulog,*),'MPI before send !',dest,lchnk,i,state%crmrank1(i)
+          i_save  = i+state%crmrank1(i)
           chnksz = crm_nx*crm_nz*crm_nz
           call get_gcol_all_p(lchnk, pcols, gcolindex)
-          latitude0 = get_rlat_p(lchnk, i)*57.296_r8
-          longitude0 = get_rlon_p(lchnk, i)*57.296_r8 
+          latitude0 = get_rlat_p(lchnk, i_save)*57.296_r8
+          longitude0 = get_rlon_p(lchnk, i_save)*57.296_r8 
           Var_Flat(        1)                             = real(lchnk,8)
-          Var_Flat(        2)                             = real(i,8)
-          Var_Flat(        3)                             = state_loc%ps(i)
-          Var_Flat(        4)                             = state_loc%phis(i)
+          Var_Flat(        2)                             = real(i_save,8)
+          Var_Flat(        3)                             = state_loc%ps(i_save)
+          Var_Flat(        4)                             = state_loc%phis(i_save)
           Var_Flat(        5)                             = ztodt
-          Var_Flat(        6)                             = precc(i)
-          Var_Flat(        7)                             = precl(i)
-          Var_Flat(        8)                             = precsc(i)
-          Var_Flat(        9)                             = precsl(i)
-          Var_Flat(       10)                             = cltot(i)
-          Var_Flat(       11)                             = clhgh(i)
-          Var_Flat(       12)                             = clmed(i)
-          Var_Flat(       13)                             = cllow(i)
-          Var_Flat(       14)                             = prectend(i)
-          Var_Flat(       15)                             = precstend(i)
-          Var_Flat(       16)                             = cam_in%ocnfrac(i)
+          Var_Flat(        6)                             = precc(i_save)
+          Var_Flat(        7)                             = precl(i_save)
+          Var_Flat(        8)                             = precsc(i_save)
+          Var_Flat(        9)                             = precsl(i_save)
+          Var_Flat(       10)                             = cltot(i_save)
+          Var_Flat(       11)                             = clhgh(i_save)
+          Var_Flat(       12)                             = clmed(i_save)
+          Var_Flat(       13)                             = cllow(i_save)
+          Var_Flat(       14)                             = prectend(i_save)
+          Var_Flat(       15)                             = precstend(i_save)
+          Var_Flat(       16)                             = cam_in%ocnfrac(i_save)
           Var_Flat(       17)                             = wnd
           Var_Flat(       18)                             = tau00
           Var_Flat(       19)                             = bflx
@@ -1648,86 +1652,86 @@ end subroutine crm_init_cnst
           Var_Flat(       21)                             = fluxv0
           Var_Flat(       22)                             = fluxt0
           Var_Flat(       23)                             = fluxq0
-          Var_Flat(       24)                             = taux_crm(i)
-          Var_Flat(       25)                             = tauy_crm(i)
-          Var_Flat(       26)                             = z0m(i)
-          Var_Flat(       27)                             = timing_factor(i)
+          Var_Flat(       24)                             = taux_crm(i_save)
+          Var_Flat(       25)                             = tauy_crm(i_save)
+          Var_Flat(       26)                             = z0m(i_save)
+          Var_Flat(       27)                             = timing_factor(i_save)
           Var_Flat(       28)                             = latitude0
           Var_Flat(       29)                             = longitude0
           Var_Flat(       30)                             = FlagEnd
-          Var_Flat(        1+singlelen:   pver+singlelen) = state_loc%t(i,:)
-          Var_Flat( 1*pver+1+singlelen: 2*pver+singlelen) = state_loc%q(i,:,1)
-          Var_Flat( 2*pver+1+singlelen: 3*pver+singlelen) = state_loc%q(i,:,ixcldliq)
-          Var_Flat( 3*pver+1+singlelen: 4*pver+singlelen) = state_loc%q(i,:,ixcldice)
+          Var_Flat(        1+singlelen:   pver+singlelen) = state_loc%t(i_save,:)
+          Var_Flat( 1*pver+1+singlelen: 2*pver+singlelen) = state_loc%q(i_save,:,1)
+          Var_Flat( 2*pver+1+singlelen: 3*pver+singlelen) = state_loc%q(i_save,:,ixcldliq)
+          Var_Flat( 3*pver+1+singlelen: 4*pver+singlelen) = state_loc%q(i_save,:,ixcldice)
           Var_Flat( 4*pver+1+singlelen: 5*pver+singlelen) = ul(:)
           Var_Flat( 5*pver+1+singlelen: 6*pver+singlelen) = vl(:) 
-          Var_Flat( 6*pver+1+singlelen: 7*pver+singlelen) = state_loc%pmid(i,:)
-          Var_Flat( 7*pver+1+singlelen: 8*pver+singlelen) = state_loc%pdel(i,:) 
-          Var_Flat( 8*pver+1+singlelen: 9*pver+singlelen) = state_loc%zm(i,:)
-          Var_Flat( 9*pver+1+singlelen:10*pver+singlelen+1) = state_loc%zi(i,:)
-          Var_Flat(10*pver+2+singlelen:11*pver+singlelen+1) = cld(i,1:pver)
-          Var_Flat(11*pver+2+singlelen:12*pver+singlelen+1) = cldtop(i,1:pver)
-          Var_Flat(12*pver+2+singlelen:13*pver+singlelen+1) = gicewp(i,1:pver)
-          Var_Flat(13*pver+2+singlelen:14*pver+singlelen+1) = gliqwp(i,1:pver)
-          Var_Flat(14*pver+2+singlelen:15*pver+singlelen+1) = mctot(i,1:pver)
-          Var_Flat(15*pver+2+singlelen:16*pver+singlelen+1) = mcup(i,1:pver)
-          Var_Flat(16*pver+2+singlelen:17*pver+singlelen+1) = mcdn(i,1:pver)
-          Var_Flat(17*pver+2+singlelen:18*pver+singlelen+1) = mcuup(i,1:pver)
-          Var_Flat(18*pver+2+singlelen:19*pver+singlelen+1) = mcudn(i,1:pver)
-          Var_Flat(19*pver+2+singlelen:20*pver+singlelen+1) = spqc(i,1:pver)
-          Var_Flat(20*pver+2+singlelen:21*pver+singlelen+1) = spqi(i,1:pver)
-          Var_Flat(21*pver+2+singlelen:22*pver+singlelen+1) = spqs(i,1:pver)
-          Var_Flat(22*pver+2+singlelen:23*pver+singlelen+1) = spqg(i,1:pver)
-          Var_Flat(23*pver+2+singlelen:24*pver+singlelen+1) = spqr(i,1:pver) 
-          Var_Flat(24*pver+2+singlelen:25*pver+singlelen+1) = mu_crm(i,1:pver)
-          Var_Flat(25*pver+2+singlelen:26*pver+singlelen+1) = md_crm(i,1:pver)
-          Var_Flat(26*pver+2+singlelen:27*pver+singlelen+1) = du_crm(i,1:pver)
-          Var_Flat(27*pver+2+singlelen:28*pver+singlelen+1) = eu_crm(i,1:pver)
-          Var_Flat(28*pver+2+singlelen:29*pver+singlelen+1) = ed_crm(i,1:pver)
-          Var_Flat(29*pver+2+singlelen:30*pver+singlelen+1) = tkez(i,1:pver)
-          Var_Flat(30*pver+2+singlelen:31*pver+singlelen+1) = tkesgsz(i,1:pver)
-          Var_Flat(31*pver+2+singlelen:32*pver+singlelen+1) = tk_crm(i,1:pver)
-          Var_Flat(32*pver+2+singlelen:33*pver+singlelen+1) = flux_u(i,1:pver)
-          Var_Flat(33*pver+2+singlelen:34*pver+singlelen+1) = flux_v(i,1:pver)
-          Var_Flat(34*pver+2+singlelen:35*pver+singlelen+1) = flux_qt(i,1:pver)
-          Var_Flat(35*pver+2+singlelen:36*pver+singlelen+1) = fluxsgs_qt(i,1:pver)
-          Var_Flat(36*pver+2+singlelen:37*pver+singlelen+1) = flux_qp(i,1:pver)
-          Var_Flat(37*pver+2+singlelen:38*pver+singlelen+1) = precflux(i,1:pver)
-          Var_Flat(38*pver+2+singlelen:39*pver+singlelen+1) = qt_ls(i,1:pver)
-          Var_Flat(39*pver+2+singlelen:40*pver+singlelen+1) = qt_trans(i,1:pver)
-          Var_Flat(40*pver+2+singlelen:41*pver+singlelen+1) = qp_trans(i,1:pver)
-          Var_Flat(41*pver+2+singlelen:42*pver+singlelen+1) = qp_fall(i,1:pver)
-          Var_Flat(42*pver+2+singlelen:43*pver+singlelen+1) = qp_evp(i,1:pver)
-          Var_Flat(43*pver+2+singlelen:44*pver+singlelen+1) = qp_src(i,1:pver)
-          Var_Flat(44*pver+2+singlelen:45*pver+singlelen+1) = t_ls(i,1:pver)
-          Var_Flat(45*pver+2+singlelen:46*pver+singlelen+1) = ptend_loc%q(i,:,1)
-          Var_Flat(46*pver+2+singlelen:47*pver+singlelen+1) = ptend_loc%q(i,:,ixcldliq)
-          Var_Flat(47*pver+2+singlelen:48*pver+singlelen+1) = ptend_loc%q(i,:,ixcldice)
-          Var_Flat(48*pver+2+singlelen:49*pver+singlelen+1) = ptend_loc%s(i,:)
-          Var_Flat(49*pver+2+singlelen:49*pver+21+singlelen)= qtotcrm(i,1:20)
+          Var_Flat( 6*pver+1+singlelen: 7*pver+singlelen) = state_loc%pmid(i_save,:)
+          Var_Flat( 7*pver+1+singlelen: 8*pver+singlelen) = state_loc%pdel(i_save,:) 
+          Var_Flat( 8*pver+1+singlelen: 9*pver+singlelen) = state_loc%zm(i_save,:)
+          Var_Flat( 9*pver+1+singlelen:10*pver+singlelen+1) = state_loc%zi(i_save,:)
+          Var_Flat(10*pver+2+singlelen:11*pver+singlelen+1) = cld(i_save,1:pver)
+          Var_Flat(11*pver+2+singlelen:12*pver+singlelen+1) = cldtop(i_save,1:pver)
+          Var_Flat(12*pver+2+singlelen:13*pver+singlelen+1) = gicewp(i_save,1:pver)
+          Var_Flat(13*pver+2+singlelen:14*pver+singlelen+1) = gliqwp(i_save,1:pver)
+          Var_Flat(14*pver+2+singlelen:15*pver+singlelen+1) = mctot(i_save,1:pver)
+          Var_Flat(15*pver+2+singlelen:16*pver+singlelen+1) = mcup(i_save,1:pver)
+          Var_Flat(16*pver+2+singlelen:17*pver+singlelen+1) = mcdn(i_save,1:pver)
+          Var_Flat(17*pver+2+singlelen:18*pver+singlelen+1) = mcuup(i_save,1:pver)
+          Var_Flat(18*pver+2+singlelen:19*pver+singlelen+1) = mcudn(i_save,1:pver)
+          Var_Flat(19*pver+2+singlelen:20*pver+singlelen+1) = spqc(i_save,1:pver)
+          Var_Flat(20*pver+2+singlelen:21*pver+singlelen+1) = spqi(i_save,1:pver)
+          Var_Flat(21*pver+2+singlelen:22*pver+singlelen+1) = spqs(i_save,1:pver)
+          Var_Flat(22*pver+2+singlelen:23*pver+singlelen+1) = spqg(i_save,1:pver)
+          Var_Flat(23*pver+2+singlelen:24*pver+singlelen+1) = spqr(i_save,1:pver) 
+          Var_Flat(24*pver+2+singlelen:25*pver+singlelen+1) = mu_crm(i_save,1:pver)
+          Var_Flat(25*pver+2+singlelen:26*pver+singlelen+1) = md_crm(i_save,1:pver)
+          Var_Flat(26*pver+2+singlelen:27*pver+singlelen+1) = du_crm(i_save,1:pver)
+          Var_Flat(27*pver+2+singlelen:28*pver+singlelen+1) = eu_crm(i_save,1:pver)
+          Var_Flat(28*pver+2+singlelen:29*pver+singlelen+1) = ed_crm(i_save,1:pver)
+          Var_Flat(29*pver+2+singlelen:30*pver+singlelen+1) = tkez(i_save,1:pver)
+          Var_Flat(30*pver+2+singlelen:31*pver+singlelen+1) = tkesgsz(i_save,1:pver)
+          Var_Flat(31*pver+2+singlelen:32*pver+singlelen+1) = tk_crm(i_save,1:pver)
+          Var_Flat(32*pver+2+singlelen:33*pver+singlelen+1) = flux_u(i_save,1:pver)
+          Var_Flat(33*pver+2+singlelen:34*pver+singlelen+1) = flux_v(i_save,1:pver)
+          Var_Flat(34*pver+2+singlelen:35*pver+singlelen+1) = flux_qt(i_save,1:pver)
+          Var_Flat(35*pver+2+singlelen:36*pver+singlelen+1) = fluxsgs_qt(i_save,1:pver)
+          Var_Flat(36*pver+2+singlelen:37*pver+singlelen+1) = flux_qp(i_save,1:pver)
+          Var_Flat(37*pver+2+singlelen:38*pver+singlelen+1) = precflux(i_save,1:pver)
+          Var_Flat(38*pver+2+singlelen:39*pver+singlelen+1) = qt_ls(i_save,1:pver)
+          Var_Flat(39*pver+2+singlelen:40*pver+singlelen+1) = qt_trans(i_save,1:pver)
+          Var_Flat(40*pver+2+singlelen:41*pver+singlelen+1) = qp_trans(i_save,1:pver)
+          Var_Flat(41*pver+2+singlelen:42*pver+singlelen+1) = qp_fall(i_save,1:pver)
+          Var_Flat(42*pver+2+singlelen:43*pver+singlelen+1) = qp_evp(i_save,1:pver)
+          Var_Flat(43*pver+2+singlelen:44*pver+singlelen+1) = qp_src(i_save,1:pver)
+          Var_Flat(44*pver+2+singlelen:45*pver+singlelen+1) = t_ls(i_save,1:pver)
+          Var_Flat(45*pver+2+singlelen:46*pver+singlelen+1) = ptend_loc%q(i_save,:,1)
+          Var_Flat(46*pver+2+singlelen:47*pver+singlelen+1) = ptend_loc%q(i_save,:,ixcldliq)
+          Var_Flat(47*pver+2+singlelen:48*pver+singlelen+1) = ptend_loc%q(i_save,:,ixcldice)
+          Var_Flat(48*pver+2+singlelen:49*pver+singlelen+1) = ptend_loc%s(i_save,:)
+          Var_Flat(49*pver+2+singlelen:49*pver+21+singlelen)= qtotcrm(i_save,1:20)
           Var_Flat(49*pver+22+singlelen:49*pver+21+singlelen+pcols)=gcolindex(1:pcols) 
           fcount = 0
           do ii=1,crm_nx
             do jj=1,crm_ny
               do kk=1,crm_nz
                 fcount = fcount + 1
-                Var_Flat2(fcount)              = crm_u(i,ii,jj,kk)
-                Var_Flat2(fcount + 1 * chnksz) = crm_v(i,ii,jj,kk)
-                Var_Flat2(fcount + 2 * chnksz) = crm_w(i,ii,jj,kk)
-                Var_Flat2(fcount + 3 * chnksz) = crm_t(i,ii,jj,kk)
-                Var_Flat2(fcount + 4 * chnksz) = crm_qrad(i,ii,jj,kk)
-                Var_Flat2(fcount + 5 * chnksz) = qc_crm(i,ii,jj,kk)
-                Var_Flat2(fcount + 6 * chnksz) = qi_crm(i,ii,jj,kk)
-                Var_Flat2(fcount + 7 * chnksz) = qpc_crm(i,ii,jj,kk)
-                Var_Flat2(fcount + 8 * chnksz) = qpi_crm(i,ii,jj,kk)
-                Var_Flat2(fcount + 9 * chnksz) = t_rad(i,ii,jj,kk)
-                Var_Flat2(fcount + 10* chnksz) = qv_rad(i,ii,jj,kk)
-                Var_Flat2(fcount + 11* chnksz) = qc_rad(i,ii,jj,kk)
-                Var_Flat2(fcount + 12* chnksz) = qi_rad(i,ii,jj,kk)
-                Var_Flat2(fcount + 13* chnksz) = cld_rad(i,ii,jj,kk)
-                Var_Flat2(fcount + 14* chnksz) = cld3d_crm(i,ii,jj,kk)
-                Var_Flat2(fcount + 15* chnksz) = crm_tk(i,ii,jj,kk)
-                Var_Flat2(fcount + 16* chnksz) = crm_tkh(i,ii,jj,kk)
+                Var_Flat2(fcount)              = crm_u(i_save,ii,jj,kk)
+                Var_Flat2(fcount + 1 * chnksz) = crm_v(i_save,ii,jj,kk)
+                Var_Flat2(fcount + 2 * chnksz) = crm_w(i_save,ii,jj,kk)
+                Var_Flat2(fcount + 3 * chnksz) = crm_t(i_save,ii,jj,kk)
+                Var_Flat2(fcount + 4 * chnksz) = crm_qrad(i_save,ii,jj,kk)
+                Var_Flat2(fcount + 5 * chnksz) = qc_crm(i_save,ii,jj,kk)
+                Var_Flat2(fcount + 6 * chnksz) = qi_crm(i_save,ii,jj,kk)
+                Var_Flat2(fcount + 7 * chnksz) = qpc_crm(i_save,ii,jj,kk)
+                Var_Flat2(fcount + 8 * chnksz) = qpi_crm(i_save,ii,jj,kk)
+                Var_Flat2(fcount + 9 * chnksz) = t_rad(i_save,ii,jj,kk)
+                Var_Flat2(fcount + 10* chnksz) = qv_rad(i_save,ii,jj,kk)
+                Var_Flat2(fcount + 11* chnksz) = qc_rad(i_save,ii,jj,kk)
+                Var_Flat2(fcount + 12* chnksz) = qi_rad(i_save,ii,jj,kk)
+                Var_Flat2(fcount + 13* chnksz) = cld_rad(i_save,ii,jj,kk)
+                Var_Flat2(fcount + 14* chnksz) = cld3d_crm(i_save,ii,jj,kk)
+                Var_Flat2(fcount + 15* chnksz) = crm_tk(i_save,ii,jj,kk)
+                Var_Flat2(fcount + 16* chnksz) = crm_tkh(i_save,ii,jj,kk)
               end do
             end do
           end do
@@ -1737,7 +1741,7 @@ end subroutine crm_init_cnst
               do kk=1,crm_nz
                 do ll=1,nmicro_fields
                   fcount=fcount+1
-                  Var_Flat2(fcount) = crm_micro(i,ii,jj,kk,ll)
+                  Var_Flat2(fcount) = crm_micro(i_save,ii,jj,kk,ll)
                 end do
               end do
             end do
@@ -1746,14 +1750,19 @@ end subroutine crm_init_cnst
           do ii=1,crm_nx
             do jj=1,crm_ny
               fcount = fcount + 1
-              Var_Flat2(fcount) = prec_crm(i,ii,jj)
+              Var_Flat2(fcount) = prec_crm(i_save,ii,jj)
             end do
           end do
           write (iulog,9999),lchnk,i,state%crmrank0(i),dest,latitude0,longitude0
           9999  format ('lon-lat',4I4,2E15.6)
           call MPI_Send(Var_Flat(:)         ,flen,MPI_REAL8 ,dest,9018,MPI_COMM_WORLD,ierr)
           call MPI_Send(Var_Flat2(:)         ,flen2,MPI_REAL8,dest,9019,MPI_COMM_WORLD,ierr)
-
+          write (iulog,*),'MPI send finish!',dest,lchnk,i
+         end if   ! is this column coupled to an external CRM?
+        end do
+        do i = 1,ncol 
+         if (state%crmrank0(i) .ne. -1) then ! is this column coupled to an external CRM?   
+          !i = i_save 
         ! re: next args in call to crm () are ptend* which despite being declared inout are actually output.
 
           ! ****************
@@ -1912,6 +1921,7 @@ end subroutine crm_init_cnst
             end do
           end do
          endif ! is this column column coupled to an external (orchestrated) CRM?
+         lchnk = lchnk_save
 #endif
          call crm (lchnk,      i,                                                                                            &
              state_loc%t(i,:),   state_loc%q(i,:,1),    state_loc%q(i,:,ixcldliq), state_loc%q(i,:,ixcldice),                &

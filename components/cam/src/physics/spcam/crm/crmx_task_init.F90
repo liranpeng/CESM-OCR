@@ -2,6 +2,7 @@ subroutine task_init
 		
 !   Check things, initialize multitasking:
 use crmx_grid
+use crmx_task_util_mpi
 implicit none
 
 integer itasks,ntasks,numproc_global,myrank_global,ierr

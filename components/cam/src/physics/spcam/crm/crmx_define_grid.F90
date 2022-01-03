@@ -12,6 +12,12 @@ nzm = nz-1
 
 nsubdomains = nsubdomains_x * nsubdomains_y
 
+if(nsubdomains.eq.1) then
+  dompi = .false.
+else
+  dompi = .true.
+endif
+
 RUN3D = ny_gl.gt.1
 RUN2D = .not.RUN3D
 

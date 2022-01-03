@@ -84,6 +84,9 @@ subroutine crm_orc     (long,lati,gcolindex,lchnk, icol, &
         use crmx_microphysics
         use crmx_sgs
         use crmx_mpi
+        use crmx_task_init_mpi
+        use crmx_crm_kurant_ORC
+        use crmx_crm_pressure_ORC
         use crmx_crmtracers
 #ifdef MODAL_AERO
         use modal_aero_data,   only: ntot_amode
@@ -136,7 +139,7 @@ subroutine crm_orc     (long,lati,gcolindex,lchnk, icol, &
          real(r8), intent(in) :: phis ! Global grid surface geopotential (m2/s2)
          real(r8), intent(in) :: zmid(plev) ! Global grid height (m)
          real(r8), intent(in) :: zint(plev+1)! Global grid interface height (m)
-         real(r8), intent(in) :: qrad_crm(crm_nx, crm_ny, crm_nz) ! CRM rad. heating
+         real(r8), intent(in) :: qrad_crm(nx, ny, nzm) ! CRM rad. heating
          real(r8), intent(in) :: dt_gl ! global model's time step
          real(r8), intent(in) :: ocnfrac ! area fraction of the ocean
          real(r8), intent(in) :: tau00  ! large-scale surface stress (N/m2)
@@ -168,16 +171,16 @@ subroutine crm_orc     (long,lati,gcolindex,lchnk, icol, &
 
 !  Input/Output:
 #ifdef SPCAM_CLUBB_SGS
-         real(r8), intent(inout), target :: clubb_buffer(crm_nx, crm_ny, crm_nz+1,1:nclubbvars)
-         real(r8), intent(inout)  :: crm_cld(crm_nx, crm_ny, crm_nz+1)
-         real(r8), intent(inout)  :: clubb_tk(crm_nx, crm_ny, crm_nz)
-         real(r8), intent(inout)  :: clubb_tkh(crm_nx, crm_ny, crm_nz)
-         real(r8), intent(inout)  :: relvar(crm_nx, crm_ny, crm_nz) 
-         real(r8), intent(inout)  :: accre_enhan(crm_nx, crm_ny, crm_nz)
-         real(r8), intent(inout)  :: qclvar(crm_nx, crm_ny, crm_nz)
+         real(r8), intent(inout), target :: clubb_buffer(nx, ny, nzm+1,1:nclubbvars)
+         real(r8), intent(inout)  :: crm_cld(nx, ny, nzm+1)
+         real(r8), intent(inout)  :: clubb_tk(nx, ny, nzm)
+         real(r8), intent(inout)  :: clubb_tkh(nx, ny, nzm)
+         real(r8), intent(inout)  :: relvar(nx, ny, nzm) 
+         real(r8), intent(inout)  :: accre_enhan(nx, ny, nzm)
+         real(r8), intent(inout)  :: qclvar(nx, ny, nzm)
 #endif
-         real(r8), intent(inout)  :: crm_tk(crm_nx, crm_ny, crm_nz)
-         real(r8), intent(inout)  :: crm_tkh(crm_nx, crm_ny, crm_nz)
+         real(r8), intent(inout)  :: crm_tk(nx, ny, nzm)
+         real(r8), intent(inout)  :: crm_tkh(nx, ny, nzm)
 
          real(r8), intent(inout) :: cltot ! shaded cloud fraction
          real(r8), intent(inout) :: clhgh ! shaded cloud fraction
@@ -192,36 +195,36 @@ subroutine crm_orc     (long,lati,gcolindex,lchnk, icol, &
 !         real(r8), intent(inout) :: v_crm  (:,:,:) ! CRM v-wind component
 !         real(r8), intent(inout) :: w_crm  (:,:,:) ! CRM w-wind component
 !         real(r8), intent(inout) :: t_crm  (:,:,:) ! CRM temperuture
-         real(r8), intent(inout) :: u_crm  (crm_nx,crm_ny,crm_nz) ! CRM v-wind component
-         real(r8), intent(inout) :: v_crm  (crm_nx,crm_ny,crm_nz) ! CRM v-wind component
-         real(r8), intent(inout) :: w_crm  (crm_nx,crm_ny,crm_nz) ! CRM w-wind component
-         real(r8), intent(inout) :: t_crm  (crm_nx,crm_ny,crm_nz) ! CRM temperuture
+         real(r8), intent(inout) :: u_crm  (nx,ny,nzm) ! CRM v-wind component
+         real(r8), intent(inout) :: v_crm  (nx,ny,nzm) ! CRM v-wind component
+         real(r8), intent(inout) :: w_crm  (nx,ny,nzm) ! CRM w-wind component
+         real(r8), intent(inout) :: t_crm  (nx,ny,nzm) ! CRM temperuture
 !         real(r8), intent(inout) :: micro_fields_crm  (:,:,:,:) ! CRM total water
-         real(r8), intent(inout) :: micro_fields_crm  (crm_nx,crm_ny,crm_nz,nmicro_fields+1) ! CRM total water
+         real(r8), intent(inout) :: micro_fields_crm  (nx,ny,nzm,nmicro_fields+1) ! CRM total water
          real(r8), intent(inout) :: qltend(plev) ! tendency of water vapor
          real(r8), intent(inout) :: qcltend(plev)! tendency of cloud liquid water
          real(r8), intent(inout) :: qiltend(plev)! tendency of cloud ice
-         real(r8), intent(inout) :: t_rad (crm_nx, crm_ny, crm_nz) ! rad temperuture
-         real(r8), intent(inout) :: qv_rad(crm_nx, crm_ny, crm_nz) ! rad vapor
-         real(r8), intent(inout) :: qc_rad(crm_nx, crm_ny, crm_nz) ! rad cloud water
-         real(r8), intent(inout) :: qi_rad(crm_nx, crm_ny, crm_nz) ! rad cloud ice
-         real(r8), intent(inout) :: cld_rad(crm_nx, crm_ny, crm_nz) ! rad cloud fraction 
-         real(r8), intent(inout) :: cld3d_crm(crm_nx, crm_ny, crm_nz) ! instant 3D cloud fraction
+         real(r8), intent(inout) :: t_rad (nx, ny, nzm) ! rad temperuture
+         real(r8), intent(inout) :: qv_rad(nx, ny, nzm) ! rad vapor
+         real(r8), intent(inout) :: qc_rad(nx, ny, nzm) ! rad cloud water
+         real(r8), intent(inout) :: qi_rad(nx, ny, nzm) ! rad cloud ice
+         real(r8), intent(inout) :: cld_rad(nx, ny, nzm) ! rad cloud fraction 
+         real(r8), intent(inout) :: cld3d_crm(nx, ny, nzm) ! instant 3D cloud fraction
 #ifdef m2005
-         real(r8), intent(inout) :: nc_rad(crm_nx, crm_ny, crm_nz) ! rad cloud droplet number (#/kg) 
-         real(r8), intent(inout) :: ni_rad(crm_nx, crm_ny, crm_nz) ! rad cloud ice crystal number (#/kg)
-         real(r8), intent(inout) :: qs_rad(crm_nx, crm_ny, crm_nz) ! rad cloud snow (kg/kg)
-         real(r8), intent(inout) :: ns_rad(crm_nx, crm_ny, crm_nz) ! rad cloud snow crystal number (#/kg)
-         real(r8), intent(inout) :: wvar_crm(crm_nx, crm_ny, crm_nz) ! vertical velocity variance (m/s)
+         real(r8), intent(inout) :: nc_rad(nx, ny, nzm) ! rad cloud droplet number (#/kg) 
+         real(r8), intent(inout) :: ni_rad(nx, ny, nzm) ! rad cloud ice crystal number (#/kg)
+         real(r8), intent(inout) :: qs_rad(nx, ny, nzm) ! rad cloud snow (kg/kg)
+         real(r8), intent(inout) :: ns_rad(nx, ny, nzm) ! rad cloud snow crystal number (#/kg)
+         real(r8), intent(inout) :: wvar_crm(nx, ny, nzm) ! vertical velocity variance (m/s)
 ! hm 7/26/11 new output
-         real(r8), intent(inout) :: aut_crm(crm_nx, crm_ny, crm_nz) ! cloud water autoconversion (1/s)
-         real(r8), intent(inout) :: acc_crm(crm_nx, crm_ny, crm_nz) ! cloud water accretion (1/s)
-         real(r8), intent(inout) :: evpc_crm(crm_nx, crm_ny, crm_nz) ! cloud water evaporation (1/s)
-         real(r8), intent(inout) :: evpr_crm(crm_nx, crm_ny, crm_nz) ! rain evaporation (1/s)
-         real(r8), intent(inout) :: mlt_crm(crm_nx, crm_ny, crm_nz) ! ice, snow, graupel melting (1/s)
-         real(r8), intent(inout) :: sub_crm(crm_nx, crm_ny, crm_nz) ! ice, snow, graupel sublimation (1/s)
-         real(r8), intent(inout) :: dep_crm(crm_nx, crm_ny, crm_nz) ! ice, snow, graupel deposition (1/s)
-         real(r8), intent(inout) :: con_crm(crm_nx, crm_ny, crm_nz) ! cloud water condensation(1/s)
+         real(r8), intent(inout) :: aut_crm(nx, ny, nzm) ! cloud water autoconversion (1/s)
+         real(r8), intent(inout) :: acc_crm(nx, ny, nzm) ! cloud water accretion (1/s)
+         real(r8), intent(inout) :: evpc_crm(nx, ny, nzm) ! cloud water evaporation (1/s)
+         real(r8), intent(inout) :: evpr_crm(nx, ny, nzm) ! rain evaporation (1/s)
+         real(r8), intent(inout) :: mlt_crm(nx, ny, nzm) ! ice, snow, graupel melting (1/s)
+         real(r8), intent(inout) :: sub_crm(nx, ny, nzm) ! ice, snow, graupel sublimation (1/s)
+         real(r8), intent(inout) :: dep_crm(nx, ny, nzm) ! ice, snow, graupel deposition (1/s)
+         real(r8), intent(inout) :: con_crm(nx, ny, nzm) ! cloud water condensation(1/s)
 ! hm 8/31/11 new output, gcm-grid and time step-avg
          real(r8), intent(inout) :: aut_crm_a(plev) ! cloud water autoconversion (1/s)
          real(r8), intent(inout) :: acc_crm_a(plev) ! cloud water accretion (1/s)
@@ -295,11 +298,11 @@ subroutine crm_orc     (long,lati,gcolindex,lchnk, icol, &
          real(r8), intent(inout):: tauy_crm  ! merid CRM surface stress perturbation (N/m2)
          real(r8), intent(inout):: z0m ! surface stress (N/m2)
          real(r8), intent(inout):: timing_factor ! crm cpu efficiency
-         real(r8), intent(inout) :: qc_crm (crm_nx, crm_ny, crm_nz)! CRM cloud water
-         real(r8), intent(inout) :: qi_crm (crm_nx, crm_ny, crm_nz)! CRM cloud ice
-         real(r8), intent(inout) :: qpc_crm(crm_nx, crm_ny, crm_nz)! CRM precip water
-         real(r8), intent(inout) :: qpi_crm(crm_nx, crm_ny, crm_nz)! CRM precip ice
-         real(r8), intent(inout) :: prec_crm(crm_nx, crm_ny)! CRM precipiation rate
+         real(r8), intent(inout) :: qc_crm (nx, ny, nzm)! CRM cloud water
+         real(r8), intent(inout) :: qi_crm (nx, ny, nzm)! CRM cloud ice
+         real(r8), intent(inout) :: qpc_crm(nx, ny, nzm)! CRM precip water
+         real(r8), intent(inout) :: qpi_crm(nx, ny, nzm)! CRM precip ice
+         real(r8), intent(inout) :: prec_crm(nx, ny)! CRM precipiation rate
 #ifdef ECPP
 ! at layer center
          real(r8), intent(inout) :: acen(plev,NCLASS_CL,ncls_ecpp_in,NCLASS_PR)   ! cloud fraction for each sub-sub class for full time period
@@ -371,7 +374,7 @@ real(kind=core_rknd), dimension(nzm) :: &
         real, allocatable, dimension(:,:)  :: cltemp,cmtemp,chtemp,cttemp
         real(r8), intent(inout) :: qtot(20)
         real ntotal_step
-
+        CHARACTER(LEN=6) :: crm_number
         nsubdomains_x  = 2
         call crm_define_grid()
 !-----------------------------------------------
@@ -420,8 +423,10 @@ real(kind=core_rknd), dimension(nzm) :: &
        
         call mpi_comm_size(crm_comm_in, myproc_crm_check, ierr)
         call mpi_comm_rank(crm_comm_in, myrank_crm_check, ierr) 
+       
         write(0, *) 'Enter task_init_ORC',numproc_crm_in,myrank_crm_in,myrank_crm_check
-        call task_init_ORC ()
+        call task_init_ORC (crm_comm_in,myproc_crm_check,myrank_crm_check)
+        write(0, *) 'End task init'
         call setparm()
 
 !        doshortwave = doshort
@@ -927,13 +932,12 @@ do while(nstep.lt.nstop)
 !  Check if the dynamical time step should be decreased 
 !  to handle the cases when the flow being locally linearly unstable
 !------------------------------------------------------------------
-
   ncycle = 1
 
-  call kurant()
-
+  call kurant_ORC()
+write(0, *) 'Liran 0',ncycle
   do icyc=1,ncycle
-
+write(0, *) 'Liran 1'
      icycle = icyc
      dtn = dt/ncycle
      dt3(na) = dtn
@@ -942,17 +946,17 @@ do while(nstep.lt.nstop)
 !  	the Adams-Bashforth scheme in time
 
      call abcoefs()
- 
+write(0, *) 'Liran 2' 
 !---------------------------------------------
 !  	initialize stuff: 
 	
      call zero()
-
+write(0, *) 'Liran 3'
 !-----------------------------------------------------------
 !       Buoyancy term:
 	     
      call buoyancy()
-
+write(0, *) 'Liran 4'
 !+++mhwangtest
 ! test water conservtion problem
         ntotal_step = ntotal_step + 1.
@@ -962,7 +966,7 @@ do while(nstep.lt.nstop)
 !       Large-scale and surface forcing:
 
      call forcing()
-
+write(0, *) 'Liran 5'
      do k=1,nzm
       do j=1,ny
         do i=1,nx
@@ -975,7 +979,7 @@ do while(nstep.lt.nstop)
 !   	suppress turbulence near the upper boundary (spange):
 
      if(dodamping) call damping()
-
+write(0, *) 'Liran 6'
 !---------------------------------------------------------
 !   Ice fall-out
 
@@ -988,27 +992,27 @@ do while(nstep.lt.nstop)
           call ice_fall()
       end if
 #endif  /*CLUBB_SGS*/ 
-
+write(0, *) 'Liran 7'
 !----------------------------------------------------------
 !     Update scalar boundaries after large-scale processes:
 
      call boundaries(3)
-
+write(0, *) 'Liran 8'
 !---------------------------------------------------------
 !     Update boundaries for velocities:
 
       call boundaries(0)
-
+write(0, *) 'Liran 9'
 !-----------------------------------------------
 !     surface fluxes:
 
      if(dosurface) call crmsurface(bflx)
-
+write(0, *) 'Liran 10'
 !-----------------------------------------------------------
 !  SGS physics:
 
      if (dosgs) call sgs_proc()
-        
+write(0, *) 'Liran 11'        
 #ifdef CLUBB_CRM_OLD   
 !----------------------------------------------------------
 !     Do a timestep with CLUBB if enabled:
@@ -1069,9 +1073,9 @@ do while(nstep.lt.nstop)
      call boundaries(4)
 !-----------------------------------------------
 !       advection of momentum:
-
+write(0, *) 'Liran 12'
      call advect_mom()
-
+write(0, *) 'Liran 13'
 !----------------------------------------------------------
 !	SGS effects on momentum:
 
@@ -1082,48 +1086,49 @@ do while(nstep.lt.nstop)
 !               ( dudt, dvdt ) ! in/out
      endif
 #endif /*CLUBB_CRM_OLD*/
-
+write(0, *) 'Liran 14'
 !-----------------------------------------------------------
 !       Coriolis force:
 	     
      if(docoriolis) call coriolis()
+write(0, *) 'Liran 15'
 	 
 !---------------------------------------------------------
 !       compute rhs of the Poisson equation and solve it for pressure. 
 
-     call pressure()
-
+     call pressure_ORC()
+write(0, *) 'Liran 16'
 !---------------------------------------------------------
 !       find velocity field at n+1/2 timestep needed for advection of scalars:
 !  Note that at the end of the call, the velocities are in nondimensional form.
 	 
      call adams()
-
+write(0, *) 'Liran 17'
 !----------------------------------------------------------
 !     Update boundaries for all prognostic scalar fields for advection:
 
      call boundaries(2)
-
+write(0, *) 'Liran 18'
 !---------------------------------------------------------
 !      advection of scalars :
 
      call advect_all_scalars()
-
+write(0, *) 'Liran 19'
 !-----------------------------------------------------------
 !    Convert velocity back from nondimensional form:
 
       call uvw()
-
+write(0, *) 'Liran 20'
 !----------------------------------------------------------
 !     Update boundaries for scalars to prepare for SGS effects:
 
      call boundaries(3)
-
+write(0, *) 'Liran 21'
 !---------------------------------------------------------
 !      SGS effects on scalars :
 
      if (dosgs) call sgs_scalars()
-
+write(0, *) 'Liran 22'
 #ifdef CLUBB_CRM_OLD
       ! Re-compute q/qv/qcl based on values computed in CLUBB
      if ( doclubb ) then
@@ -1189,7 +1194,7 @@ do while(nstep.lt.nstop)
       call diagnose()
 !----------------------------------------------------------
 ! Rotate the dynamic tendency arrays for Adams-bashforth scheme:
-
+write(0, *) 'Liran 23'
       nn=na
       na=nc
       nc=nb
@@ -1373,7 +1378,7 @@ do while(nstep.lt.nstop)
 !----------------------------------------------------------
         end do ! main loop
 !----------------------------------------------------------
-
+write(0, *) 'Liran finish main loop'
         tmp1 = 1._r8/ dble(nstop)
         t_rad = t_rad * tmp1
         qv_rad = qv_rad * tmp1

@@ -373,11 +373,12 @@ call crm_define_grid()
 rankprint = 30
 call mpi_comm_size(MPI_COMM_WORLD, numproc_global, ierr)
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-#ifdef CRM_DEBUG
-923 format(I6.6)
-  write(crm_number,923) myrank_global
-  open(unit=13,file='debug.log.'//TRIM(crm_number),form='formatted')
-#endif
+!!!#ifdef CRM_DEBUG
+!923 format(I6.6)
+!  write(crm_number,923) myrank_global
+!  open(unit=13,file='debug.log.'//TRIM(crm_number),form='formatted')
+!!!#endif
+!write(13, *) 'Liran Check crm_module',nsubdomains_x
 !-----------------------------------------------
         allocate ( cltemp (nx, ny))
         allocate ( cmtemp (nx, ny))
@@ -434,7 +435,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !        pres0 = pres00
 !        tabs_s = tabs_s0
 !        case = case0
-
         latitude0 = get_rlat_p(lchnk, icol)*57.296_r8
         longitude0 = get_rlon_p(lchnk, icol)*57.296_r8
 !        pi = acos(-1.)
@@ -978,9 +978,7 @@ do while(nstep.lt.nstop)
          end do
 #endif
   ncycle = 1
-
   call kurant()
-
   do icyc=1,ncycle
 
      icycle = icyc

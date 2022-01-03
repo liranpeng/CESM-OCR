@@ -1,20 +1,20 @@
 
 	subroutine task_start(rank,numtasks)
 	integer rank,numtasks	
-	print*, 'MPI call from a single task program! Exiting...'
+	print*, '1 MPI call from a single task program! Exiting...'
 	stop
 	end
 	
 !----------------------------------------------------------------------
 	
 	subroutine task_abort()
-	print*,'Aborting the program...'
+	print*,'2 Aborting the program...'
 	stop
 	end
 !----------------------------------------------------------------------
 	
 	subroutine task_finish()
-	print*,'program is finished...'
+	print*,'3 program is finished...'
 	stop
 	end
 
@@ -30,7 +30,7 @@
         integer rank_from       ! broadcasting task's rank
         real buffer(*)          ! buffer of data
         integer length          ! buffers' length
-	print*, 'MPIsndf call from a single task program! Exiting...'
+	print*, '4 MPIsndf call from a single task program! Exiting...'
         stop
         end
 
@@ -43,7 +43,7 @@
 	integer length		! buffers' length
 	integer tag		! tag of the message
 	integer request		! request id
-	print*, 'MPIsndf call from a single task program! Exiting...'
+	print*, '5 MPIsndf call from a single task program! Exiting...'
 	stop
 	end
 
@@ -56,7 +56,7 @@
 	integer length		! buffers' length
 	integer tag		! tag of the message
 	integer request
-	print*, 'MPIsndi call from a single task program! Exiting...'
+	print*, '6 MPIsndi call from a single task program! Exiting...'
 	stop
 	end
 	
@@ -69,7 +69,7 @@
 	integer length		! buffers' length
 	integer tag		! tag of the message
 	integer request
-	print*, 'MPIsndi call from a single task program! Exiting...'
+	print*, '7 MPIsndi call from a single task program! Exiting...'
 	stop
 	end
 	
@@ -79,7 +79,7 @@
 	real buffer(*)		! buffer of data
 	integer length		! buffers' length
 	integer request
-	print*, 'MPIrcvf call from a single task program! Exiting...'
+	print*, '8 MPIrcvf call from a single task program! Exiting...'
 	stop
 	end
 
@@ -109,7 +109,7 @@
         real buffer(*)          ! buffer of data
         integer length          ! buffers' length
         integer tag             ! tag of the message
-        print*, 'MPI call from a single task program! Exiting...'  
+        print*, '9 MPI call from a single task program! Exiting...'  
 	stop
         return
         end
@@ -134,7 +134,7 @@
 	integer request
 	integer rank, tag
 	logical flag
-	print*, 'MPItst call from a single task program! Exiting...'
+	print*, '10 MPItst call from a single task program! Exiting...'
 	stop
 	end
 
@@ -144,7 +144,7 @@
 	real buffer1(*)	! buffer of data
 	real buffer2(*)	! buffer of data
 	integer length		! buffers' length
-	print*, 'MPI call from a single task program! Exiting...'
+	print*, '11 MPI call from a single task program! Exiting...'
 	stop
 	end
 
@@ -154,7 +154,7 @@
 	real buffer1(*)	! buffer of data
 	real buffer2(*)	! buffer of data
 	integer length		! buffers' length
-	print*, 'MPI call from a single task program! Exiting...'
+	print*, '12 MPI call from a single task program! Exiting...'
 	stop
 	end
 !----------------------------------------------------------------------
@@ -163,7 +163,7 @@
 	real buffer1(*)	! buffer of data
 	real buffer2(*)	! buffer of data
 	integer length		! buffers' length
-	print*, 'MPI call from a single task program! Exiting...'
+	print*, '13 MPI call from a single task program! Exiting...'
 	stop
 	end
 !----------------------------------------------------------------------
@@ -173,7 +173,7 @@
 	real buffer2(*)	! buffer of data
 	integer length		! buffers' length
 	return
-	print*, 'MPI call from a single task program! Exiting...'
+	print*, '14 MPI call from a single task program! Exiting...'
 	stop
 	end
 !----------------------------------------------------------------------
@@ -182,7 +182,7 @@
 	real buffer1(*)	! buffer of data
 	real buffer2(*)	! buffer of data
 	integer length		! buffers' length
-	print*, 'MPI call from a single task program! Exiting...'
+	print*, '15 MPI call from a single task program! Exiting...'
 	stop
 	end
 !----------------------------------------------------------------------
@@ -191,7 +191,7 @@
 	real buffer1(*)	! buffer of data
 	real buffer2(*)	! buffer of data
 	integer length		! buffers' length
-	print*, 'MPI call from a single task program! Exiting...'
+	print*, '16 MPI call from a single task program! Exiting...'
 	stop
 	end
 !----------------------------------------------------------------------
@@ -200,7 +200,7 @@
 	real buffer1(*)	! buffer of data
 	real buffer2(*)	! buffer of data
 	integer length		! buffers' length
-	print*, 'MPI call from a single task program! Exiting...'
+	print*, '17 MPI call from a single task program! Exiting...'
 	stop
 	end
 !----------------------------------------------------------------------
@@ -209,7 +209,7 @@
         character*1 buffer(*)   ! buffer of data
         integer length          ! buffers' length
         integer request
-	print*, 'MPI call from a single task program! Exiting...'
+	print*, '18 MPI call from a single task program! Exiting...'
         stop
         end
 !----------------------------------------------------------------------

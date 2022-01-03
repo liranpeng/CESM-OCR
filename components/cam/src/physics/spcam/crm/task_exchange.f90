@@ -7,6 +7,7 @@ subroutine task_exchange(f_local,dimx1,dimx2,dimy1,dimy2,dimz,i_1, i_2, j_1, j_2
 ! sends and receives the boundary messages	
 	
 use crmx_grid
+use crmx_task_util_mpi
 use crmx_advection, only: NADVS
 implicit none
 	
@@ -109,7 +110,7 @@ allocate ( buff_recv(bufflen,8)      )
 
 	 if(rank.ne.ranks(m)) then 
 
-          call task_receive_float(buff_recv(1,m),bufflen,reqs_in(m))
+          call task_receive_float_ORC(buff_recv(1,m),bufflen,reqs_in(m))
 	  flag(m) = .false.
 
 	 else

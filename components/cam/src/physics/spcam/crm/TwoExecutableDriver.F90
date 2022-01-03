@@ -20,7 +20,7 @@ program TwoExecutableDriver
   integer, parameter :: nmicro_fields = 2   ! total number of prognostic water vars
   integer, parameter :: pcols = 16
   integer, parameter :: pver = 26
-  integer :: i,from,EndFlag
+  integer :: i,from,EndFlag,crm_step,crm_start_ind,crm_end_ind
   integer, dimension(1) :: destGCM0 = -999
   CHARACTER(LEN=6) :: crm_number
   integer gcolindex(pcols)  ! array of global latitude indices
@@ -93,7 +93,7 @@ program TwoExecutableDriver
   call mpi_comm_rank(crm_comm, myrank_crm, ierr)
 
   crm_comm_color = int(myrank_crm/rank_offset)
-  call mpi_comm_split(crm_comm, crm_comm_color, 0, crm_comm_in, ierr)
+  call mpi_comm_split(crm_comm, crm_comm_color, myrank_crm, crm_comm_in, ierr)
   call mpi_comm_size(crm_comm_in, numproc_crm_in, ierr)
   call mpi_comm_rank(crm_comm_in, myrank_crm_in, ierr)
   if(ierr.eq.0) then
@@ -110,10 +110,10 @@ program TwoExecutableDriver
   write(13,*) 'CRM: ',crm_comm,numproc_crm,myrank_crm
   write(13,*) 'CRM in: ',crm_comm_in,crm_comm_color,numproc_crm_in,myrank_crm_in
   ! ----------- GCM handshake from spcam_drivers --------------
-  EndFlag  = 1
+  EndFlag  = 0
   !do i = 1,numproc_crm-1
   i = myrank_crm
-  if (MOD(myrank_crm,rank_offset) .eq. 0) then  
+  !if (MOD(myrank_crm,rank_offset) .eq. 0) then  
      write(13,924) numproc_global, myrank_global,numproc_crm,myrank_crm,crm_comm_color
 924      format('MPI_COMM_WORLD: size/myrank = ',2i5,', crm_comm: size/myrank= ',3i5)
 !    open(unit=13,file='crm.log.'//TRIM(crm_number),form='formatted')    
@@ -126,9 +126,9 @@ program TwoExecutableDriver
      else 
        write (13,*) 'MPI_Recv from spcam_driver handshake failed for CRM rank ',myrank_crm,',ierr=',ierr
      end if
-     EndFlag  = 0
+     !EndFlag  = 0
      allocate(out_Var_Flat(fleno+nflat))
-  end if
+  !end if
   !end do
   call mpi_comm_size(crm_comm_in, numproc_crm_in, ierr)
   call mpi_comm_rank(crm_comm_in, myrank_crm_in, ierr)
@@ -136,6 +136,7 @@ program TwoExecutableDriver
   write(13,*) 'CRM rank2',numproc_crm_in,myrank_crm_in,crm_comm_in
   write(13,*) 'CRM Init Check',EndFlag,myrank_crm_in,myrank_crm,myrank_global
   do while (EndFlag.eq.0)
+  write(13,*) 'Enter Loop!!'
   ! ----------- Receive from cesm.exe/crm_physics inputs to CRM right before call to crm() ----------------
   chnksz = crm_nx*crm_nz*crm_nz
   nflat =  17*chnksz + crm_nx*crm_ny*crm_nz*nmicro_fields +crm_nx*crm_ny
@@ -144,6 +145,7 @@ program TwoExecutableDriver
 ! =====================================================================================
   call MPI_Recv(inp_Var_Flat(:) ,flen   ,MPI_REAL8,MPI_ANY_SOURCE,9018,MPI_COMM_WORLD,status,ierr)
   call MPI_Recv(inp_Var_Flat2(:) ,flen2,MPI_REAL8,MPI_ANY_SOURCE,9019,MPI_COMM_WORLD,status,ierr)
+  write(13,*) 'Finish receiving',myrank_crm_in
   inp01_lchnk         = int(inp_Var_Flat(1))
   inp02_i             = int(inp_Var_Flat(2))
   inp09_ps            =     inp_Var_Flat(3)
@@ -276,26 +278,24 @@ program TwoExecutableDriver
   !call mpi_comm_rank(crm_comm_in, myrank_crm_in, ierr)
 
 
-  do i = 1,numproc_crm-1
-    if(myrank_global.eq.(50+(i-1)*rank_offset)) then
         call mpi_comm_size(crm_comm_in, numproc_crm_in, ierr)
         call mpi_comm_rank(crm_comm_in, myrank_crm_in, ierr)
-    end if
-  end do
-
-
+  crm_step = crm_nx/numproc_crm_in
+  crm_start_ind = (myrank_crm_in)*crm_step
+  crm_end_ind   = (myrank_crm_in+1)*crm_step-1 
   write(13,*) 'Liran Check again:', crm_comm_in,myrank_crm, myrank_global, numproc_crm_in,myrank_crm_in 
+  write(13,*) 'Liran crm check->', crm_step,crm_start_ind,crm_end_ind
   call crm_orc (lon,lat,gcolindex,inp01_lchnk, inp02_i,                            &
             inp03_tl(:),inp04_ql(:),inp05_qccl(:),inp06_qiil(:), &
             inp07_ul(:),inp08_vl(:),inp09_ps,inp10_pmid(:),inp11_pdel(:), &
             inp12_phis,inp13_zm(:),inp14_zi(:),inp15_ztodt,pver, &
             out01_qltend(:),out02_qcltend(:),out03_qiltend(:),out04_sltend(:),&
-            outin01_crm_u(:,:,:),outin02_crm_v(:,:,:),outin03_crm_w(:,:,:),&
-            outin04_crm_t(:,:,:),outin05_crm_micro(:,:,:,:),outin06_crm_qrad(:,:,:),&
-            outin07_qc_crm(:,:,:),outin08_qi_crm(:,:,:),outin09_qpc_crm(:,:,:),&
-            outin10_qpi_crm(:,:,:),outin11_prec_crm(:,:),outin12_t_rad(:,:,:),&
-            outin13_qv_rad(:,:,:),outin14_qc_rad(:,:,:),outin15_qi_rad(:,:,:),&
-            outin16_cld_rad(:,:,:),outin17_cld3d_crm(:,:,:),&
+            outin01_crm_u(crm_start_ind:crm_end_ind,:,:),outin02_crm_v(crm_start_ind:crm_end_ind,:,:),outin03_crm_w(crm_start_ind:crm_end_ind,:,:),&
+            outin04_crm_t(crm_start_ind:crm_end_ind,:,:),outin05_crm_micro(crm_start_ind:crm_end_ind,:,:,:),outin06_crm_qrad(crm_start_ind:crm_end_ind,:,:),&
+            outin07_qc_crm(crm_start_ind:crm_end_ind,:,:),outin08_qi_crm(crm_start_ind:crm_end_ind,:,:),outin09_qpc_crm(crm_start_ind:crm_end_ind,:,:),&
+            outin10_qpi_crm(crm_start_ind:crm_end_ind,:,:),outin11_prec_crm(crm_start_ind:crm_end_ind,:),outin12_t_rad(crm_start_ind:crm_end_ind,:,:),&
+            outin13_qv_rad(crm_start_ind:crm_end_ind,:,:),outin14_qc_rad(crm_start_ind:crm_end_ind,:,:),outin15_qi_rad(crm_start_ind:crm_end_ind,:,:),&
+            outin16_cld_rad(crm_start_ind:crm_end_ind,:,:),outin17_cld3d_crm(crm_start_ind:crm_end_ind,:,:),&
 #ifdef m2005 ! to be added.
 #endif            
             precc,precl,precsc,precsl,&
@@ -310,7 +310,7 @@ program TwoExecutableDriver
 #endif
 #ifdef SPCAM_CLUBB_SGS
 #endif
-            crm_tk( :, :, :), crm_tkh( :, :, :),&
+            crm_tk( crm_start_ind:crm_end_ind, :, :), crm_tkh( crm_start_ind:crm_end_ind, :, :),&
           mu_crm(:),        md_crm(:),          du_crm(:), eu_crm(:),&
              ed_crm(:),        jt_crm,            mx_crm,&
              tkez(:),          tkesgsz(:),         tk_crm( :),&
@@ -431,6 +431,7 @@ program TwoExecutableDriver
   call MPI_Send(out_Var_Flat,fleno+nflat,MPI_REAL8,destGCM0,8006,MPI_COMM_WORLD,ierr)
  end do
   call MPI_comm_free(crm_comm, ierr)
+  call MPI_comm_free(crm_comm_in, ierr)
   call MPI_barrier(MPI_COMM_WORLD, ierr)
   call MPI_finalize(ierr)
 end program TwoExecutableDriver
