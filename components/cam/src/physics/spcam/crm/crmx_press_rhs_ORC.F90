@@ -19,6 +19,9 @@ subroutine press_rhs_ORC
 	
 real *8 dta,rdx,rdy,rdz,btat,ctat,rup,rdn
 integer i,j,k,ic,jc,kc
+integer rank,numtasks
+
+call task_start_ORC(rank,numtasks)
 
 if(dowallx.and.mod(rank,nsubdomains_x).eq.0) then
 
@@ -42,9 +45,7 @@ end if
 
 
 if(dompi) then
-   print *,'task_bound_duvdt barrier start',rank
    call task_bound_duvdt_ORC()
-   print *,'task_bound_duvdt barrier end',rank
 else
    call bound_duvdt()	   
 endif
@@ -110,9 +111,7 @@ end do
 
 endif
 if(dompi) then
-  print *,'pressure barrier start',rank
   call task_barrier_ORC()
-  print *,'pressure barrier end'
 else 
   call task_barrier()
 end if

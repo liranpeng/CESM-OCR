@@ -6,6 +6,7 @@ program TwoExecutableDriver
   use crmdims,         only: crm_nx, crm_ny, crm_nz
   use crmx_crm_module_orc,     only: crm_orc
   use crmx_mpi
+  use crmx_grid
 !  use ppgrid,          only: pcols
 !  use spmd_utils, only: npes
   implicit none
@@ -285,6 +286,12 @@ program TwoExecutableDriver
   crm_end_ind   = (myrank_crm_in+1)*crm_step-1 
   write(13,*) 'Liran Check again:', crm_comm_in,myrank_crm, myrank_global, numproc_crm_in,myrank_crm_in 
   write(13,*) 'Liran crm check->', crm_step,crm_start_ind,crm_end_ind
+  nsubdomains_x  = 2
+  call crm_define_grid()
+  write(13,*) 'Liran crm check2->',nx,nsubdomains_x 
+  call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+  write (13,*),'CALL CRM_ORC!',myrank_global,inp01_lchnk
+
   call crm_orc (lon,lat,gcolindex,inp01_lchnk, inp02_i,                            &
             inp03_tl(:),inp04_ql(:),inp05_qccl(:),inp06_qiil(:), &
             inp07_ul(:),inp08_vl(:),inp09_ps,inp10_pmid(:),inp11_pdel(:), &
@@ -322,7 +329,9 @@ program TwoExecutableDriver
              taux_crm,        tauy_crm,          z0m, timing_factor,        qtotcrm( :)         &
             )
 ! ====================== DONE CALLING CRM -- TIME TO SEND OUTPUTS TO GCM
-
+write(13,*) 'CRM_ORC run finish',myrank_global
+  call MPI_barrier(crm_comm_in, ierr)
+write(13,*) 'Liran start send data back',myrank_crm
   out_Var_Flat(        1)                               = precc
   out_Var_Flat(        2)                               = precl
   out_Var_Flat(        3)                               = precsc
@@ -429,6 +438,7 @@ program TwoExecutableDriver
   end do
   write(13,*) 'CRM chunk,i',myrank_crm, destGCM0,inp01_lchnk,inp02_i
   call MPI_Send(out_Var_Flat,fleno+nflat,MPI_REAL8,destGCM0,8006,MPI_COMM_WORLD,ierr)
+write(13,*) 'Finish send data back'
  end do
   call MPI_comm_free(crm_comm, ierr)
   call MPI_comm_free(crm_comm_in, ierr)

@@ -5,6 +5,7 @@ subroutine diagnose
 use crmx_vars
 use crmx_params
 use crmx_sgs, only: sgs_diagnose
+use crmx_task_util_mpi
 implicit none
 	
 integer i,j,k,kb,kc,k200,k500,k850
@@ -97,7 +98,7 @@ if(dompi) then
     buffer(k,7) = qn0(k)
     buffer(k,8) = qp0(k)
   end do
-  call task_sum_real8(buffer,buffer1,nzm*8)
+  call task_sum_real8_ORC(buffer,buffer1,nzm*8)
   do k=1,nzm
     u0(k)=buffer1(k,1)*coef1
     v0(k)=buffer1(k,2)*coef1

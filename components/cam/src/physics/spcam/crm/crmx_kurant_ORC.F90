@@ -47,15 +47,11 @@ call kurant_sgs(cfl_sgs)
 cfl = max(cfl,cfl_sgs)
 	
 ncycle = max(1,ceiling(cfl/0.7))
-print *,'ncycle',ncycle
 if(dompi) then
   ncycle1(1)=ncycle
   call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-  print *,'ncycle1',myrank_global,ncycle1(1),ncycle2(1)
-  !call task_max_integer_ORC(ncycle1,ncycle2,1)
-  !ncycle=ncycle2(1)
+  call task_max_integer_ORC(ncycle1,ncycle2,1)
   ncycle=ncycle1(1)
-  !print *,'ncycle2',myrank_global,ncycle
 end if
 if(ncycle.gt.4) then
    if(masterproc) print *,'the number of cycles exceeded 4.'

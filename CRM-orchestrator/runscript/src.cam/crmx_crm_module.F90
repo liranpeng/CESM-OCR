@@ -324,8 +324,6 @@ subroutine crm        (lchnk, icol, &
 
 !  Local space:
         real dummy(nz), t00(nz)
-        !real fluxbtmp(nx,ny), fluxttmp(nx,ny) !bloss
-        real, allocatable, dimension(:,:)  :: fluxbtmp,fluxttmp
         real tln(plev), qln(plev), qccln(plev), qiiln(plev), uln(plev), vln(plev)
         !real cwp(nx,ny), cwph(nx,ny), cwpm(nx,ny), cwpl(nx,ny)
         real, allocatable, dimension(:,:)  :: cwp,cwph,cwpm,cwpl
@@ -367,12 +365,12 @@ integer numproc_global,myrank_global,ierr,rankprint
 
 include 'mpif.h'
 
-nsubdomains_x  = 1
-call crm_define_grid()
-
 rankprint = 30
 call mpi_comm_size(MPI_COMM_WORLD, numproc_global, ierr)
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+
+!write(0, *) 'Liran enter CRM',myrank_global ,nx
+
 !!!#ifdef CRM_DEBUG
 !923 format(I6.6)
 !  write(crm_number,923) myrank_global
@@ -384,8 +382,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
         allocate ( cmtemp (nx, ny))
         allocate ( chtemp (nx, ny))
         allocate ( cttemp (nx, ny))
-        allocate ( fluxbtmp (nx, ny))
-        allocate ( fluxttmp (nx, ny))
         allocate ( cwp (nx, ny))
         allocate ( cwph (nx, ny))
         allocate ( cwpm (nx, ny))

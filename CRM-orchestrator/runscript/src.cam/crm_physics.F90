@@ -11,7 +11,8 @@ module crm_physics
 ! July, 2009, Minghuai Wang: m2005_effradius
 !
 !---------------------------------------------------------------------------
-
+   use crmx_grid
+   use crmx_mpi
    use shr_kind_mod,    only: r8 => shr_kind_r8
    use ppgrid,          only: pcols, pver, pverp
 #ifdef CRM
@@ -1068,7 +1069,7 @@ end subroutine crm_init_cnst
    real(r8) :: dunc_arr(pcols,pver)
    integer gcolindex(pcols)  ! array of global latitude indices
    integer ii, jj,status
-   integer iii,FlagEnd
+   integer iii,FlagEnd,i_in
    integer i, k, m,lchnk_save,i_save
    integer ifld
    logical :: ls, lu, lv, lq(pcnst)
@@ -1611,20 +1612,23 @@ end subroutine crm_init_cnst
               ul(:) = state_loc%u(i,:)
               vl(:) = state_loc%v(i,:)
          endif
-       end do ! i (loop over ncol)
+       end do
+       ORC_count = 0
 #ifdef ORCHESTRATOR
        ! Outsource the call to CRM to the separate Orchestrator executable by
        ! sending required inputs...
-       do i = 1,ncol
-         if (state%crmrank0(i) .ne. -2) then ! is this column coupled to an external CRM?
+       do i_in = 1,ncol
+         if (state%crmrank0(i_in) .ne. -2) then ! is this column coupled to an external CRM?
           ! This part is to test the idear of creating a new data type for MPI
           ! transfer data. 
           ! =================================================
           ! Start to flatten the arry and send it to CRM. 
           ! =================================================
-          dest = npes+state%crmrank0(i)*rank_offset
-          write (iulog,*),'MPI before send !',dest,lchnk,i,state%crmrank1(i)
-          i_save  = i+state%crmrank1(i)
+          dest = npes+state%crmrank0(i_in)*rank_offset
+          i_save  = i_in+state%crmrank1(i_in)
+          ORC_count = 0
+          call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+          write (iulog,*),'MPI before send',dest,myrank_global,lchnk,state%crmrank1(i_in),i_save
           chnksz = crm_nx*crm_nz*crm_nz
           call get_gcol_all_p(lchnk, pcols, gcolindex)
           latitude0 = get_rlat_p(lchnk, i_save)*57.296_r8
@@ -1753,15 +1757,14 @@ end subroutine crm_init_cnst
               Var_Flat2(fcount) = prec_crm(i_save,ii,jj)
             end do
           end do
-          write (iulog,9999),lchnk,i,state%crmrank0(i),dest,latitude0,longitude0
+          write (iulog,9999),lchnk,i_save,state%crmrank0(i),dest,latitude0,longitude0
           9999  format ('lon-lat',4I4,2E15.6)
           call MPI_Send(Var_Flat(:)         ,flen,MPI_REAL8 ,dest,9018,MPI_COMM_WORLD,ierr)
           call MPI_Send(Var_Flat2(:)         ,flen2,MPI_REAL8,dest,9019,MPI_COMM_WORLD,ierr)
-          write (iulog,*),'MPI send finish!',dest,lchnk,i
+          write (iulog,*),'MPI send finish!',dest,lchnk,i_save,FlagEnd
          end if   ! is this column coupled to an external CRM?
         end do
-        do i = 1,ncol 
-         if (state%crmrank0(i) .ne. -1) then ! is this column coupled to an external CRM?   
+        do i = 1,ncol
           !i = i_save 
         ! re: next args in call to crm () are ptend* which despite being declared inout are actually output.
 
@@ -1811,7 +1814,9 @@ end subroutine crm_init_cnst
          ! write (iulog,*) 'Liran Check Start Receving data from CRM'
           ! ---------- flattened multi-dim CRM inputs, prepackaged in
           ! crm_physics -------
-
+         if (state%crmrank0(i) .ne. -2) then ! is this column coupled to an external CRM?
+          call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+          write (iulog,*),'MPI Recv start!',myrank_global,state%crmrank0(i)
           call MPI_Recv(CRM_Var_Flat,fleno+nflat,MPI_REAL8,MPI_ANY_SOURCE,8006,MPI_COMM_WORLD,status,ierr)
 
           out_precc               = CRM_Var_Flat(1 ) 
@@ -1920,9 +1925,20 @@ end subroutine crm_init_cnst
               out_prec_crm(ii,jj) = CRM_Var_Flat(fcount)
             end do
           end do
+         call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+         ORC_count = ORC_count + 1
+         write (iulog,*),'MPI Recv finish!',myrank_global,state%crmrank0(i),i,lchnk,lchnk_save
          endif ! is this column column coupled to an external (orchestrated) CRM?
          lchnk = lchnk_save
+        end do
 #endif
+
+        do i = 1,ncol
+         nsubdomains_x  = 1
+         call crm_define_grid()
+         lchnk = state%lchnk
+         call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+         write (iulog,*),'CALL CRM!',myrank_global,i,lchnk,ORC_count
          call crm (lchnk,      i,                                                                                            &
              state_loc%t(i,:),   state_loc%q(i,:,1),    state_loc%q(i,:,ixcldliq), state_loc%q(i,:,ixcldice),                &
              ul(:),              vl(:),                                                                                      &
@@ -1982,9 +1998,9 @@ end subroutine crm_init_cnst
           do ii=1,crm_nx
             do jj=1,crm_ny
               do kk=1,crm_nz
-                write (iulog,1111),lchnk,i,ii,kk,int(ztodt),crm_u(i,ii,jj,kk),out_crm_u(ii,jj,kk)
-                write (iulog,1112),lchnk,i,ii,kk,int(ztodt),crm_w(i,ii,jj,kk),out_crm_w(ii,jj,kk)
-                write (iulog,1113),lchnk,i,ii,kk,int(ztodt),crm_t(i,ii,jj,kk),out_crm_t(ii,jj,kk)
+                !write (iulog,1111),lchnk,i,ii,kk,int(ztodt),crm_u(i,ii,jj,kk),out_crm_u(ii,jj,kk)
+                !write (iulog,1112),lchnk,i,ii,kk,int(ztodt),crm_w(i,ii,jj,kk),out_crm_w(ii,jj,kk)
+                !write (iulog,1113),lchnk,i,ii,kk,int(ztodt),crm_t(i,ii,jj,kk),out_crm_t(ii,jj,kk)
               end do
             end do
           end do
@@ -2012,10 +2028,9 @@ end subroutine crm_init_cnst
               crm_qc(i,:,:,:) = crm_micro(i,:,:,:,11)
           endif
        if (i.eq.ncol) then
-         FlagEnd = 1
+       !  FlagEnd = 1
        endif
        end do ! i (loop over ncol)
-
        call t_stopf('crm_call')
 
        ! There is no separate convective and stratiform precip for CRM:

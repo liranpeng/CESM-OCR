@@ -337,13 +337,8 @@ subroutine sgs_scalars()
   implicit none
 
     real dummy(nz)
-    !real fluxbtmp(nx,ny), fluxttmp(nx,ny) !bloss
-    real, allocatable, dimension(:,:)  :: fluxbtmp,fluxttmp 
 
     integer i,j,k,kk
-
-     allocate ( fluxbtmp(nx,ny))
-     allocate ( fluxttmp(nx,ny))
 
      f(:,:,:)=t(:,:,:)
      fluxb(:,:)=fluxbt(:,:)

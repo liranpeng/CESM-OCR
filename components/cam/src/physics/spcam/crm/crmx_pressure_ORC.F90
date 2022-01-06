@@ -137,9 +137,7 @@ endif
 	
 !-----------------------------------------------------------------
 !  Compute the r.h.s. of the Poisson equation for pressure
-print*,'pressure 0'
 call press_rhs_ORC()
-print*,'pressure 1'
 !-----------------------------------------------------------------	 
 !   Form the horizontal slabs of right-hand-sides of Poisson equation 
 !   for the global domain. Request sending and receiving tasks.
@@ -153,7 +151,6 @@ do m = 0,nsubdomains-1
 
     n_in = n_in + 1
     if(dompi) then
-      print*,'pressure 2'
       call task_receive_float_ORC(bufp_subs(0,1-YES3D,1,n_in), &
                              nzslab*nxp1*nyp1,reqs_in(n_in))
     else
@@ -200,7 +197,6 @@ do m = 0,nsubdomains-1
 
     n = m*nzslab + 1
     if(dompi) then
-      print*,'pressure 3'
       call task_bsend_float_ORC(m,p(0,1-YES3D,n),nzslab*nxp1*nyp1, 33)
     else
       call task_bsend_float(m,p(0,1-YES3D,n),nzslab*nxp1*nyp1, 33)
@@ -224,7 +220,6 @@ do while (count .gt. 0)
         if(flag(m)) then 
 	   count=count-1
            if(dompi) then
-             print*,'pressure 4'
              call task_rank_to_index_ORC(rf,it,jt)
            else
              call task_rank_to_index(rf,it,jt)	  
@@ -264,7 +259,6 @@ endif
 
 ! Synchronize all slabs:
 if(dompi) then
-print*,'pressure 5'
   call task_barrier_ORC()
 else
   call task_barrier()
@@ -443,7 +437,6 @@ do j=1,nyp22-jwall
    end do  
 end do 
 if(dompi) then
-print*,'pressure 7'
   call task_barrier_ORC()
 else
   call task_barrier()
@@ -552,7 +545,6 @@ if(rank.lt.npressureslabs) then
 
 endif
 if(dompi) then
-print*,'pressure 8'
   call task_barrier_ORC()
 else
   call task_barrier()
@@ -676,7 +668,6 @@ do while (count .gt. 0)
   end do
 end do
 if(dompi) then
-print*,'pressure 9'
   call task_barrier_ORC()
 else
   call task_barrier()

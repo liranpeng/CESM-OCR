@@ -333,8 +333,6 @@ subroutine crm_orc     (long,lati,gcolindex,lchnk, icol, &
 
 !  Local space:
         real dummy(nz), t00(nz)
-        !real fluxbtmp(nx,ny), fluxttmp(nx,ny) !bloss
-        real, allocatable, dimension(:,:)  :: fluxbtmp,fluxttmp
         real tln(plev), qln(plev), qccln(plev), qiiln(plev), uln(plev), vln(plev)
         !real cwp(nx,ny), cwph(nx,ny), cwpm(nx,ny), cwpl(nx,ny)
         real, allocatable, dimension(:,:)  :: cwp,cwph,cwpm,cwpl
@@ -375,6 +373,10 @@ real(kind=core_rknd), dimension(nzm) :: &
         real(r8), intent(inout) :: qtot(20)
         real ntotal_step
         CHARACTER(LEN=6) :: crm_number
+
+       include 'mpif.h'   
+        call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+        write(0, *) 'Liran enter ORC',myrank_global ,nx       
         nsubdomains_x  = 2
         call crm_define_grid()
 !-----------------------------------------------
@@ -382,14 +384,16 @@ real(kind=core_rknd), dimension(nzm) :: &
         allocate ( cmtemp (nx, ny))
         allocate ( chtemp (nx, ny))
         allocate ( cttemp (nx, ny))
-        allocate ( fluxbtmp (nx, ny))
-        allocate ( fluxttmp (nx, ny))
         allocate ( cwp (nx, ny))
         allocate ( cwph (nx, ny))
         allocate ( cwpm (nx, ny))
         allocate ( cwpl (nx, ny))
         allocate (flag_top(nx, ny))
-        call crm_allocate()
+        
+        if (.not. allocated(u)) then        
+          call crm_deallocate()
+          call crm_allocate()
+        end if
         dostatis = .false.    ! no statistics are collected. 
         idt_gl = 1._r8/dt_gl
         ptop = plev-nzm+1
@@ -423,10 +427,7 @@ real(kind=core_rknd), dimension(nzm) :: &
        
         call mpi_comm_size(crm_comm_in, myproc_crm_check, ierr)
         call mpi_comm_rank(crm_comm_in, myrank_crm_check, ierr) 
-       
-        write(0, *) 'Enter task_init_ORC',numproc_crm_in,myrank_crm_in,myrank_crm_check
         call task_init_ORC (crm_comm_in,myproc_crm_check,myrank_crm_check)
-        write(0, *) 'End task init'
         call setparm()
 
 !        doshortwave = doshort
@@ -468,14 +469,8 @@ real(kind=core_rknd), dimension(nzm) :: &
            prespot(k)=(1000./pres(k))**(rgas/cp)
            bet(k) = ggr/tl(plev-k+1)
            gamaz(k)=ggr/cp*z(k)
-           !write(0, *) 'Liran Debug0',zi(k)
         end do ! k
 !        zi(nz) =  zint(plev-nz+2)
-        !write(0, *) 'Liran Debug1',plev,nzm
-        !write(0, *) 'Liran Debug2',nz
-        !write(0, *) 'Liran Debug3',zint(plev+1)
-        !write(0, *) 'Liran Debug4',zint(plev-nz+2)
-        !write(0, *) 'Liran Debug5',zi(nz)
         zi(nz) = zint(plev-nz+2)-zint(plev+1) !+++mhwang, 2012-02-04
 
         dz = 0.5*(z(1)+z(2))
@@ -528,7 +523,6 @@ real(kind=core_rknd), dimension(nzm) :: &
          do k=1,nzm
           do j=1,ny
            do i=1,nx
-             !write(0, *) 'Liran Debug0_0',qcl(i,j,k)
              u_crm(i,j,k) = min( umax, max(-umax,u_crm(i,j,k)) )
              v_crm(i,j,k) = min( umax, max(-umax,v_crm(i,j,k)) )*YES3D
            end do
@@ -935,9 +929,7 @@ do while(nstep.lt.nstop)
   ncycle = 1
 
   call kurant_ORC()
-write(0, *) 'Liran 0',ncycle
   do icyc=1,ncycle
-write(0, *) 'Liran 1'
      icycle = icyc
      dtn = dt/ncycle
      dt3(na) = dtn
@@ -946,17 +938,14 @@ write(0, *) 'Liran 1'
 !  	the Adams-Bashforth scheme in time
 
      call abcoefs()
-write(0, *) 'Liran 2' 
 !---------------------------------------------
 !  	initialize stuff: 
 	
      call zero()
-write(0, *) 'Liran 3'
 !-----------------------------------------------------------
 !       Buoyancy term:
 	     
      call buoyancy()
-write(0, *) 'Liran 4'
 !+++mhwangtest
 ! test water conservtion problem
         ntotal_step = ntotal_step + 1.
@@ -966,7 +955,6 @@ write(0, *) 'Liran 4'
 !       Large-scale and surface forcing:
 
      call forcing()
-write(0, *) 'Liran 5'
      do k=1,nzm
       do j=1,ny
         do i=1,nx
@@ -979,7 +967,6 @@ write(0, *) 'Liran 5'
 !   	suppress turbulence near the upper boundary (spange):
 
      if(dodamping) call damping()
-write(0, *) 'Liran 6'
 !---------------------------------------------------------
 !   Ice fall-out
 
@@ -992,27 +979,22 @@ write(0, *) 'Liran 6'
           call ice_fall()
       end if
 #endif  /*CLUBB_SGS*/ 
-write(0, *) 'Liran 7'
 !----------------------------------------------------------
 !     Update scalar boundaries after large-scale processes:
 
      call boundaries(3)
-write(0, *) 'Liran 8'
 !---------------------------------------------------------
 !     Update boundaries for velocities:
 
       call boundaries(0)
-write(0, *) 'Liran 9'
 !-----------------------------------------------
 !     surface fluxes:
 
      if(dosurface) call crmsurface(bflx)
-write(0, *) 'Liran 10'
 !-----------------------------------------------------------
 !  SGS physics:
 
      if (dosgs) call sgs_proc()
-write(0, *) 'Liran 11'        
 #ifdef CLUBB_CRM_OLD   
 !----------------------------------------------------------
 !     Do a timestep with CLUBB if enabled:
@@ -1073,9 +1055,7 @@ write(0, *) 'Liran 11'
      call boundaries(4)
 !-----------------------------------------------
 !       advection of momentum:
-write(0, *) 'Liran 12'
      call advect_mom()
-write(0, *) 'Liran 13'
 !----------------------------------------------------------
 !	SGS effects on momentum:
 
@@ -1086,49 +1066,39 @@ write(0, *) 'Liran 13'
 !               ( dudt, dvdt ) ! in/out
      endif
 #endif /*CLUBB_CRM_OLD*/
-write(0, *) 'Liran 14'
 !-----------------------------------------------------------
 !       Coriolis force:
 	     
      if(docoriolis) call coriolis()
-write(0, *) 'Liran 15'
 	 
 !---------------------------------------------------------
 !       compute rhs of the Poisson equation and solve it for pressure. 
-
      call pressure_ORC()
-write(0, *) 'Liran 16'
 !---------------------------------------------------------
 !       find velocity field at n+1/2 timestep needed for advection of scalars:
 !  Note that at the end of the call, the velocities are in nondimensional form.
 	 
      call adams()
-write(0, *) 'Liran 17'
 !----------------------------------------------------------
 !     Update boundaries for all prognostic scalar fields for advection:
 
      call boundaries(2)
-write(0, *) 'Liran 18'
 !---------------------------------------------------------
 !      advection of scalars :
 
      call advect_all_scalars()
-write(0, *) 'Liran 19'
 !-----------------------------------------------------------
 !    Convert velocity back from nondimensional form:
 
       call uvw()
-write(0, *) 'Liran 20'
 !----------------------------------------------------------
 !     Update boundaries for scalars to prepare for SGS effects:
 
      call boundaries(3)
-write(0, *) 'Liran 21'
 !---------------------------------------------------------
 !      SGS effects on scalars :
 
      if (dosgs) call sgs_scalars()
-write(0, *) 'Liran 22'
 #ifdef CLUBB_CRM_OLD
       ! Re-compute q/qv/qcl based on values computed in CLUBB
      if ( doclubb ) then
@@ -1190,11 +1160,9 @@ write(0, *) 'Liran 22'
 #endif /*CLUBB_SGS*/
 !-----------------------------------------------------------
 !    Compute diagnostics fields:
-
       call diagnose()
 !----------------------------------------------------------
 ! Rotate the dynamic tendency arrays for Adams-bashforth scheme:
-write(0, *) 'Liran 23'
       nn=na
       na=nc
       nc=nb
@@ -1845,7 +1813,9 @@ write(0, *) 'Liran finish main loop'
        call ecpp_crm_cleanup ()
 #endif /*ECPP*/
 !call sgs_deallocate()
-call crm_deallocate()
+!call crm_deallocate()
+call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+write(0, *) 'Liran finish deallocate',myrank_global
 !call micro_deallocate()
         
 end subroutine crm_orc

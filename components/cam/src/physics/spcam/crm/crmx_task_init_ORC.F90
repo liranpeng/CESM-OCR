@@ -21,7 +21,6 @@ implicit none
 integer, intent(in) :: ncomm,npro,ntask
 integer itasks,ntasks,numproc_in_check,myrank_in_check,ierr,crm_comm_in_dup
 include 'mpif.h'
-print *,'Enter ORC'
 if(YES3D .ne. 1 .and. YES3D .ne. 0) then
   print*,'YES3D is not 1 or 0. STOP'
   stop
@@ -43,13 +42,10 @@ if(nsubdomains.eq.1) then
   dompi = .false.
   print *,'Something is wrong here',npro,ntask
 else
-  print *,'Enter task start ORC',crm_comm_in, numproc_crm_in,myrank_crm_in
   call mpi_comm_size(crm_comm_in, numproc_in_check, ierr)
   call mpi_comm_rank(crm_comm_in, myrank_in_check, ierr) 
-  print *,'Liran check888',numproc_in_check,myrank_in_check
   ntasks = myrank_in_check
   call task_start_ORC(rank,ntasks)
-  print *,'start finish',dompi,rank,ntasks
 
   !call systemf('hostname')
 
@@ -58,11 +54,8 @@ else
              '  ntasks=',ntasks,'   nsubdomains=',nsubdomains
     call task_abort_ORC() 
   endif
-  print *,'barrier start',ntasks,nsubdomains      
   call task_barrier_ORC()
-print *,'barrier finish'
   call task_ranks_ORC()
-print *,'rank finish'        
 end if ! nsubdomains.eq.1
 
 #ifndef CRM
@@ -75,15 +68,12 @@ do itasks=0,nsubdomains-1
     close (8)
    endif
 end do
-print *,'CaseName end'
 #endif  /*CRM*/
 
 masterproc = rank.eq.0
 
 #ifndef CRM
-print *,'MPI tasks start'
 if(masterproc) print *,'number of MPI tasks:',ntasks
-print *,'MPI tasks end'
 #endif /*CRM*/
 	
 

@@ -42,24 +42,16 @@ contains
         integer crm_comm_in_check,numproc_crm_check,myrank_crm_check,ierr
         integer rank,numtasks
         include 'mpif.h'
-        print *,'Liran check984'
         call mpi_comm_size(MPI_COMM_WORLD, numproc_global_check, ierr)
         call mpi_comm_rank(MPI_COMM_WORLD, myrank_global_check, ierr)
-        print *,'Liran check985',numproc_global_check,numproc_global
-        print *,'Liran check986',myrank_global_check,myrank_global
 ! get information on MPI_COMM_WORLD
         call mpi_comm_size(crm_comm, numproc_crm_check, ierr)
         call mpi_comm_rank(crm_comm, myrank_crm_check, ierr)
-        print *,'Liran check987',numproc_crm_check,numproc_crm
-        print *,'Liran check988',myrank_crm_check,myrank_crm
         !crm_comm_color = int((myrank_global_check-50)/2)
-!print *,'Liran check987',crm_comm_color
         !call mpi_comm_split(, crm_comm_color, 0, crm_comm_in_check, ierr)
-        print *,'Liran check989',crm_comm_color,ierr,crm_comm_in
         ! get information on MPI_COMM_WORLD
         call mpi_comm_size(crm_comm_in, numproc_in_check, ierr)
         call mpi_comm_rank(crm_comm_in, myrank_in_check, ierr)
-        print *,'Liran check999',numproc_in_check,myrank_in_check
         rank = myrank_in_check
         numtasks = numproc_in_check
 ! Split MPI_COMM_WORLD into two communicators:
@@ -71,7 +63,6 @@ contains
 
 ! get information on MPI_COMM_WORLD
 
-        print*, 'Liran Check MPI start',numproc_in_check,myrank_in_check
 	!stop
 	end
 	
@@ -462,12 +453,10 @@ contains
         call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
         call mpi_comm_size(crm_comm_in, numproc_in_check, ierr)
         call mpi_comm_rank(crm_comm_in, myrank_in_check, ierr)
-        print *,'Liran check9790',numproc_in_check,myrank_in_check,myrank_global
         !if (myrank_in_check.eq.1) then
           call MPI_ALLREDUCE(buffer_in,buffer_out, &
                           length,MPI_INTEGER,MPI_MAX,crm_comm_in,ierr)
         !end if
-        print *,'Liran check9991'
         return
 	end
 !----------------------------------------------------------------------
@@ -555,6 +544,9 @@ contains
         real, allocatable, dimension(:) :: buff_send
         real, allocatable, dimension(:,:) :: buff_recv
         integer reqs_in(2)
+        integer numtasks
+
+        call task_start_ORC(rank,numtasks)
 
          allocate ( buff_send(max(nx,ny)*nzm))      
          allocate ( buff_recv(max(nx,ny)*nzm,2)      )

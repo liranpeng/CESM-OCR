@@ -41,6 +41,7 @@ end
 subroutine averageXY_MPI(f,dimx1,dimx2,dimy1,dimy2,dimz,fm)
 	
 use crmx_grid
+use crmx_task_util_mpi
 implicit none
 integer dimx1, dimx2, dimy1, dimy2, dimz
 real f(dimx1:dimx2, dimy1:dimy2, dimz),fm(nzm)
@@ -60,7 +61,7 @@ if(dompi) then
  do k =1,nzm
    fm2(k) = fm1(k)
  end do
- call task_sum_real8(fm2,fm1,nzm)
+ call task_sum_real8_ORC(fm2,fm1,nzm)
  do k=1,nzm
   fm(k)=real(fm1(k)/dble(nsubdomains))
  end do

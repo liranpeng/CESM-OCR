@@ -1,6 +1,6 @@
-module crmx_vars
+module crmx_vars_ORC
 
-use crmx_grid
+use crmx_grid_ORC
 #ifdef CRM 
 #ifdef MODAL_AERO 
 use modal_aero_data,   only: ntot_amode
@@ -66,7 +66,6 @@ real, allocatable, dimension(:,:)  :: precsfc
 real, allocatable, dimension(:,:)  :: precssfc
 real, allocatable, dimension(:,:)  :: fluxb
 real, allocatable, dimension(:,:)  :: fluxt                
-real, allocatable, dimension(:,:)  :: fluxbtmp,fluxttmp
 !-----------------------------------------------------------------
 ! profiles 
 real, allocatable, dimension(:)  :: t0
@@ -314,4 +313,4 @@ real, allocatable :: cloudtoptemp(:,:)
   real, allocatable ::  vaer(:,:)     ! aerosol volume concentration [m3/m3]
   real, allocatable ::  hgaer(:,:)    ! hygroscopicity of aerosol mode
 
-end module crmx_vars
+end module crmx_vars_ORC

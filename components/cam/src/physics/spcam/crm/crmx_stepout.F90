@@ -95,7 +95,7 @@ if(mod(nstep,nprint).eq.0) then
    buffer_e(6) = total_energy_clubb
    buffer_e(7) = total_energy_rad
 #endif
-   call task_sum_real8(buffer, buffer1,6)
+   call task_sum_real8_ORC(buffer, buffer1,6)
    total_water_before = buffer1(1)
    total_water_after = buffer1(2)
    total_water_evap = buffer1(3)
@@ -104,7 +104,7 @@ if(mod(nstep,nprint).eq.0) then
 #ifdef CLUBB_CRM
    total_water_clubb = buffer1(6)
 
-   call task_sum_real8(buffer_e, buffer1_e,7)
+   call task_sum_real8_ORC(buffer_e, buffer1_e,7)
    total_energy_before = buffer1_e(1)
    total_energy_after = buffer1_e(2)
    total_energy_evap = buffer1_e(3)

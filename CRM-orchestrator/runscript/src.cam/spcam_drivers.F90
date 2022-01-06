@@ -6,7 +6,7 @@ module spcam_drivers
 use spmd_utils, only: npes,masterproc,iam ! pritch
 use cam_logfile,      only: iulog ! pritch
 use camsrfexch,       only: cam_out_t, cam_in_t
-use ppgrid,           only: pcols, pver,begchunk
+use ppgrid,           only: pcols, pver,begchunk,endchunk
 use camsrfexch ,      only: cam_export
 use shr_kind_mod,     only: r8 => shr_kind_r8
 #ifdef CRM
@@ -498,14 +498,17 @@ subroutine tphysbc_spcam (ztodt, state,   &
        state%crmrank0(:ncol) = -2
        state%crmrank1(:ncol) = -2
        if (lchnk .eq. begchunk .and. masterproc) then
-         write (iulog,*) 'MDEBUG YO on masterproc lchnk=',begchunk,',ncols',ncol
+         write (iulog,*) 'MDEBUG YO on masterproc lchnk=',begchunk,endchunk,',ncols',ncol
          ! except (for now) the first six columns on masterproc...
          do i=1,12
            ! each of which is to be linked (for now) to a single-core CRM in the external
            ! executable.
            
            state%crmrank0(i) = i-1
-           state%crmrank1(i) = mod(i,2)-1
+         end do
+         do i=0,5
+           state%crmrank1(2*i+1) = -i
+           state%crmrank1(2*i+2) = -i-1
          end do
        end if
 

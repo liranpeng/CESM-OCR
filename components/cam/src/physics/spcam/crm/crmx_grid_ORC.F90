@@ -1,4 +1,4 @@
-module crmx_grid
+module crmx_grid_ORC
 
 use crmx_domain
 use crmx_advection, only: NADV, NADVS
@@ -10,7 +10,7 @@ character(8) :: version_date = 'Feb 2013'
         
 integer :: nx ,ny ,nz ,nzm 
 
-integer :: nsubdomains
+integer :: nsubdomains 
 
 logical :: RUN3D 
 logical :: RUN2D 
@@ -144,4 +144,4 @@ logical :: isInitialized_scamiopdata = .false.
 logical :: wgls_holds_omega = .false.
 
 !-----------------------------------------
-end module crmx_grid
+end module crmx_grid_ORC
