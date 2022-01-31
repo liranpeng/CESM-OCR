@@ -71,4 +71,5 @@ if(j1.gt.nsubdomains_y) j1 = 1
 if(i1.lt.1) i1 = nsubdomains_x
 ranknw = i1 + (j1-1)*nsubdomains_x - 1
 
+!print*,'Check neighbour',rank,i,j,i1,j1,rankne,rankee,rankse,rankss,ranksw,rankww
 end

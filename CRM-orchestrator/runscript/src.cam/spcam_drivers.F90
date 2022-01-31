@@ -387,6 +387,7 @@ subroutine tphysbc_spcam (ztodt, state,   &
     integer :: ii, jj
     integer :: ierr !bloss MPI Vars
     integer :: gcmrank(1), dest ! pritch
+    integer :: myrank_global 
     !-----------------------------------------------------------------------
     call t_startf('bc_init')
     zero = 0._r8
@@ -493,10 +494,12 @@ subroutine tphysbc_spcam (ztodt, state,   &
     ! Call cloud resolving model
     ! -------------------------------------------------------------------------------
 #ifdef ORCHESTRATOR
+    call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
     !if(nstep.eq.1) then
     ! pritch -- default, columns are not orchestrated:
-       state%crmrank0(:ncol) = -2
-       state%crmrank1(:ncol) = -2
+    state%crmrank0(:ncol) = -2
+    state%crmrank1(:ncol) = -2
+     if (myrank_global .eq. 0) then
        if (lchnk .eq. begchunk .and. masterproc) then
          write (iulog,*) 'MDEBUG YO on masterproc lchnk=',begchunk,endchunk,',ncols',ncol
          ! except (for now) the first six columns on masterproc...
@@ -524,7 +527,7 @@ subroutine tphysbc_spcam (ztodt, state,   &
           call MPI_Send(gcmrank,1,MPI_INTEGER,dest,54321,MPI_COMM_WORLD,ierr)
         end if
       end do 
-    !end if
+    end if
 #endif
 
     call crm_physics_tend(ztodt, state, tend, ptend, pbuf, cam_in)

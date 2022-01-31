@@ -369,6 +369,15 @@ rankprint = 30
 call mpi_comm_size(MPI_COMM_WORLD, numproc_global, ierr)
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 
+
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org q00',myrank_global,q
+!write(0, *) 'Liran CRM_org qv00',myrank_global,qv
+!end if
+
+       nsubdomains_x  = 1
+       call crm_define_grid()
+
 !write(0, *) 'Liran enter CRM',myrank_global ,nx
 
 !!!#ifdef CRM_DEBUG
@@ -422,6 +431,11 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
         call task_init ()
 
         call setparm()
+
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org 01 q',myrank_global,q
+!write(0, *) 'Liran CRM_org 01 qv',myrank_global,qv
+!end if
 
 !        doshortwave = doshort
 !        dolongwave = dolong
@@ -528,6 +542,10 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
         w(1:nx,1:ny,1:nzm) = w_crm(1:nx,1:ny,1:nzm)
         tabs(1:nx,1:ny,1:nzm) = t_crm(1:nx,1:ny,1:nzm)
 
+!call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org u',myrank_global,u
+!end if
         micro_field(1:nx,1:ny,1:nzm,1:nmicro_fields) = micro_fields_crm(1:nx,1:ny,1:nzm,1:nmicro_fields)
 
 #ifdef sam1mom
@@ -622,6 +640,11 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           end do
          end do
 #endif
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org q012',myrank_global,q
+!write(0, *) 'Liran CRM_org qv012',myrank_global,qv
+!end if
+
         do k=1,nzm
           
           u0(k)=0.
@@ -948,6 +971,11 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !   Main time loop    
 !------------------------------------------------------------------
 
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org q',myrank_global,q
+!write(0, *) 'Liran CRM_org qv',myrank_global,qv
+!end if
+
 do while(nstep.lt.nstop) 
         
   nstep = nstep + 1
@@ -984,17 +1012,40 @@ do while(nstep.lt.nstop)
 
 !---------------------------------------------
 !  	the Adams-Bashforth scheme in time
-
+call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org 1 u',myrank_global,u
+!write(0, *) 'Liran CRM_org 1 du',myrank_global,dudt
+!end if
      call abcoefs()
  
 !---------------------------------------------
 !  	initialize stuff: 
+!call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org 2 u',myrank_global,u
+!write(0, *) 'Liran CRM_org 2 du',myrank_global,dudt
+!end if
 	
      call zero()
 
 !-----------------------------------------------------------
 !       Buoyancy term:
 	     
+!call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org 3 u',myrank_global,u
+!write(0, *) 'Liran CRM_org 3 du',myrank_global,dudt
+!write(0, *) 'Liran CRM_org 3 dw',myrank_global,dwdt
+!write(0, *) 'Liran CRM_org2 qv',myrank_global,qv
+!write(0, *) 'Liran CRM_org2 qcl',myrank_global,qcl
+!write(0, *) 'Liran CRM_org2 qci',myrank_global,qci
+!write(0, *) 'Liran CRM_org2 qpl',myrank_global,qpl
+!write(0, *) 'Liran CRM_org2 qpi',myrank_global,qpi
+!write(0, *) 'Liran CRM_org2 qv0',myrank_global,qv0
+!write(0, *) 'Liran CRM_org2 qn0',myrank_global,qn0
+!write(0, *) 'Liran CRM_org2 w',myrank_global,w
+!end if
      call buoyancy()
 
 !+++mhwangtest
@@ -1004,7 +1055,14 @@ do while(nstep.lt.nstop)
 
 !------------------------------------------------------------
 !       Large-scale and surface forcing:
-
+!call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org 4 u',myrank_global,u
+!write(0, *) 'Liran CRM_org 4 du',myrank_global,dudt
+!write(0, *) 'Liran CRM_org 4 ut',myrank_global,utend
+!write(0, *) 'Liran CRM_org 4 dw',myrank_global,dwdt
+!write(0, *) 'Liran CRM_org 4 w',myrank_global,w
+!end if
      call forcing()
 
      do k=1,nzm
@@ -1017,7 +1075,12 @@ do while(nstep.lt.nstop)
 
 !----------------------------------------------------------
 !   	suppress turbulence near the upper boundary (spange):
-
+call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org 5 u',myrank_global,u
+!write(0, *) 'Liran CRM_org 5 du',myrank_global,dudt
+!write(0, *) 'Liran CRM_org 5 dw',myrank_global,dwdt
+!end if
      if(dodamping) call damping()
 
 !---------------------------------------------------------
@@ -1032,17 +1095,27 @@ do while(nstep.lt.nstop)
           call ice_fall()
       end if
 #endif  /*CLUBB_SGS*/ 
-
+call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org 6 u',myrank_global,u
+!write(0, *) 'Liran CRM_org 6 t',myrank_global,t
+!end if
 !----------------------------------------------------------
 !     Update scalar boundaries after large-scale processes:
 
      call boundaries(3)
-
+if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org 7 w',myrank_global,w
+!write(0, *) 'Liran CRM_org 7 t',myrank_global,t
+end if
 !---------------------------------------------------------
 !     Update boundaries for velocities:
 
       call boundaries(0)
-
+if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org 8 w',myrank_global,w
+!write(0, *) 'Liran CRM_org 8 t',myrank_global,t
+end if
 !-----------------------------------------------
 !     surface fluxes:
 
@@ -1050,7 +1123,12 @@ do while(nstep.lt.nstop)
 
 !-----------------------------------------------------------
 !  SGS physics:
-   
+!call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org 7 u',myrank_global,u
+!write(0, *) 'Liran CRM_org 7 du',myrank_global,dudt
+!write(0, *) 'Liran CRM_org 7 dw',myrank_global,dwdt
+!end if   
     if (dosgs) call sgs_proc()
 
 #ifdef CRM_DEBUG
@@ -1124,13 +1202,26 @@ do while(nstep.lt.nstop)
 #endif  /*CLUBB_CRM_OLD*/
 !----------------------------------------------------------
 !     Fill boundaries for SGS diagnostic fields:
-
+call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org 8 u',myrank_global,u
+!write(0, *) 'Liran CRM_org 8 du',myrank_global,dudt
+!end if
      call boundaries(4)
 !-----------------------------------------------
 !       advection of momentum:
-
+call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org 9 u',myrank_global,u
+!write(0, *) 'Liran CRM_org 9 du',myrank_global,dudt
+!end if
      call advect_mom()
 
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org 9 u',myrank_global,u
+!write(0, *) 'Liran CRM_org 9 du',myrank_global,dudt
+!write(0, *) 'Liran CRM_org 9 dw',myrank_global,dwdt
+!end if
 #ifdef CRM_DEBUG
          do k=1,nzm
           do j=1,ny
@@ -1150,8 +1241,19 @@ do while(nstep.lt.nstop)
 #endif
 !----------------------------------------------------------
 !	SGS effects on momentum:
-
+call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org 10 u',myrank_global,u
+!write(0, *) 'Liran CRM_org 10 du',myrank_global,dudt
+!end if
      if(dosgs) call sgs_mom()
+
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org 10 u',myrank_global,u
+!write(0, *) 'Liran CRM_org 10 du',myrank_global,dudt
+!write(0, *) 'Liran CRM_org 10 dw',myrank_global,dwdt
+!end if
+
 #ifdef CLUBB_CRM_OLD
      if ( doclubb ) then
 !          call apply_clubb_sgs_tndcy_mom &
@@ -1179,12 +1281,27 @@ do while(nstep.lt.nstop)
 !-----------------------------------------------------------
 !       Coriolis force:
 	     
+call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org 11 u',myrank_global,u
+!write(0, *) 'Liran CRM_org 11 du',myrank_global,dudt
+!end if
      if(docoriolis) call coriolis()
 	 
 !---------------------------------------------------------
 !       compute rhs of the Poisson equation and solve it for pressure. 
-
+call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org 12 u',myrank_global,u
+!write(0, *) 'Liran CRM_org 12 w',myrank_global,w
+!write(0, *) 'Liran CRM_org 12 du',myrank_global,dudt
+!write(0, *) 'Liran CRM_org 12 dw',myrank_global,dwdt
+!end if
      call pressure()
+
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org 1 p',myrank_global,p
+!end if
 #ifdef CRM_DEBUG
          do k=1,nzm
           do j=1,ny
@@ -1211,7 +1328,9 @@ do while(nstep.lt.nstop)
 !     Update boundaries for all prognostic scalar fields for advection:
 
      call boundaries(2)
-
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org dudt',myrank_global,dudt
+!end if
 !---------------------------------------------------------
 !      advection of scalars :
 

@@ -43,8 +43,10 @@ real(kind=selected_real_kind(12)) xi,xj,xnx,xny,ddx2,ddy2,pii,factx,facty,eign
 
 integer i, j, k, id, jd, m, n, it, jt, ii, jj, tag, rf
 integer nyp22, n_in, count
-integer iwall,jwall
+integer iwall,jwall,myrank_global,ierr
 integer,parameter :: DBL = selected_real_kind(12)
+
+include 'mpif.h'
 
 npressureslabs = nsubdomains
 nzslab = max(1,nzm / npressureslabs)
@@ -128,8 +130,15 @@ endif
 	
 !-----------------------------------------------------------------
 !  Compute the r.h.s. of the Poisson equation for pressure
+call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+!if(myrank_global.eq.0) then
+!  print*, 'Liran Check u0 org ',u
+!  print*, 'Liran Check p0 org ',p
+!end if
 call press_rhs()
-
+!if(myrank_global.eq.0) then
+!  print*, 'Liran Check p org ',p
+!end if 
 !-----------------------------------------------------------------	 
 !   Form the horizontal slabs of right-hand-sides of Poisson equation 
 !   for the global domain. Request sending and receiving tasks.
@@ -158,9 +167,13 @@ do m = 0,nsubdomains-1
      end do    
  
     flag(n_in) = .false.
- 
+! if(myrank_global.eq.0) then
+!  print*, 'Liran p org ',p
+!  end if 
   endif
-
+ ! if(myrank_global.eq.0) then
+ ! print*, 'Liran buff_subs org ',buff_subs
+ ! end if
   if(rank.lt.npressureslabs.and.m.eq.nsubdomains-1) then
 
     if(dompi) then
@@ -179,6 +192,10 @@ do m = 0,nsubdomains-1
   endif
 
 end do ! m
+  !if(myrank_global.eq.0) then
+  !print*, 'Liran fp org ',it,fp
+  !print*, 'Liran p001 org ',it,p
+  !end if
 
 ! Blocking send now:
 
@@ -196,7 +213,9 @@ do m = 0,nsubdomains-1
   endif
 
 end do ! m
-
+  !if(myrank_global.eq.0) then
+  !print*, 'Liran p 2org ',p
+  !end if
 
 ! Fill slabs when receive buffers are full:
 
@@ -227,7 +246,9 @@ do while (count .gt. 0)
    endif
   end do
 end do
-
+  !if(myrank_global.eq.0) then
+  !print*, 'Liran fp 2 org ',fp
+  !end if
 !-------------------------------------------------
 ! Perform Fourier transformation for a slab:
 
@@ -520,6 +541,9 @@ do while (count .gt. 0)
    endif
   end do
 end do
+!if(myrank_global.eq.0) then
+!  print*, 'Liran Check fp org ',fp
+!end if
 !-------------------------------------------------
 !   Perform inverse Fourier transformation:
 
@@ -659,6 +683,12 @@ do while (count .gt. 0)
    endif
   end do
 end do
+
+call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+!if(myrank_global.eq.0) then
+!  print*, 'Liran Check p org 2 ',p
+!end if
+
 if(dompi) then
   call task_barrier_ORC()
 else

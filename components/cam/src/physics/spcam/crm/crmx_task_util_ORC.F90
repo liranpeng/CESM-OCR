@@ -559,9 +559,10 @@ contains
         if(rank.ne.rankss) nsent=nsent+1
 
         ! Non-blocking receive first:
-
+!print *,'Liran Non-blocking receive0',rank,nsent,rankww
          do m =  1,nsent
             call task_receive_float_ORC(buff_recv(1,m),bufflen,reqs_in(m))
+!print *,'Liran Non-blocking receive',rank,nsent,bufflen
          end do
 
         ! Blocking send second:
@@ -573,7 +574,7 @@ contains
              buff_send(n) = dudt(1,j,k,na)
             end do
          end do
-
+!print *,'Liran Non-blocking receive2',n,buff_send
          if(rank.ne.rankww) then
                call task_bsend_float_ORC(rankww, buff_send,n,54)
          else
@@ -583,7 +584,7 @@ contains
                tag(2) = 54
                rf(2) = rankee
          end if
-
+!print *,'Liran Non-blocking receive3',dudt
          if(RUN3D) then
 
           n=0
@@ -607,11 +608,11 @@ contains
 
          endif
 
-
+!print *,'Liran Non-blocking receive4',nsent,reqs_in,rf,tag,dudt
 ! Wait until messages are received::
 
           call task_waitall_ORC(nsent,reqs_in,rf,tag)
-
+!print *,'Liran Non-blocking receive5',dudt
 ! Fill data:
 
           do m =  1,1+YES3D
@@ -653,8 +654,11 @@ contains
         use crmx_crmtracers
         implicit none
 
-        integer flag,i
+        integer flag,i,numtasks
 
+        call task_start_ORC(rank,numtasks)
+
+ !       print*,"Task Exchange",rank,flag
         if(flag.eq.0) then
 
          call task_exchange(u,dimx1_u,dimx2_u,dimy1_u,dimy2_u,nzm,1,1,1,1,1)
@@ -663,10 +667,11 @@ contains
          ! boundaries (for
          ! surface fluxes call
          w(1:nx,1:ny,nz) = sstxy(1:nx,1:ny)
+         write(0, *) 'Liran intask w1',rank,w
          call task_exchange(w,dimx1_w,dimx2_w,dimy1_w,dimy2_w,nz,1,1,1,1,3)   
          sstxy(0:nx,1-YES3D:ny) = w(0:nx,1-YES3D:ny,nz)
          w(0:nx+1,1-YES3D:ny+YES3D,nz) = 0. ! fill it back with 0s
-
+         write(0, *) 'Liran intask w2',rank,w
         endif
 
         if(flag.eq.2) then

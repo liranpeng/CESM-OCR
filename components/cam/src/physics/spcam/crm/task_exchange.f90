@@ -112,7 +112,7 @@ allocate ( buff_recv(bufflen,8)      )
 
           call task_receive_float_ORC(buff_recv(1,m),bufflen,reqs_in(m))
 	  flag(m) = .false.
-
+!print*,"Liran Check receive",rank,ranks(m),buff_recv            
 	 else
 
           flag(m) = .true.
@@ -124,20 +124,21 @@ allocate ( buff_recv(bufflen,8)      )
 ! Blocking sends:
 
 	do m = 1,mend
-
+!print*,"Liran Check bsend0",rank,ranks(m),i_start(m),i_end(m),rankee,rankww
 	   n=0
 	   do k=1,dimz
 	     do j=j_start(m),j_end(m)
 	       do i=i_start(m),i_end(m)
 	         n = n+1
 	         buff_send(n) = f_local(i,j,k)
+!print*,"Liran Check bsend",rank,ranks(m),i,k,n,f_local(i,j,k)
 	       end do
 	     end do
            end do
 
 	if(rank.ne.ranks(m)) then 
-
-	  call task_bsend_float(ranks(m),buff_send,n,ids(m))
+!print*,"Liran Check bsend2",rank,ranks(m)
+	  call task_bsend_float_ORC(ranks(m),buff_send,n,ids(m))
 
 	 else
 
@@ -168,7 +169,7 @@ allocate ( buff_recv(bufflen,8)      )
         do while (count .lt. mend)
 	  do m = 1,mend
 	   if(.not.flag(m)) then
-	    call task_test(reqs_in(m),flag(m),rf,tag)
+	    call task_test_ORC(reqs_in(m),flag(m),rf,tag)
 	    if(flag(m)) then 
 	      count=count+1
 	      call task_dispatch(buff_recv(1,m),tag)
@@ -176,7 +177,7 @@ allocate ( buff_recv(bufflen,8)      )
 	   endif
 	  end do
 	end do
-
- call task_barrier()
-
+!print*,"Check barrier before",rank
+ call task_barrier_ORC()
+!print*,"Check barrier after",rank
 end

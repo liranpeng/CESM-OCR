@@ -54,7 +54,7 @@ program TwoExecutableDriver
   integer,parameter :: structlen  = 49
   integer,parameter :: singlelen  = 30
   integer,parameter :: flen       = structlen*pver+singlelen+1+20+pcols
-  integer,parameter :: flen2      = 17*crm_nx*crm_nz*crm_nz + crm_nx*crm_ny*crm_nz*nmicro_fields+crm_nx*crm_ny
+  integer,parameter :: flen2      = 17*crm_nx*crm_ny*crm_nz + crm_nx*crm_ny*crm_nz*nmicro_fields+crm_nx*crm_ny
   integer,parameter :: structleno = 37
   integer,parameter :: singleleno = 22
   integer,parameter :: rank_offset=2
@@ -139,7 +139,7 @@ program TwoExecutableDriver
   do while (EndFlag.eq.0)
   write(13,*) 'Enter Loop!!'
   ! ----------- Receive from cesm.exe/crm_physics inputs to CRM right before call to crm() ----------------
-  chnksz = crm_nx*crm_nz*crm_nz
+  chnksz = crm_nx*crm_ny*crm_nz
   nflat =  17*chnksz + crm_nx*crm_ny*crm_nz*nmicro_fields +crm_nx*crm_ny
 ! =====================================================================================
 ! Receive from GCM, in order, the input ingredients expected by crm subroutine:
@@ -147,6 +147,7 @@ program TwoExecutableDriver
   call MPI_Recv(inp_Var_Flat(:) ,flen   ,MPI_REAL8,MPI_ANY_SOURCE,9018,MPI_COMM_WORLD,status,ierr)
   call MPI_Recv(inp_Var_Flat2(:) ,flen2,MPI_REAL8,MPI_ANY_SOURCE,9019,MPI_COMM_WORLD,status,ierr)
   write(13,*) 'Finish receiving',myrank_crm_in
+  call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
   inp01_lchnk         = int(inp_Var_Flat(1))
   inp02_i             = int(inp_Var_Flat(2))
   inp09_ps            =     inp_Var_Flat(3)
@@ -250,6 +251,7 @@ program TwoExecutableDriver
         outin16_cld_rad(ii,jj,kk)  = inp_Var_Flat2(fcount + 14* chnksz)
         crm_tk(ii,jj,kk)           = inp_Var_Flat2(fcount + 15* chnksz)
         crm_tkh(ii,jj,kk)          = inp_Var_Flat2(fcount + 16* chnksz)
+write (13,*),'CALL CRM_ORC ww!',myrank_global,ii,jj,kk,outin03_crm_w(ii,jj,kk)
       end do
     end do
   end do
@@ -282,16 +284,20 @@ program TwoExecutableDriver
         call mpi_comm_size(crm_comm_in, numproc_crm_in, ierr)
         call mpi_comm_rank(crm_comm_in, myrank_crm_in, ierr)
   crm_step = crm_nx/numproc_crm_in
-  crm_start_ind = (myrank_crm_in)*crm_step
-  crm_end_ind   = (myrank_crm_in+1)*crm_step-1 
+  crm_start_ind = (myrank_crm_in)*crm_step+1
+  crm_end_ind   = (myrank_crm_in+1)*crm_step-1+1 
   write(13,*) 'Liran Check again:', crm_comm_in,myrank_crm, myrank_global, numproc_crm_in,myrank_crm_in 
   write(13,*) 'Liran crm check->', crm_step,crm_start_ind,crm_end_ind
   nsubdomains_x  = 2
   call crm_define_grid()
-  write(13,*) 'Liran crm check2->',nx,nsubdomains_x 
+  write(13,*) 'Liran crm check2->',nx,crm_nx,nsubdomains_x 
   call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-  write (13,*),'CALL CRM_ORC!',myrank_global,inp01_lchnk
+  write (13,*),'CALL CRM_ORC u all!',myrank_global,outin01_crm_u
+  write (13,*),'CALL CRM_ORC u!',myrank_global,inp01_lchnk,outin01_crm_u(crm_start_ind:crm_end_ind,:,:)
+  write (13,*),'CALL CRM_ORC w!',myrank_global,inp01_lchnk,outin03_crm_w(crm_start_ind:crm_end_ind,:,:)
+  write (13,*),'CALL CRM_ORC m1!',myrank_global,outin05_crm_micro(crm_start_ind:crm_end_ind,:,:,1)
 
+  call MPI_barrier(crm_comm_in, ierr)
   call crm_orc (lon,lat,gcolindex,inp01_lchnk, inp02_i,                            &
             inp03_tl(:),inp04_ql(:),inp05_qccl(:),inp06_qiil(:), &
             inp07_ul(:),inp08_vl(:),inp09_ps,inp10_pmid(:),inp11_pdel(:), &

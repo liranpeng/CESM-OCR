@@ -17,7 +17,6 @@ contains
 
 subroutine pressure_ORC
 	
-!       Original pressure solver based on horizontal slabs
 !       (C) 1998, 2002 Marat Khairoutdinov
 !       Works only when the number of slabs is equal to the number of processors.
 !       Therefore, the number of processors shouldn't exceed the number of levels nzm
@@ -52,11 +51,17 @@ real(kind=selected_real_kind(12)) xi,xj,xnx,xny,ddx2,ddy2,pii,factx,facty,eign
 
 integer i, j, k, id, jd, m, n, it, jt, ii, jj, tag, rf
 integer nyp22, n_in, count
-integer iwall,jwall
+integer iwall,jwall,myrank_global, ierr
 integer,parameter :: DBL = selected_real_kind(12)
+
+include 'mpif.h'
 
 npressureslabs = nsubdomains
 nzslab = max(1,nzm / npressureslabs)
+!nx2=nx+2
+!ny2=ny+2*YES3D
+!n3i=3*nx/2+1
+!n3j=3*ny/2+1
 nx2=nx_gl+2
 ny2=ny_gl+2*YES3D
 n3i=3*nx_gl/2+1
@@ -137,7 +142,11 @@ endif
 	
 !-----------------------------------------------------------------
 !  Compute the r.h.s. of the Poisson equation for pressure
+call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+!print*, 'Liran Check u0 ',myrank_global,u
+!print*, 'Liran Check p0 ',myrank_global,p
 call press_rhs_ORC()
+!print*, 'Liran Check p ',myrank_global,p
 !-----------------------------------------------------------------	 
 !   Form the horizontal slabs of right-hand-sides of Poisson equation 
 !   for the global domain. Request sending and receiving tasks.
@@ -146,11 +155,10 @@ call press_rhs_ORC()
 
 n_in = 0
 do m = 0,nsubdomains-1
-
   if(rank.lt.npressureslabs.and.m.ne.nsubdomains-1) then
-
     n_in = n_in + 1
     if(dompi) then
+!print*,'Liran p check 1',rank,myrank_global,m,n_in,nsubdomains,npressureslabs
       call task_receive_float_ORC(bufp_subs(0,1-YES3D,1,n_in), &
                              nzslab*nxp1*nyp1,reqs_in(n_in))
     else
@@ -161,35 +169,39 @@ do m = 0,nsubdomains-1
       do j = 1,nyp2 
        do i = 1,nxp1 
          buff_subs(i,j,k,n_in) = bufp_subs(i,j,k,n_in) 
+!print*,'Liran p check 12',rank,m,i,j,k,n_in,bufp_subs(i,j,k,n_in)
        end do 
       end do 
      end do    
  
     flag(n_in) = .false.
- 
+! print*,'Liran buff_subs',myrank_global,rank,buff_subs
   endif
 
   if(rank.lt.npressureslabs.and.m.eq.nsubdomains-1) then
 
     if(dompi) then
-      call task_rank_to_index_ORC(rank,it,jt)	  
+      call task_rank_to_index_ORC(rank,it,jt)	
+print*,'Liran it check 2',rank,m,it,jt  
     else
       call task_rank_to_index(rank,it,jt)
     end if
+!print*,'Liran p check 23',nzslab,ny,nx,nx+it,ny+jt,nzslab+rank*nzslab
     n = rank*nzslab
     do k = 1,nzslab
      do j = 1,ny
        do i = 1,nx
          fp(i+it,j+jt,k) = p(i,j,k+n)
+!print*,'Liran p check 3',rank,m,i,k,n,p(i,j,k+n)
        end do
      end do
     end do
   endif
 
 end do ! m
-
+!print*, 'Liran Check p1 ',myrank_global,fp
 ! Blocking send now:
-
+!print*, 'Liran Check p001 ',myrank_global,p
 
 do m = 0,nsubdomains-1
 
@@ -197,6 +209,7 @@ do m = 0,nsubdomains-1
 
     n = m*nzslab + 1
     if(dompi) then
+!print*,'Liran p check 4',rank,m,n,nxp1,nzslab,p(0,1-YES3D,n)
       call task_bsend_float_ORC(m,p(0,1-YES3D,n),nzslab*nxp1*nyp1, 33)
     else
       call task_bsend_float(m,p(0,1-YES3D,n),nzslab*nxp1*nyp1, 33)
@@ -204,7 +217,7 @@ do m = 0,nsubdomains-1
   endif
 
 end do ! m
-
+!print*, 'Liran Check p2 ',myrank_global,p
 
 ! Fill slabs when receive buffers are full:
 
@@ -213,6 +226,7 @@ do while (count .gt. 0)
   do m = 1,n_in
    if(.not.flag(m)) then
         if(dompi) then
+!print*,'Liran p check 5',rank,m,reqs_in(m), flag(m)
           call task_test_ORC(reqs_in(m), flag(m), rf, tag)
         else
 	  call task_test(reqs_in(m), flag(m), rf, tag)
@@ -221,6 +235,7 @@ do while (count .gt. 0)
 	   count=count-1
            if(dompi) then
              call task_rank_to_index_ORC(rf,it,jt)
+!print*,'Liran p check 6',rank,m,it
            else
              call task_rank_to_index(rf,it,jt)	  
            end if
@@ -228,6 +243,7 @@ do while (count .gt. 0)
             do j = 1,ny
              do i = 1,nx
                fp(i+it,j+jt,k) = bufp_subs(i,j,k,m)
+!print*,'Liran p check 7',rank,m,i,k,bufp_subs(i,j,k,m)
              end do
             end do
            end do
@@ -235,7 +251,7 @@ do while (count .gt. 0)
    endif
   end do
 end do
-
+!print*, 'Liran Check fp3 ',myrank_global,fp
 !-------------------------------------------------
 ! Perform Fourier transformation for a slab:
 
@@ -256,7 +272,7 @@ if(rank.lt.npressureslabs) then
 
 endif
 
-
+!print*, 'Liran Check p4 ',myrank_global,p
 ! Synchronize all slabs:
 if(dompi) then
   call task_barrier_ORC()
@@ -274,6 +290,7 @@ do m = 0, nsubdomains-1
 		
    if(dompi) then
      call task_rank_to_index_ORC(m,it,jt)
+!print*,'Liran p check 8',rank,m,it
   else
      call task_rank_to_index(m,it,jt)
   end if
@@ -285,6 +302,7 @@ do m = 0, nsubdomains-1
       do j = 1,nyp22-jwall
         do i = 1,nxp1-iwall
           ff(i,j,k+n) = fp(i+it,j+jt,k) 
+!print*,'Liran p check 9',rank,m,i,k,fp(i+it,j+jt,k)
         end do
       end do
      end do 
@@ -298,6 +316,7 @@ do m = 0, nsubdomains-1
    if(dompi) then
      call task_receive_float_ORC(buff_slabs(1,1,1,n_in), &
                                 nzslab*nxp1*nyp22,reqs_in(n_in))
+!print*,'Liran p check 10',rank,m,n_in,buff_slabs(1,1,1,n_in)
    else
      call task_receive_float(buff_slabs(1,1,1,n_in), &
                                 nzslab*nxp1*nyp22,reqs_in(n_in))
@@ -316,7 +335,7 @@ do m = 0, nsubdomains-1
    endif
 
 end do ! m
-
+!print*, 'Liran Check p5 ',myrank_global,p
 ! Blocking send now:
 
 do m = 0, nsubdomains-1
@@ -343,7 +362,7 @@ do m = 0, nsubdomains-1
 
 end do ! m
 
-
+!print*, 'Liran Check p6 ',myrank_global,p
 
 ! Fill slabs when receive buffers are complete:
 
@@ -371,6 +390,7 @@ do while (count .gt. 0)
    endif
   end do
 end do
+!print*, 'Liran Check p7 ',myrank_global,p
 !-------------------------------------------------
 !   Solve the tri-diagonal system for Fourier coeffiecients 
 !   in the vertical for each subdomain:
@@ -436,6 +456,7 @@ do j=1,nyp22-jwall
 
    end do  
 end do 
+!print*, 'Liran Check p8 ',myrank_global,p
 if(dompi) then
   call task_barrier_ORC()
 else
@@ -481,7 +502,7 @@ do m = 0,nsubdomains-1
   endif
 
 end do ! m
-
+!print*, 'Liran Check p9 ',myrank_global,p
 ! Blocking send now:
 
 do m = 0,nsubdomains-1
@@ -528,6 +549,7 @@ do while (count .gt. 0)
    endif
   end do
 end do
+!print*, 'Liran Check p10 ',myrank_global,fp
 !-------------------------------------------------
 !   Perform inverse Fourier transformation:
 
@@ -556,10 +578,10 @@ do i=1,nx_gl
  iii(i)=i
 end do
 iii(0)=nx_gl
-do j=1,ny_gl
+do j=1,ny
  jjj(j)=j
 end do
-jjj(0)=ny_gl
+jjj(0)=ny
 
 ! Non-blocking receive first:
 
@@ -602,6 +624,7 @@ do m = 0, nsubdomains-1
        jj=jjj(j+jt)
         do i = 0,nx
 	 ii=iii(i+it)
+print*, 'Liran Debug ',ii,jj,k,i,it,fp(ii,jj,k)
           p(i,j,k+n) = fp(ii,jj,k) 
         end do
       end do
@@ -610,7 +633,7 @@ do m = 0, nsubdomains-1
    end if
 
 end do ! m
-
+!print*, 'Liran Check p11 ',myrank_global,p
 
 ! Blocking send now:
 
@@ -641,7 +664,7 @@ do m = 0, nsubdomains-1
    endif
 
 end do ! m
-
+!print*, 'Liran Check p12 ',myrank_global,p
 ! Fill the receive buffers:
 
 count = n_in
@@ -667,6 +690,8 @@ do while (count .gt. 0)
    endif
   end do
 end do
+call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+!print*, 'Liran Check p 13 ',myrank_global,p
 if(dompi) then
   call task_barrier_ORC()
 else
@@ -675,7 +700,7 @@ end if
 !  Add pressure gradient term to the rhs of the momentum equation:
 
 call press_grad()
-
+!print*, 'Liran Check pi14 ',myrank_global,p
 
  deallocate (fp)  ! global rhs and array for FTP coefficeients
  deallocate (ff)  ! local (subdomain's) version of f

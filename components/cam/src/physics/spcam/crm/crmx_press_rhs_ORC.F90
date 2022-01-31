@@ -18,8 +18,10 @@ subroutine press_rhs_ORC
          
 	
 real *8 dta,rdx,rdy,rdz,btat,ctat,rup,rdn
-integer i,j,k,ic,jc,kc
+integer i,j,k,ic,jc,kc,ierr
 integer rank,numtasks
+
+include 'mpif.h'
 
 call task_start_ORC(rank,numtasks)
 
@@ -43,12 +45,17 @@ if(dowally.and.RUN3D.and.rank.lt.nsubdomains_x) then
 
 end if
 
+call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+
+!write(0, *) 'Liran CRM_ORC1 dudt',myrank_global,dudt
 
 if(dompi) then
    call task_bound_duvdt_ORC()
 else
    call bound_duvdt()	   
 endif
+
+!write(0, *) 'Liran CRM_ORC2 dudt',myrank_global,dudt
 
 dta=1./dt3(na)/at
 rdx=1./dx
@@ -105,6 +112,15 @@ do k=1,nzm
            ctat*(rdx*(dudt(ic,j,k,nc)-dudt(i,j,k,nc))+ &
                  (dwdt(i,j,kc,nc)*rup-dwdt(i,j,k,nc)*rdn) )
   p(i,j,k)=p(i,j,k)*rho(k)
+  !print*,'Liran check p rhs0',myrank_global,i,k,p(i,j,k),u(ic,j,k),u(i,j,k)
+  !print*,'Liran check p rh0q',myrank_global,i,k,w(i,j,kc),w(i,j,k)
+  !print*,'Liran check p rh1q',myrank_global,i,k,dudt(ic,j,k,na),dudt(i,j,k,na),dudt(i,j,k,nb)
+  !print*,'Liran check p rh2q',myrank_global,i,k,dwdt(i,j,kc,nb),dwdt(i,j,k,nb)
+  !print*,'Liran check p rhs1',myrank_global,i,k,(rdx*(u(ic,j,k)-u(i,j,k))+(w(i,j,kc)*rup-w(i,j,k)*rdn))*dta
+  !print*,'Liran check p rhs2',myrank_global,i,k,(dwdt(i,j,kc,na)*rup-dwdt(i,j,k,na)*rdn) 
+  !print*,'Liran check p rhs3',myrank_global,i,k,btat*(rdx*(dudt(ic,j,k,nb)-dudt(i,j,k,nb))+(dwdt(i,j,kc,nb)*rup-dwdt(i,j,k,nb)*rdn))
+  !print*,'Liran check p rhs4',myrank_global,i,k,ctat*(rdx*(dudt(ic,j,k,nc)-dudt(i,j,k,nc))+(dwdt(i,j,kc,nc)*rup-dwdt(i,j,k,nc)*rdn))
+  !print*,'Liran check p rhs5',myrank_global,i,k,(w(i,j,kc)*rup-w(i,j,k)*rdn)*dta
  end do
 end do
 
