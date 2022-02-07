@@ -131,14 +131,14 @@ endif
 !-----------------------------------------------------------------
 !  Compute the r.h.s. of the Poisson equation for pressure
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-!if(myrank_global.eq.0) then
-!  print*, 'Liran Check u0 org ',u
-!  print*, 'Liran Check p0 org ',p
-!end if
+if(myrank_global.eq.0) then
+  !print*, 'Liran Check u0 org ',u
+  print*, 'Liran Check p0 org ',p
+end if
 call press_rhs()
-!if(myrank_global.eq.0) then
-!  print*, 'Liran Check p org ',p
-!end if 
+if(myrank_global.eq.0) then
+  print*, 'Liran Check p org ',p
+end if 
 !-----------------------------------------------------------------	 
 !   Form the horizontal slabs of right-hand-sides of Poisson equation 
 !   for the global domain. Request sending and receiving tasks.
@@ -256,9 +256,9 @@ if(rank.lt.npressureslabs) then
 
  call fftfax_crm(nx_gl,ifaxi,trigxi)
  if(RUN3D) call fftfax_crm(ny_gl,ifaxj,trigxj)
-
+print*,'org fp',rank,fp
  do k=1,nzslab
-
+print*,'org fp k',k,fp(1,1,k)
    call fft991_crm(fp(1,1,k),work,trigxi,ifaxi,1,nx2,nx_gl,ny_gl,-1)
 
   if(RUN3D) then

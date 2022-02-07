@@ -251,7 +251,7 @@ program TwoExecutableDriver
         outin16_cld_rad(ii,jj,kk)  = inp_Var_Flat2(fcount + 14* chnksz)
         crm_tk(ii,jj,kk)           = inp_Var_Flat2(fcount + 15* chnksz)
         crm_tkh(ii,jj,kk)          = inp_Var_Flat2(fcount + 16* chnksz)
-write (13,*),'CALL CRM_ORC ww!',myrank_global,ii,jj,kk,outin03_crm_w(ii,jj,kk)
+!write (13,*),'CALL CRM_ORC ww!',myrank_global,ii,jj,kk,outin03_crm_w(ii,jj,kk)
       end do
     end do
   end do
@@ -286,16 +286,16 @@ write (13,*),'CALL CRM_ORC ww!',myrank_global,ii,jj,kk,outin03_crm_w(ii,jj,kk)
   crm_step = crm_nx/numproc_crm_in
   crm_start_ind = (myrank_crm_in)*crm_step+1
   crm_end_ind   = (myrank_crm_in+1)*crm_step-1+1 
-  write(13,*) 'Liran Check again:', crm_comm_in,myrank_crm, myrank_global, numproc_crm_in,myrank_crm_in 
-  write(13,*) 'Liran crm check->', crm_step,crm_start_ind,crm_end_ind
+  !write(13,*) 'Liran Check again:', crm_comm_in,myrank_crm, myrank_global, numproc_crm_in,myrank_crm_in 
+  !write(13,*) 'Liran crm check->', crm_step,crm_start_ind,crm_end_ind
   nsubdomains_x  = 2
   call crm_define_grid()
-  write(13,*) 'Liran crm check2->',nx,crm_nx,nsubdomains_x 
+  !write(13,*) 'Liran crm check2->',nx,crm_nx,nsubdomains_x 
   call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-  write (13,*),'CALL CRM_ORC u all!',myrank_global,outin01_crm_u
-  write (13,*),'CALL CRM_ORC u!',myrank_global,inp01_lchnk,outin01_crm_u(crm_start_ind:crm_end_ind,:,:)
-  write (13,*),'CALL CRM_ORC w!',myrank_global,inp01_lchnk,outin03_crm_w(crm_start_ind:crm_end_ind,:,:)
-  write (13,*),'CALL CRM_ORC m1!',myrank_global,outin05_crm_micro(crm_start_ind:crm_end_ind,:,:,1)
+  !write (13,*),'CALL CRM_ORC u all!',myrank_global,outin01_crm_u
+  !write (13,*),'CALL CRM_ORC u!',myrank_global,inp01_lchnk,outin01_crm_u(crm_start_ind:crm_end_ind,:,:)
+  !write (13,*),'CALL CRM_ORC w!',myrank_global,inp01_lchnk,outin03_crm_w(crm_start_ind:crm_end_ind,:,:)
+  !write (13,*),'CALL CRM_ORC m1!',myrank_global,outin05_crm_micro(crm_start_ind:crm_end_ind,:,:,1)
 
   call MPI_barrier(crm_comm_in, ierr)
   call crm_orc (lon,lat,gcolindex,inp01_lchnk, inp02_i,                            &

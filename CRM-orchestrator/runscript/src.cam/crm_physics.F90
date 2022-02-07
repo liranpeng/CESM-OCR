@@ -1049,7 +1049,7 @@ end subroutine crm_init_cnst
    real(r8) ::  latitude0
    real(r8) :: cldd(pver)
    real(r8) radflux(pcols)   ! radiative fluxes from radiation calculation (qrs + qrl)
-
+   CHARACTER(LEN=6) :: crm_number
    real(r8) qtot(pcols, 3)      ! total water
    real(r8) qt_hydro(pcols, 2)  ! total hydrometer 
    real(r8) qt_cloud(pcols, 3)  ! total cloud water
@@ -1069,7 +1069,7 @@ end subroutine crm_init_cnst
    real(r8) :: dunc_arr(pcols,pver)
    integer gcolindex(pcols)  ! array of global latitude indices
    integer ii, jj,status
-   integer iii,FlagEnd,i_in
+   integer iii,FlagEnd
    integer i, k, m,lchnk_save,i_save
    integer ifld
    logical :: ls, lu, lv, lq(pcnst)
@@ -1271,6 +1271,16 @@ end subroutine crm_init_cnst
          state_loc%q(:ncol, :pver, ixcldliq) = state%q(:ncol, :pver, ixcldliq)
    endif
 
+call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+if (myrank_global == 0) then
+ ! ---------- basic comm pool size sanity checks by bloss -------------
+  923 format(I6.6)
+  write(crm_number,923) myrank_global
+  open(unit=13,file='crm.log_debug.'//TRIM(crm_number),form='formatted')
+  write(13,*) 'Global: ',myrank_global
+  ! ----------- GCM handshake from spcam_drivers --------------
+end if
+
    !------------------------- 
    !------------------------- 
    ! On the first_step, initialize values only and do not call CRM
@@ -1293,9 +1303,8 @@ end subroutine crm_init_cnst
                 crm_u(i,:,:,k) = state_loc%u(i,m)
                 crm_v(i,:,:,k) = state_loc%v(i,m)
              endif
-             call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-             !write (iulog,*),'MPI init u',myrank_global
              crm_w(i,:,:,k) = 0._r8
+             !write (13,*),'MPI init w',myrank_global,i,k,crm_w(i,:,:,k)
              crm_t(i,:,:,k) = state_loc%t(i,m)
 
              if (is_spcam_sam1mom)  then
@@ -1349,7 +1358,9 @@ end subroutine crm_init_cnst
              cld_rad(i,:,:,k)      = 0._r8
          end do
        end do
-
+       do i=1,ncol
+         write(iulog,*) 'Check Init u: ',i,crm_u(i,:,:,:)
+       end do
        ! use radiation from grid-cell mean radctl on first time step
        prec_crm (:,:,:)          = 0._r8
        ptend_loc%q(:,:,1)        = 0._r8
@@ -1454,6 +1465,15 @@ end subroutine crm_init_cnst
    !------------------------- 
 
    else
+
+       call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+
+       do i=1,ncol
+         write(iulog,*) 'Check step2 u: ',myrank_global,i,crm_u(i,:,:,:)
+       end do
+
+
+       !write (iulog,*),'MPI init w1',myrank_global,crm_w(1,:,:,:)
        ptend_loc%q(:,:,1)        = 0._r8
        ptend_loc%q(:,:,ixcldliq) = 0._r8
        ptend_loc%q(:,:,ixcldice) = 0._r8
@@ -1514,8 +1534,7 @@ end subroutine crm_init_cnst
           cs(1:ncol, 1:pver) = state_loc%pmid(1:ncol, 1:pver)/(287.15_r8*state_loc%t(1:ncol, 1:pver))
       end if
       FlagEnd = 0
-       do i = 1,ncol
-
+      do i = 1,ncol
          tau00  = sqrt(cam_in%wsx(i)**2 + cam_in%wsy(i)**2)
          wnd    = sqrt(state_loc%u(i,pver)**2 + state_loc%v(i,pver)**2)
          bflx   = cam_in%shf(i)/cpair + 0.61_r8*state_loc%t(i,pver)*cam_in%lhf(i)/latvap
@@ -1613,23 +1632,28 @@ end subroutine crm_init_cnst
               ul(:) = state_loc%u(i,:)
               vl(:) = state_loc%v(i,:)
          endif
-       end do
-       ORC_count = 0
-#ifdef ORCHESTRATOR
        ! Outsource the call to CRM to the separate Orchestrator executable by
        ! sending required inputs...
-       do i_in = 1,ncol
-         if (state%crmrank0(i_in) .ne. -2) then ! is this column coupled to an external CRM?
+       end do !do i = 1,ncol
+#ifdef ORCHESTRATOR
+       ! =================================================
+       !
+       !
+       ! =================================================
+       call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+       if (myrank_global == 0) then
+
+       do i = 1,ncol
+         if (state%crmrank0(i) .ne. -2) then ! is this column coupled to an external CRM?
           ! This part is to test the idear of creating a new data type for MPI
           ! transfer data. 
           ! =================================================
           ! Start to flatten the arry and send it to CRM. 
           ! =================================================
-          dest = npes+state%crmrank0(i_in)*rank_offset
-          i_save  = i_in+state%crmrank1(i_in)
-          ORC_count = 0
+          dest = npes+state%crmrank0(i)*rank_offset
+          i_save  = i+state%crmrank1(i)
+          write(iulog,*) 'Check step3 u: ',myrank_global,i,i_save,crm_u(i,:,:,:)
           call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-          !write (iulog,*),'MPI before send',dest,myrank_global,lchnk,state%crmrank1(i_in),i_save
           chnksz = crm_nx*crm_ny*crm_nz
           call get_gcol_all_p(lchnk, pcols, gcolindex)
           latitude0 = get_rlat_p(lchnk, i_save)*57.296_r8
@@ -1715,26 +1739,6 @@ end subroutine crm_init_cnst
           Var_Flat(48*pver+2+singlelen:49*pver+singlelen+1) = ptend_loc%s(i_save,:)
           Var_Flat(49*pver+2+singlelen:49*pver+21+singlelen)= qtotcrm(i_save,1:20)
           Var_Flat(49*pver+22+singlelen:49*pver+21+singlelen+pcols)=gcolindex(1:pcols) 
-
-          do k=1,crm_nz
-            m = pver-k+1
-            do i=1,ncol
-
-             if (spcam_direction == 'NS') then
-                if(crm_ny.eq.1) then ! change domain orientation only for 2D CRM
-                  crm_u(i,:,:,k) = state_loc%v(i,m)
-                  crm_v(i,:,:,k) = state_loc%u(i,m)
-                else
-                  crm_u(i,:,:,k) = state_loc%u(i,m)
-                  crm_v(i,:,:,k) = state_loc%v(i,m)
-                end if
-             else if( spcam_direction == 'WE') then
-                crm_u(i,:,:,k) = state_loc%u(i,m)
-                crm_v(i,:,:,k) = state_loc%v(i,m)
-             endif
-            end do
-          end do
-
           fcount = 0
           do ii=1,crm_nx
             do jj=1,crm_ny
@@ -1778,83 +1782,96 @@ end subroutine crm_init_cnst
               Var_Flat2(fcount) = prec_crm(i_save,ii,jj)
             end do
           end do
-          write (iulog,9999),lchnk,i_save,state%crmrank0(i),dest,latitude0,longitude0
+          write (13,9999),lchnk,i_save,state%crmrank0(i),dest,latitude0,longitude0
           9999  format ('lon-lat',4I4,2E15.6)
-          call MPI_Send(Var_Flat(:)         ,flen,MPI_REAL8 ,dest,9018,MPI_COMM_WORLD,ierr)
-          call MPI_Send(Var_Flat2(:)         ,flen2,MPI_REAL8,dest,9019,MPI_COMM_WORLD,ierr)
-          !write (iulog,*),'MPI send finish!',dest,lchnk,i_save,FlagEnd
-          !if (i_save.eq.1)then
-          !  write (iulog,*),'MPI check send crm_u!',dest,crm_u(i_save,:,:,:)
-          !  write (iulog,*),'MPI check send crm_t!',dest,crm_t(i_save,:,:,:)
-          !end if
-         i = i_save
+
+          do ii=1,ncol
+            dest = npes+state%crmrank0(ii)*rank_offset
+            i_save  = ii+state%crmrank1(ii)
+            if (i .eq. i_save) then
+              write (iulog,*),'Send Check',i_save,i,dest,ii
+              call MPI_Send(Var_Flat(:)         ,flen,MPI_REAL8 ,dest,9018,MPI_COMM_WORLD,ierr)
+              call MPI_Send(Var_Flat2(:)         ,flen2,MPI_REAL8,dest,9019,MPI_COMM_WORLD,ierr)
+              write (iulog,*),'MPI check send crm_t!',dest,i_save,i,crm_t(i_save,:,:,:)
+            end if !if (i .eq. i_save) then
+          end do  !do ii=1,ncol
+
+          do ii=1,ncol
+            dest = npes+state%crmrank0(ii)*rank_offset
+            i_save  = ii+state%crmrank1(ii)
+            if (i .eq. i_save) then
          nsubdomains_x  = 1
          call crm_define_grid()
          lchnk = state%lchnk
+        write (iulog,*),'MPI check input crm_t!',myrank_global,i_save,i,crm_t(i_save,:,:,:)
          !write (iulog,*),'MPI check send crm_u!',dest,crm_u(i_save,:,:,:)
-         !write (iulog,*),'MPI check input crm_u!',i_save,crm_u(i_save,:,:,:)
-         !write (iulog,*),'MPI check input crm_w!',i_save,crm_w(i_save,:,:,:)
+         !write (iulog,*),'MPI check input crm_u!',myrank_global,i_save,i,crm_u(i_save,:,:,:)
+         !write (13,*),'MPI check input crm_w!',i_save,dest,crm_w(i_save,:,:,:)
          !write (iulog,*),'MPI check input crm_w 1!',i_save,crm_micro(i_save,:,:,:,1)
          !write (iulog,*),'MPI check input crm_w 2!',i_save,crm_micro(i_save,:,:,:,2)
          !write (iulog,*),'MPI check input crm_w 3!',i_save,crm_micro(i_save,:,:,:,3)
-         call crm (lchnk,      i,                                                                                            &
-             state_loc%t(i,:),   state_loc%q(i,:,1),    state_loc%q(i,:,ixcldliq), state_loc%q(i,:,ixcldice),                &
+         call crm (lchnk,      i_save,                                                                                            &
+             state_loc%t(i_save,:),   state_loc%q(i_save,:,1),    state_loc%q(i_save,:,ixcldliq), state_loc%q(i_save,:,ixcldice),                &
              ul(:),              vl(:),                                                                                      &
-             state_loc%ps(i),    state_loc%pmid(i,:),   state_loc%pdel(i,:),  state_loc%phis(i),                             &
-             state_loc%zm(i,:),  state_loc%zi(i,:),     ztodt,                pver,                                          &
-             ptend_loc%q(i,:,1), ptend_loc%q(i,:,ixcldliq),ptend_loc%q(i,:,ixcldice), ptend_loc%s(i,:),                      &
-             crm_u(i,:,:,:),     crm_v(i,:,:,:),       crm_w(i,:,:,:),        crm_t(i,:,:,:),          crm_micro(i,:,:,:,:), &
-             crm_qrad(i,:,:,:),                                                                                              &
-             qc_crm(i,:,:,:),    qi_crm(i,:,:,:),      qpc_crm(i,:,:,:),      qpi_crm(i,:,:,:),                              &
-             prec_crm(i,:,:),    t_rad(i,:,:,:),       qv_rad(i,:,:,:),                                                      &
-             qc_rad(i,:,:,:),    qi_rad(i,:,:,:),      cld_rad(i,:,:,:),      cld3d_crm(i, :, :, :),                         &
+             state_loc%ps(i_save),    state_loc%pmid(i_save,:),   state_loc%pdel(i_save,:),  state_loc%phis(i_save),                             &
+             state_loc%zm(i_save,:),  state_loc%zi(i_save,:),     ztodt,                pver,                                          &
+             ptend_loc%q(i_save,:,1), ptend_loc%q(i_save,:,ixcldliq),ptend_loc%q(i_save,:,ixcldice), ptend_loc%s(i_save,:),                      &
+             crm_u(i_save,:,:,:),     crm_v(i_save,:,:,:),       crm_w(i_save,:,:,:),        crm_t(i_save,:,:,:),          crm_micro(i_save,:,:,:,:), &
+             crm_qrad(i_save,:,:,:),                                                                                              &
+             qc_crm(i_save,:,:,:),    qi_crm(i_save,:,:,:),      qpc_crm(i_save,:,:,:),      qpi_crm(i_save,:,:,:),                              &
+             prec_crm(i_save,:,:),    t_rad(i_save,:,:,:),       qv_rad(i_save,:,:,:),                                                      &
+             qc_rad(i_save,:,:,:),    qi_rad(i_save,:,:,:),      cld_rad(i_save,:,:,:),      cld3d_crm(i_save, :, :, :),                         &
 #ifdef m2005
-             nc_rad(i,:,:,:),    ni_rad(i,:,:,:),      qs_rad(i,:,:,:),       ns_rad(i,:,:,:),         wvar_crm(i,:,:,:),    &
-             aut_crm(i,:,:,:),   acc_crm(i,:,:,:),     evpc_crm(i,:,:,:),     evpr_crm(i,:,:,:),       mlt_crm(i,:,:,:),     &
-             sub_crm(i,:,:,:),   dep_crm(i,:,:,:),     con_crm(i,:,:,:),                                                     &
-             aut_crm_a(i,:),     acc_crm_a(i,:),       evpc_crm_a(i,:),       evpr_crm_a(i,:),         mlt_crm_a(i,:),       &
-             sub_crm_a(i,:),     dep_crm_a(i,:),       con_crm_a(i,:),                                                       &
+             nc_rad(i_save,:,:,:),    ni_rad(i_save,:,:,:),      qs_rad(i_save,:,:,:),       ns_rad(i_save,:,:,:),         wvar_crm(i_save,:,:,:),    &
+             aut_crm(i_save,:,:,:),   acc_crm(i_save,:,:,:),     evpc_crm(i_save,:,:,:),     evpr_crm(i_save,:,:,:),       mlt_crm(i_save,:,:,:),     &
+             sub_crm(i_save,:,:,:),   dep_crm(i_save,:,:,:),     con_crm(i_save,:,:,:),                                                     &
+             aut_crm_a(i_save,:),     acc_crm_a(i_save,:),       evpc_crm_a(i_save,:),       evpr_crm_a(i_save,:),         mlt_crm_a(i_save,:),       &
+             sub_crm_a(i_save,:),     dep_crm_a(i_save,:),       con_crm_a(i_save,:),                                                       &
 #endif
-             precc(i),           precl(i),             precsc(i),             precsl(i),                                     &
-             cltot(i),           clhgh(i),             clmed(i),              cllow(i),                cld(i,:),  cldtop(i,:), &
-             gicewp(i,:),        gliqwp(i,:),                                                                                &
-             mctot(i,:),         mcup(i,:),            mcdn(i,:),             mcuup(i,:),              mcudn(i,:),           &
-             spqc(i,:),          spqi(i,:),            spqs(i,:),             spqg(i,:),               spqr(i,:),            &
+             precc(i_save),           precl(i_save),             precsc(i_save),             precsl(i_save),                                     &
+             cltot(i_save),           clhgh(i_save),             clmed(i_save),              cllow(i_save),                cld(i_save,:),  cldtop(i_save,:), &
+             gicewp(i_save,:),        gliqwp(i_save,:),                                                                                &
+             mctot(i_save,:),         mcup(i_save,:),            mcdn(i_save,:),             mcuup(i_save,:),              mcudn(i_save,:),           &
+             spqc(i_save,:),          spqi(i_save,:),            spqs(i_save,:),             spqg(i_save,:),               spqr(i_save,:),            &
 #ifdef m2005
-             spnc(i,:),          spni(i,:),            spns(i,:),             spng(i,:),               spnr(i,:),            &
+             spnc(i_save,:),          spni(i_save,:),            spns(i_save,:),             spng(i_save,:),               spnr(i_save,:),            &
 #ifdef MODAL_AERO
              naermod,            vaerosol,             hygro,                                                                &
 #endif 
 #endif
 #ifdef SPCAM_CLUBB_SGS
-             clubb_buffer(i,:,:,:,:),                                                                                        &
-             crm_cld(i,:, :, :),                                                                                             &
-             clubb_tk(i, :, :, :), clubb_tkh(i, :, :, :),                                                                    &
-             relvar(i,:, :, :),  accre_enhan(i, :, :, :),  qclvar(i, :, :, :),                                               &
+             clubb_buffer(i_save,:,:,:,:),                                                                                        &
+             crm_cld(i_save,:, :, :),                                                                                             &
+             clubb_tk(i_save, :, :, :), clubb_tkh(i_save, :, :, :),                                                                    &
+             relvar(i_save,:, :, :),  accre_enhan(i_save, :, :, :),  qclvar(i_save, :, :, :),                                               &
 #endif
-             crm_tk(i, :, :, :), crm_tkh(i, :, :, :),                                                                        &
-             mu_crm(i,:),        md_crm(i,:),          du_crm(i,:),           eu_crm(i,:),                                   & 
-             ed_crm(i,:),        jt_crm(i),            mx_crm(i),                                                            &
+             crm_tk(i_save, :, :, :), crm_tkh(i_save, :, :, :),                                                                        &
+             mu_crm(i_save,:),        md_crm(i_save,:),          du_crm(i_save,:),           eu_crm(i_save,:),                                   & 
+             ed_crm(i_save,:),        jt_crm(i_save),            mx_crm(i_save),                                                            &
 #ifdef m2005
-             abnd(i,:,:,:,:),    abnd_tf(i,:,:,:,:),   massflxbnd(i,:,:,:,:), acen(i,:,:,:,:),         acen_tf(i,:,:,:,:),   &
-             rhcen(i,:,:,:,:),   qcloudcen(i,:,:,:,:), qicecen(i,:,:,:,:),    qlsink_afcen(i,:,:,:,:),                       &
-             precrcen(i,:,:,:,:),                      precsolidcen(i,:,:,:,:),                                              &
-             qlsink_bfcen(i,:,:,:,:),                  qlsink_avgcen(i,:,:,:,:),                       praincen(i,:,:,:,:),  &
-             wupthresh_bnd(i,:), wdownthresh_bnd(i,:),                                                                       &
-             wwqui_cen(i,:),     wwqui_bnd(i,:),       wwqui_cloudy_cen(i,:), wwqui_cloudy_bnd(i,:),                         &
+             abnd(i_save,:,:,:,:),    abnd_tf(i_save,:,:,:,:),   massflxbnd(i_save,:,:,:,:), acen(i_save,:,:,:,:),         acen_tf(i_save,:,:,:,:),   &
+             rhcen(i_save,:,:,:,:),   qcloudcen(i_save,:,:,:,:), qicecen(i_save,:,:,:,:),    qlsink_afcen(i_save,:,:,:,:),                       &
+             precrcen(i_save,:,:,:,:),                      precsolidcen(i_save,:,:,:,:),                                              &
+             qlsink_bfcen(i_save,:,:,:,:),                  qlsink_avgcen(i_save,:,:,:,:),                       praincen(i_save,:,:,:,:),  &
+             wupthresh_bnd(i_save,:), wdownthresh_bnd(i_save,:),                                                                       &
+             wwqui_cen(i_save,:),     wwqui_bnd(i_save,:),       wwqui_cloudy_cen(i_save,:), wwqui_cloudy_bnd(i_save,:),                         &
 #endif
-             tkez(i,:),          tkesgsz(i,:),         tk_crm(i, :),                                                         &
-             flux_u(i,:),        flux_v(i,:),          flux_qt(i,:),          fluxsgs_qt(i,:),         flux_qp(i,:),         &
-             precflux(i,:),      qt_ls(i,:),           qt_trans(i,:),         qp_trans(i,:),           qp_fall(i,:),         &
-             qp_evp(i,:),        qp_src(i,:),          t_ls(i,:),             prectend(i),             precstend(i),         &
-             cam_in%ocnfrac(i),  wnd,                  tau00,                 bflx,                                          & 
+             tkez(i_save,:),          tkesgsz(i_save,:),         tk_crm(i_save, :),                                                         &
+             flux_u(i_save,:),        flux_v(i_save,:),          flux_qt(i_save,:),          fluxsgs_qt(i_save,:),         flux_qp(i_save,:),         &
+             precflux(i_save,:),      qt_ls(i_save,:),           qt_trans(i_save,:),         qp_trans(i_save,:),           qp_fall(i_save,:),         &
+             qp_evp(i_save,:),        qp_src(i_save,:),          t_ls(i_save,:),             prectend(i_save),             precstend(i_save),         &
+             cam_in%ocnfrac(i_save),  wnd,                  tau00,                 bflx,                                          & 
              fluxu0,             fluxv0,               fluxt0,                fluxq0,                                        & 
-             taux_crm(i),        tauy_crm(i),          z0m(i),                timing_factor(i),        qtotcrm(i, :)         )   
+             taux_crm(i_save),        tauy_crm(i_save),          z0m(i_save),                timing_factor(i_save),        qtotcrm(i_save, :)         )   
+
+         end if
+         end do
 
          end if   ! is this column coupled to an external CRM?
-        end do
 #endif
-        do i = 1,ncol
+       end do  !do i = 1,ncol
+       end if ! if (myrank_global == 0) then
+       do i = 1,ncol
           !i = i_save 
         ! re: next args in call to crm () are ptend* which despite being declared inout are actually output.
 
@@ -2017,7 +2034,6 @@ end subroutine crm_init_cnst
             end do
           end do
          call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-         ORC_count = ORC_count + 1
          !write (iulog,*),'MPI Recv finish!',myrank_global,state%crmrank0(i),i,lchnk,lchnk_save
          endif ! is this column column coupled to an external (orchestrated) CRM?
          lchnk = lchnk_save
@@ -2025,69 +2041,69 @@ end subroutine crm_init_cnst
 #endif
 
         !do i = 1,ncol
-         nsubdomains_x  = 1
-         call crm_define_grid()
-         lchnk = state%lchnk
-#ifdef ORCHESTRATOR
+!         nsubdomains_x  = 1
+!         call crm_define_grid()
+!         lchnk = state%lchnk
+!#ifdef ORCHESTRATOR
          !call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
          !if (state%crmrank0(i) .ne. -2) then
          !write (iulog,*),'CALL CRM!',myrank_global,i,lchnk,ORC_count
          !write (iulog,*),'CALL CRM u!',crm_u(i,:,:,:)
          !end if
-#endif
-         call crm (lchnk,      i,                                                                                            &
-             state_loc%t(i,:),   state_loc%q(i,:,1),    state_loc%q(i,:,ixcldliq), state_loc%q(i,:,ixcldice),                &
-             ul(:),              vl(:),                                                                                      &
-             state_loc%ps(i),    state_loc%pmid(i,:),   state_loc%pdel(i,:),  state_loc%phis(i),                             &
-             state_loc%zm(i,:),  state_loc%zi(i,:),     ztodt,                pver,                                          &
-             ptend_loc%q(i,:,1), ptend_loc%q(i,:,ixcldliq),ptend_loc%q(i,:,ixcldice), ptend_loc%s(i,:),                      &
-             crm_u(i,:,:,:),     crm_v(i,:,:,:),       crm_w(i,:,:,:),        crm_t(i,:,:,:),          crm_micro(i,:,:,:,:), &
-             crm_qrad(i,:,:,:),                                                                                              &
-             qc_crm(i,:,:,:),    qi_crm(i,:,:,:),      qpc_crm(i,:,:,:),      qpi_crm(i,:,:,:),                              &
-             prec_crm(i,:,:),    t_rad(i,:,:,:),       qv_rad(i,:,:,:),                                                      &
-             qc_rad(i,:,:,:),    qi_rad(i,:,:,:),      cld_rad(i,:,:,:),      cld3d_crm(i, :, :, :),                         &
-#ifdef m2005
-             nc_rad(i,:,:,:),    ni_rad(i,:,:,:),      qs_rad(i,:,:,:),       ns_rad(i,:,:,:),         wvar_crm(i,:,:,:),    &
-             aut_crm(i,:,:,:),   acc_crm(i,:,:,:),     evpc_crm(i,:,:,:),     evpr_crm(i,:,:,:),       mlt_crm(i,:,:,:),     &
-             sub_crm(i,:,:,:),   dep_crm(i,:,:,:),     con_crm(i,:,:,:),                                                     &
-             aut_crm_a(i,:),     acc_crm_a(i,:),       evpc_crm_a(i,:),       evpr_crm_a(i,:),         mlt_crm_a(i,:),       &
-             sub_crm_a(i,:),     dep_crm_a(i,:),       con_crm_a(i,:),                                                       &
-#endif
-             precc(i),           precl(i),             precsc(i),             precsl(i),                                     &
-             cltot(i),           clhgh(i),             clmed(i),              cllow(i),                cld(i,:),  cldtop(i,:), &
-             gicewp(i,:),        gliqwp(i,:),                                                                                &
-             mctot(i,:),         mcup(i,:),            mcdn(i,:),             mcuup(i,:),              mcudn(i,:),           &
-             spqc(i,:),          spqi(i,:),            spqs(i,:),             spqg(i,:),               spqr(i,:),            &
-#ifdef m2005
-             spnc(i,:),          spni(i,:),            spns(i,:),             spng(i,:),               spnr(i,:),            &
-#ifdef MODAL_AERO
-             naermod,            vaerosol,             hygro,                                                                &
-#endif 
-#endif
-#ifdef SPCAM_CLUBB_SGS
-             clubb_buffer(i,:,:,:,:),                                                                                        &
-             crm_cld(i,:, :, :),                                                                                             &
-             clubb_tk(i, :, :, :), clubb_tkh(i, :, :, :),                                                                    &
-             relvar(i,:, :, :),  accre_enhan(i, :, :, :),  qclvar(i, :, :, :),                                               &
-#endif
-             crm_tk(i, :, :, :), crm_tkh(i, :, :, :),                                                                        &
-             mu_crm(i,:),        md_crm(i,:),          du_crm(i,:),           eu_crm(i,:),                                   & 
-             ed_crm(i,:),        jt_crm(i),            mx_crm(i),                                                            &
-#ifdef m2005
-             abnd(i,:,:,:,:),    abnd_tf(i,:,:,:,:),   massflxbnd(i,:,:,:,:), acen(i,:,:,:,:),         acen_tf(i,:,:,:,:),   &
-             rhcen(i,:,:,:,:),   qcloudcen(i,:,:,:,:), qicecen(i,:,:,:,:),    qlsink_afcen(i,:,:,:,:),                       &
-             precrcen(i,:,:,:,:),                      precsolidcen(i,:,:,:,:),                                              &
-             qlsink_bfcen(i,:,:,:,:),                  qlsink_avgcen(i,:,:,:,:),                       praincen(i,:,:,:,:),  &
-             wupthresh_bnd(i,:), wdownthresh_bnd(i,:),                                                                       &
-             wwqui_cen(i,:),     wwqui_bnd(i,:),       wwqui_cloudy_cen(i,:), wwqui_cloudy_bnd(i,:),                         &
-#endif
-             tkez(i,:),          tkesgsz(i,:),         tk_crm(i, :),                                                         &
-             flux_u(i,:),        flux_v(i,:),          flux_qt(i,:),          fluxsgs_qt(i,:),         flux_qp(i,:),         &
-             precflux(i,:),      qt_ls(i,:),           qt_trans(i,:),         qp_trans(i,:),           qp_fall(i,:),         &
-             qp_evp(i,:),        qp_src(i,:),          t_ls(i,:),             prectend(i),             precstend(i),         &
-             cam_in%ocnfrac(i),  wnd,                  tau00,                 bflx,                                          & 
-             fluxu0,             fluxv0,               fluxt0,                fluxq0,                                        & 
-             taux_crm(i),        tauy_crm(i),          z0m(i),                timing_factor(i),        qtotcrm(i, :)         )   
+!#endif
+!         call crm (lchnk,      i,                                                                                            &
+!             state_loc%t(i,:),   state_loc%q(i,:,1),    state_loc%q(i,:,ixcldliq), state_loc%q(i,:,ixcldice),                &
+!             ul(:),              vl(:),                                                                                      &
+!             state_loc%ps(i),    state_loc%pmid(i,:),   state_loc%pdel(i,:),  state_loc%phis(i),                             &
+!             state_loc%zm(i,:),  state_loc%zi(i,:),     ztodt,                pver,                                          &
+!             ptend_loc%q(i,:,1), ptend_loc%q(i,:,ixcldliq),ptend_loc%q(i,:,ixcldice), ptend_loc%s(i,:),                      &
+!             crm_u(i,:,:,:),     crm_v(i,:,:,:),       crm_w(i,:,:,:),        crm_t(i,:,:,:),          crm_micro(i,:,:,:,:), &
+!             crm_qrad(i,:,:,:),                                                                                              &
+!             qc_crm(i,:,:,:),    qi_crm(i,:,:,:),      qpc_crm(i,:,:,:),      qpi_crm(i,:,:,:),                              &
+!             prec_crm(i,:,:),    t_rad(i,:,:,:),       qv_rad(i,:,:,:),                                                      &
+!             qc_rad(i,:,:,:),    qi_rad(i,:,:,:),      cld_rad(i,:,:,:),      cld3d_crm(i, :, :, :),                         &
+!#ifdef m2005
+!             nc_rad(i,:,:,:),    ni_rad(i,:,:,:),      qs_rad(i,:,:,:),       ns_rad(i,:,:,:),         wvar_crm(i,:,:,:),    &
+!             aut_crm(i,:,:,:),   acc_crm(i,:,:,:),     evpc_crm(i,:,:,:),     evpr_crm(i,:,:,:),       mlt_crm(i,:,:,:),     &
+!             sub_crm(i,:,:,:),   dep_crm(i,:,:,:),     con_crm(i,:,:,:),                                                     &
+!             aut_crm_a(i,:),     acc_crm_a(i,:),       evpc_crm_a(i,:),       evpr_crm_a(i,:),         mlt_crm_a(i,:),       &
+!             sub_crm_a(i,:),     dep_crm_a(i,:),       con_crm_a(i,:),                                                       &
+!#endif
+!             precc(i),           precl(i),             precsc(i),             precsl(i),                                     &
+!             cltot(i),           clhgh(i),             clmed(i),              cllow(i),                cld(i,:),  cldtop(i,:), &
+!             gicewp(i,:),        gliqwp(i,:),                                                                                &
+!             mctot(i,:),         mcup(i,:),            mcdn(i,:),             mcuup(i,:),              mcudn(i,:),           &
+!             spqc(i,:),          spqi(i,:),            spqs(i,:),             spqg(i,:),               spqr(i,:),            &
+!#ifdef m2005
+!             spnc(i,:),          spni(i,:),            spns(i,:),             spng(i,:),               spnr(i,:),            &
+!#ifdef MODAL_AERO
+!             naermod,            vaerosol,             hygro,                                                                &
+!#endif 
+!#endif
+!#ifdef SPCAM_CLUBB_SGS
+!             clubb_buffer(i,:,:,:,:),                                                                                        &
+!             crm_cld(i,:, :, :),                                                                                             &
+!             clubb_tk(i, :, :, :), clubb_tkh(i, :, :, :),                                                                    &
+!             relvar(i,:, :, :),  accre_enhan(i, :, :, :),  qclvar(i, :, :, :),                                               &
+!#endif
+!             crm_tk(i, :, :, :), crm_tkh(i, :, :, :),                                                                        &
+!             mu_crm(i,:),        md_crm(i,:),          du_crm(i,:),           eu_crm(i,:),                                   & 
+!             ed_crm(i,:),        jt_crm(i),            mx_crm(i),                                                            &
+!#ifdef m2005
+!             abnd(i,:,:,:,:),    abnd_tf(i,:,:,:,:),   massflxbnd(i,:,:,:,:), acen(i,:,:,:,:),         acen_tf(i,:,:,:,:),   &
+!             rhcen(i,:,:,:,:),   qcloudcen(i,:,:,:,:), qicecen(i,:,:,:,:),    qlsink_afcen(i,:,:,:,:),                       &
+!             precrcen(i,:,:,:,:),                      precsolidcen(i,:,:,:,:),                                              &
+!             qlsink_bfcen(i,:,:,:,:),                  qlsink_avgcen(i,:,:,:,:),                       praincen(i,:,:,:,:),  &
+!             wupthresh_bnd(i,:), wdownthresh_bnd(i,:),                                                                       &
+!             wwqui_cen(i,:),     wwqui_bnd(i,:),       wwqui_cloudy_cen(i,:), wwqui_cloudy_bnd(i,:),                         &
+!#endif
+!             tkez(i,:),          tkesgsz(i,:),         tk_crm(i, :),                                                         &
+!             flux_u(i,:),        flux_v(i,:),          flux_qt(i,:),          fluxsgs_qt(i,:),         flux_qp(i,:),         &
+!             precflux(i,:),      qt_ls(i,:),           qt_trans(i,:),         qp_trans(i,:),           qp_fall(i,:),         &
+!             qp_evp(i,:),        qp_src(i,:),          t_ls(i,:),             prectend(i),             precstend(i),         &
+!             cam_in%ocnfrac(i),  wnd,                  tau00,                 bflx,                                          & 
+!             fluxu0,             fluxv0,               fluxt0,                fluxq0,                                        & 
+!             taux_crm(i),        tauy_crm(i),          z0m(i),                timing_factor(i),        qtotcrm(i, :)         )   
 
 #ifdef ORCHESTRATOR
         if (state%crmrank0(i) .ne. -2) then ! is this column coupled to an external CRM?

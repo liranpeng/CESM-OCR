@@ -23,6 +23,7 @@ do k=1,nzm
    dudt(i,j,k,na)=dudt(i,j,k,na)-(p(i,j,k)-p(ib,j,k))*rdx	
    dvdt(i,j,k,na)=dvdt(i,j,k,na)-(p(i,j,k)-p(i,jb,k))*rdy	
    dwdt(i,j,k,na)=dwdt(i,j,k,na)-(p(i,j,k)-p(i,j,kb))*rdz	
+print*,'Check dwdt',dwdt(i,j,k,na),p(i,j,k),p(i,j,kb),rdz,dz
   end do ! i
  end do ! j	
 end do ! k

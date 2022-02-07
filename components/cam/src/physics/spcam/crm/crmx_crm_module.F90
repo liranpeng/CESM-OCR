@@ -361,13 +361,26 @@ real(kind=core_rknd), dimension(nzm) :: &
         real, allocatable, dimension(:,:)  :: cltemp,cmtemp,chtemp,cttemp
         real(r8), intent(inout) :: qtot(20)
         real ntotal_step
-integer numproc_global,myrank_global,ierr,rankprint
+        
+integer numproc_global,myrank_global,ierr,rankprint,crm_count
 
 include 'mpif.h'
 
 rankprint = 30
+crm_count = 0
 call mpi_comm_size(MPI_COMM_WORLD, numproc_global, ierr)
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+
+
+if (myrank_global ==0) then
+ ! ---------- basic comm pool size sanity checks by bloss -------------
+  923 format(I6.6)
+  write(crm_number,923) myrank_global
+  open(unit=13,file='crm.org_debug.'//TRIM(crm_number),form='formatted')
+  write(13,*) 'Global: ',myrank_global
+  ! ----------- GCM handshake from spcam_drivers --------------
+end if
+
 
 
 !if(myrank_global.eq.0) then
@@ -967,6 +980,23 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !        nrad = nstop/nrad0
         day=day0
 
+     do k=1,nzm
+      do j=1,ny
+        do i=1,nx
+write(13, *) 'before org u0',crm_count,i,k,u(i,j,k)
+write(13, *) 'before org w0',crm_count,i,k,w(i,j,k)
+write(13, *) 'before org p0',crm_count,i,k,p(i,j,k)
+write(13, *) 'before org t0',crm_count,i,k,t(i,j,k)
+write(13, *) 'before org dudt10',crm_count,i,k,dudt(i,j,k,1)
+write(13, *) 'before org dudt20',crm_count,i,k,dudt(i,j,k,2)
+write(13, *) 'before org dudt30',crm_count,i,k,dudt(i,j,k,3)
+write(13, *) 'before org dwdt10',crm_count,i,k,dwdt(i,j,k,1)
+write(13, *) 'before org dwdt20',crm_count,i,k,dwdt(i,j,k,2)
+write(13, *) 'before org dwdt30',crm_count,i,k,dwdt(i,j,k,3)
+        enddo
+      enddo
+     enddo
+
 !------------------------------------------------------------------
 !   Main time loop    
 !------------------------------------------------------------------
@@ -1033,7 +1063,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !       Buoyancy term:
 	     
 !call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-!if(myrank_global.eq.0) then
+if(myrank_global.eq.0) then
 !write(0, *) 'Liran CRM_org 3 u',myrank_global,u
 !write(0, *) 'Liran CRM_org 3 du',myrank_global,dudt
 !write(0, *) 'Liran CRM_org 3 dw',myrank_global,dwdt
@@ -1045,7 +1075,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !write(0, *) 'Liran CRM_org2 qv0',myrank_global,qv0
 !write(0, *) 'Liran CRM_org2 qn0',myrank_global,qn0
 !write(0, *) 'Liran CRM_org2 w',myrank_global,w
-!end if
+end if
      call buoyancy()
 
 !+++mhwangtest
@@ -1124,11 +1154,11 @@ end if
 !-----------------------------------------------------------
 !  SGS physics:
 !call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-!if(myrank_global.eq.0) then
+if(myrank_global.eq.0) then
 !write(0, *) 'Liran CRM_org 7 u',myrank_global,u
 !write(0, *) 'Liran CRM_org 7 du',myrank_global,dudt
 !write(0, *) 'Liran CRM_org 7 dw',myrank_global,dwdt
-!end if   
+end if   
     if (dosgs) call sgs_proc()
 
 #ifdef CRM_DEBUG
@@ -1217,11 +1247,11 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !end if
      call advect_mom()
 
-!if(myrank_global.eq.0) then
+if(myrank_global.eq.0) then
 !write(0, *) 'Liran CRM_org 9 u',myrank_global,u
 !write(0, *) 'Liran CRM_org 9 du',myrank_global,dudt
 !write(0, *) 'Liran CRM_org 9 dw',myrank_global,dwdt
-!end if
+end if
 #ifdef CRM_DEBUG
          do k=1,nzm
           do j=1,ny
@@ -1248,11 +1278,11 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !end if
      if(dosgs) call sgs_mom()
 
-!if(myrank_global.eq.0) then
+if(myrank_global.eq.0) then
 !write(0, *) 'Liran CRM_org 10 u',myrank_global,u
 !write(0, *) 'Liran CRM_org 10 du',myrank_global,dudt
 !write(0, *) 'Liran CRM_org 10 dw',myrank_global,dwdt
-!end if
+end if
 
 #ifdef CLUBB_CRM_OLD
      if ( doclubb ) then
@@ -1291,17 +1321,57 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !---------------------------------------------------------
 !       compute rhs of the Poisson equation and solve it for pressure. 
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-!if(myrank_global.eq.0) then
+if(myrank_global.eq.0) then
 !write(0, *) 'Liran CRM_org 12 u',myrank_global,u
 !write(0, *) 'Liran CRM_org 12 w',myrank_global,w
 !write(0, *) 'Liran CRM_org 12 du',myrank_global,dudt
 !write(0, *) 'Liran CRM_org 12 dw',myrank_global,dwdt
-!end if
+
+crm_count = crm_count + 1
+     do k=1,nzm
+      do j=1,ny
+        do i=1,nx
+write(13, *) 'before u org',crm_count,i,k,u(i,j,k)
+write(13, *) 'before w org',crm_count,i,k,w(i,j,k)
+write(13, *) 'before p org',crm_count,i,k,p(i,j,k)
+write(13, *) 'before t org',crm_count,i,k,t(i,j,k)
+write(13, *) 'before dudt1 org',crm_count,i,k,dudt(i,j,k,1)
+write(13, *) 'before dudt2 org',crm_count,i,k,dudt(i,j,k,2)
+write(13, *) 'before dudt3 org',crm_count,i,k,dudt(i,j,k,3)
+write(13, *) 'before dwdt1 org',crm_count,i,k,dwdt(i,j,k,1)
+write(13, *) 'before dwdt2 org',crm_count,i,k,dwdt(i,j,k,2)
+write(13, *) 'before dwdt3 org',crm_count,i,k,dwdt(i,j,k,3)
+        enddo
+      enddo
+     enddo
+
+
+end if
      call pressure()
 
-!if(myrank_global.eq.0) then
+if(myrank_global.eq.0) then
 !write(0, *) 'Liran CRM_org 1 p',myrank_global,p
-!end if
+!write(0, *) 'Liran CRM_org 13 u',myrank_global,u
+!write(0, *) 'Liran CRM_org 13 du',myrank_global,dudt
+     do k=1,nzm
+      do j=1,ny
+        do i=1,nx
+write(13, *) 'after u',crm_count,i,k,u(i,j,k)
+write(13, *) 'after w',crm_count,i,k,w(i,j,k)
+write(13, *) 'after p',crm_count,i,k,p(i,j,k)
+write(13, *) 'after t',crm_count,i,k,t(i,j,k)
+write(13, *) 'after dudt1',crm_count,i,k,dudt(i,j,k,1)
+write(13, *) 'after dudt2',crm_count,i,k,dudt(i,j,k,1)
+write(13, *) 'after dudt3',crm_count,i,k,dudt(i,j,k,1)
+write(13, *) 'after dwdt1',crm_count,i,k,dwdt(i,j,k,1)
+write(13, *) 'after dwdt2',crm_count,i,k,dwdt(i,j,k,2)
+write(13, *) 'after dwdt3',crm_count,i,k,dwdt(i,j,k,3)
+        enddo
+      enddo
+     enddo
+
+
+end if
 #ifdef CRM_DEBUG
          do k=1,nzm
           do j=1,ny

@@ -353,7 +353,7 @@ subroutine crm_orc     (long,lati,gcolindex,lchnk, icol, &
         integer iseed   ! seed for random perturbation
         integer, intent(in) :: gcolindex(pcols)  ! array of global latitude indices
         integer :: ierr, status
-        integer :: myproc_crm_check,myrank_crm_check
+        integer :: myproc_crm_check,myrank_crm_check,crm_count
 
 #ifdef SPCAM_CLUBB_SGS
 !Array indicies for spurious RTM check
@@ -375,7 +375,18 @@ real(kind=core_rknd), dimension(nzm) :: &
         CHARACTER(LEN=6) :: crm_number
 
        include 'mpif.h'   
-        !call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+        call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+crm_count = 0
+if (myrank_global <53) then
+ ! ---------- basic comm pool size sanity checks by bloss -------------
+  923 format(I6.6)
+  write(crm_number,923) myrank_global
+  open(unit=13,file='crm.crm_debug.'//TRIM(crm_number),form='formatted')
+  write(13,*) 'Global: ',myrank_global
+  ! ----------- GCM handshake from spcam_drivers --------------
+end if
+
+
         !write(0, *) 'Liran enter ORC',myrank_global ,nx       
         nsubdomains_x  = 2
         call crm_define_grid()
@@ -430,9 +441,6 @@ real(kind=core_rknd), dimension(nzm) :: &
         call task_init_ORC (crm_comm_in,myproc_crm_check,myrank_crm_check)
         call setparm()
 !write(0, *) 'Liran CRM_ORC0 q002',myrank_global,q
-!write(0, *) 'Liran CRM_ORC0 qv002',myrank_global,qv
-!        doshortwave = doshort
-!        dolongwave = dolong
 !        day0 = day00-dt_gl/86400.
 !        latitude = latitude00
 !        longitude = longitude00
@@ -470,6 +478,7 @@ real(kind=core_rknd), dimension(nzm) :: &
            prespot(k)=(1000./pres(k))**(rgas/cp)
            bet(k) = ggr/tl(plev-k+1)
            gamaz(k)=ggr/cp*z(k)
+            write(13, *) 'Check gamaz1',k,gamaz(k),z(k)
         end do ! k
 !        zi(nz) =  zint(plev-nz+2)
         zi(nz) = zint(plev-nz+2)-zint(plev+1) !+++mhwang, 2012-02-04
@@ -537,8 +546,8 @@ real(kind=core_rknd), dimension(nzm) :: &
         v(1:nx,1:ny,1:nzm) = v_crm(1:nx,1:ny,1:nzm)*YES3D
         w(1:nx,1:ny,1:nzm) = w_crm(1:nx,1:ny,1:nzm)
         tabs(1:nx,1:ny,1:nzm) = t_crm(1:nx,1:ny,1:nzm)
-!call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-!write(0, *) 'Liran CRM_ORC0 w',myrank_global,w
+call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+write(0, *) 'Liran CRM_ORC0 w',myrank_global,w
 
         micro_field(1:nx,1:ny,1:nzm,1:nmicro_fields) = micro_fields_crm(1:nx,1:ny,1:nzm,1:nmicro_fields)
 
@@ -573,6 +582,7 @@ real(kind=core_rknd), dimension(nzm) :: &
 #endif 
 
         w(:,:,nz)=0.
+write(0, *) 'Liran CRM_ORC01 w',myrank_global,w
         wsub (:) = 0.      !used in clubb, +++mhwang
 
         !dudt(:,:,:,:) = 0.
@@ -616,11 +626,11 @@ real(kind=core_rknd), dimension(nzm) :: &
 !---mhwang
           do j=1,ny
            do i=1,nx
-            
+            write(13, *) 'Check t0',i,k,tabs(i,j,k),qcl(i,j,k),qci(i,j,k),qpl(i,j,k),qpi(i,j,k),gamaz(k)
             t(i,j,k) = tabs(i,j,k)+gamaz(k) &
                         -fac_cond*qcl(i,j,k)-fac_sub*qci(i,j,k) &
                         -fac_cond*qpl(i,j,k)-fac_sub*qpi(i,j,k)
-
+            write(13, *) 'Check t1',i,k,t(i,j,k)
             colprec=colprec+(qpl(i,j,k)+qpi(i,j,k))*pdel(plev-k+1)
             colprecs=colprecs+qpi(i,j,k)*pdel(plev-k+1)
             u0(k)=u0(k)+u(i,j,k)
@@ -922,10 +932,30 @@ real(kind=core_rknd), dimension(nzm) :: &
 !        nrad = nstop/nrad0
         day=day0
 
+
+     do k=1,nzm
+      do j=1,ny
+        do i=1,nx
+write(13, *) 'before u0',myrank_global,crm_count,i,k,u(i,j,k)
+write(13, *) 'before w0',myrank_global,crm_count,i,k,w(i,j,k)
+write(13, *) 'before p0',myrank_global,crm_count,i,k,p(i,j,k)
+write(13, *) 'before t0',myrank_global,crm_count,i,k,t(i,j,k)
+write(13, *) 'before dudt10',myrank_global,crm_count,i,k,dudt(i,j,k,1)
+write(13, *) 'before dudt20',myrank_global,crm_count,i,k,dudt(i,j,k,2)
+write(13, *) 'before dudt30',myrank_global,crm_count,i,k,dudt(i,j,k,3)
+write(13, *) 'before dwdt10',myrank_global,crm_count,i,k,dwdt(i,j,k,1)
+write(13, *) 'before dwdt20',myrank_global,crm_count,i,k,dwdt(i,j,k,2)
+write(13, *) 'before dwdt30',myrank_global,crm_count,i,k,dwdt(i,j,k,3)
+        enddo
+      enddo
+     enddo
+
+
+
 !------------------------------------------------------------------
 !   Main time loop    
 !------------------------------------------------------------------
-
+!write(0, *) 'Liran CRM_ORC02 w',myrank_global,w
 !call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !write(0, *) 'Liran CRM_ORC0 q',myrank_global,q
 !write(0, *) 'Liran CRM_ORC0 qv',myrank_global,qv
@@ -971,7 +1001,7 @@ do while(nstep.lt.nstop)
 !write(0, *) 'Liran CRM_ORC2 qpi',myrank_global,qpi
 !write(0, *) 'Liran CRM_ORC2 qv0',myrank_global,qv0
 !write(0, *) 'Liran CRM_ORC2 qn0',myrank_global,qn0
-write(0, *) 'Liran CRM_ORC2 w',myrank_global,w
+!write(0, *) 'Liran CRM_ORC2 w',myrank_global,w
      call buoyancy()
 !+++mhwangtest
 ! test water conservtion problem
@@ -982,7 +1012,7 @@ write(0, *) 'Liran CRM_ORC2 w',myrank_global,w
 !write(0, *) 'Liran CRM_ORC21 dwdt',myrank_global,dwdt
 !write(0, *) 'Liran CRM_ORC21 ut',myrank_global,utend
 !write(0, *) 'Liran CRM_ORC21 u',myrank_global,u
-write(0, *) 'Liran CRM_ORC21 w',myrank_global,w
+!write(0, *) 'Liran CRM_ORC21 w',myrank_global,w
 !------------------------------------------------------------
 !       Large-scale and surface forcing:
 
@@ -1018,7 +1048,7 @@ write(0, *) 'Liran CRM_ORC21 w',myrank_global,w
 !write(0, *) 'Liran CRM_ORC4 dudt',myrank_global,dudt
 !write(0, *) 'Liran CRM_ORC4 dwdt',myrank_global,dwdt
 !write(0, *) 'Liran CRM_ORC4 u',myrank_global,u
-write(0, *) 'Liran CRM_ORC4 w',myrank_global,w
+!write(0, *) 'Liran CRM_ORC4 w',myrank_global,w
 !write(0, *) 'Liran CRM_ORC4 t',myrank_global,t
      call boundaries(3)
 !---------------------------------------------------------
@@ -1027,7 +1057,7 @@ write(0, *) 'Liran CRM_ORC4 w',myrank_global,w
 !write(0, *) 'Liran CRM_ORC5 dudt',myrank_global,dudt
 !write(0, *) 'Liran CRM_ORC5 dwdt',myrank_global,dwdt
 !write(0, *) 'Liran CRM_ORC5 u',myrank_global,u
-write(0, *) 'Liran CRM_ORC5 w',myrank_global,w
+!write(0, *) 'Liran CRM_ORC5 w',myrank_global,w
 !write(0, *) 'Liran CRM_ORC5 t',myrank_global,t
       call boundaries(0)
 !-----------------------------------------------
@@ -1036,7 +1066,7 @@ write(0, *) 'Liran CRM_ORC5 w',myrank_global,w
 !write(0, *) 'Liran CRM_ORC6 dudt',myrank_global,dudt
 !write(0, *) 'Liran CRM_ORC6 dwdt',myrank_global,dwdt
 !write(0, *) 'Liran CRM_ORC6 u',myrank_global,u
-write(0, *) 'Liran CRM_ORC6 w',myrank_global,w
+!write(0, *) 'Liran CRM_ORC6 w',myrank_global,w
      if(dosurface) call crmsurface(bflx)
 !-----------------------------------------------------------
 !  SGS physics:
@@ -1141,45 +1171,84 @@ write(0, *) 'Liran CRM_ORC6 w',myrank_global,w
 !---------------------------------------------------------
 !       compute rhs of the Poisson equation and solve it for pressure. 
 !call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-!write(0, *) 'Liran CRM_ORC12 u',myrank_global,u
-!write(0, *) 'Liran CRM_ORC12 w',myrank_global,w
-!write(0, *) 'Liran CRM_ORC12 dudt',myrank_global,dudt
-!write(0, *) 'Liran CRM_ORC12 dwdt',myrank_global,dwdt
+crm_count = crm_count + 1
+     do k=1,nzm
+      do j=1,ny
+        do i=1,nx
+write(13, *) 'before u',myrank_global,crm_count,i,k,u(i,j,k)
+write(13, *) 'before w',myrank_global,crm_count,i,k,w(i,j,k)
+write(13, *) 'before p',myrank_global,crm_count,i,k,p(i,j,k)
+write(13, *) 'before t',myrank_global,crm_count,i,k,t(i,j,k)
+write(13, *) 'before dudt1',myrank_global,crm_count,i,k,dudt(i,j,k,1)
+write(13, *) 'before dudt2',myrank_global,crm_count,i,k,dudt(i,j,k,2)
+write(13, *) 'before dudt3',myrank_global,crm_count,i,k,dudt(i,j,k,3)
+write(13, *) 'before dwdt1',myrank_global,crm_count,i,k,dwdt(i,j,k,1)
+write(13, *) 'before dwdt2',myrank_global,crm_count,i,k,dwdt(i,j,k,2)
+write(13, *) 'before dwdt3',myrank_global,crm_count,i,k,dwdt(i,j,k,3)
+        enddo
+      enddo
+     enddo
      call pressure_ORC()
 !call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+     do k=1,nzm
+      do j=1,ny
+        do i=1,nx
+write(13, *) 'after u',myrank_global,crm_count,i,k,u(i,j,k)
+write(13, *) 'after w',myrank_global,crm_count,i,k,w(i,j,k)
+write(13, *) 'after p',myrank_global,crm_count,i,k,p(i,j,k)
+write(13, *) 'after t',myrank_global,crm_count,i,k,t(i,j,k)
+write(13, *) 'after dudt1',myrank_global,crm_count,i,k,dudt(i,j,k,1)
+write(13, *) 'after dudt2',myrank_global,crm_count,i,k,dudt(i,j,k,1)
+write(13, *) 'after dudt3',myrank_global,crm_count,i,k,dudt(i,j,k,1)
+write(13, *) 'after dwdt1',myrank_global,crm_count,i,k,dwdt(i,j,k,1)
+write(13, *) 'after dwdt2',myrank_global,crm_count,i,k,dwdt(i,j,k,2)
+write(13, *) 'after dwdt3',myrank_global,crm_count,i,k,dwdt(i,j,k,3)
+        enddo
+      enddo
+     enddo
+
+
+
 !write(0, *) 'Liran CRM_ORC7 u',myrank_global,u
-!write(0, *) 'Liran CRM_ORC1 p',myrank_global,p
+!write(0, *) 'Liran CRM_ORC7 p',myrank_global,p
+!write(0, *) 'Liran CRM_ORC7 dudt',myrank_global,dudt
 !---------------------------------------------------------
 !       find velocity field at n+1/2 timestep needed for advection of scalars:
 !  Note that at the end of the call, the velocities are in nondimensional form.
 	 
      call adams()
-write(0, *) 'Liran CRM_ORC8 u',myrank_global,u
+!write(0, *) 'Liran CRM_ORC8 u',myrank_global,u
+!write(0, *) 'Liran CRM_ORC8 dudt',myrank_global,dudt
 !----------------------------------------------------------
 !     Update boundaries for all prognostic scalar fields for advection:
 
      call boundaries(2)
-write(0, *) 'Liran CRM_ORC9 u',myrank_global,u
+!write(0, *) 'Liran CRM_ORC9 u',myrank_global,u
+!write(0, *) 'Liran CRM_ORC9 dudt',myrank_global,dudt
 !---------------------------------------------------------
 !      advection of scalars :
 
      call advect_all_scalars()
-write(0, *) 'Liran CRM_ORC7 10',myrank_global,u
+!write(0, *) 'Liran CRM_ORC7 10',myrank_global,u
+!write(0, *) 'Liran CRM_ORC7 10 dudt',myrank_global,dudt
 !-----------------------------------------------------------
 !    Convert velocity back from nondimensional form:
 
       call uvw()
-write(0, *) 'Liran CRM_ORC11 u',myrank_global,u
+!write(0, *) 'Liran CRM_ORC11 u',myrank_global,u
+!write(0, *) 'Liran CRM_ORC11 dudt',myrank_global,dudt
 !----------------------------------------------------------
 !     Update boundaries for scalars to prepare for SGS effects:
 
      call boundaries(3)
-write(0, *) 'Liran CRM_ORC12 u',myrank_global,u
+!write(0, *) 'Liran CRM_ORC12 u',myrank_global,u
+!write(0, *) 'Liran CRM_ORC12 dudt',myrank_global,dudt
 !---------------------------------------------------------
 !      SGS effects on scalars :
 
      if (dosgs) call sgs_scalars()
-write(0, *) 'Liran CRM_ORC13 u',myrank_global,u
+!write(0, *) 'Liran CRM_ORC13 u',myrank_global,u
+!write(0, *) 'Liran CRM_ORC13 dudt',myrank_global,dudt
 #ifdef CLUBB_CRM_OLD
       ! Re-compute q/qv/qcl based on values computed in CLUBB
      if ( doclubb ) then
@@ -1242,7 +1311,8 @@ write(0, *) 'Liran CRM_ORC13 u',myrank_global,u
 !-----------------------------------------------------------
 !    Compute diagnostics fields:
       call diagnose()
-write(0, *) 'Liran CRM_ORC14 u',myrank_global,u
+!write(0, *) 'Liran CRM_ORC14 u',myrank_global,u
+!write(0, *) 'Liran CRM_ORC14 dudt',myrank_global,dudt
 !----------------------------------------------------------
 ! Rotate the dynamic tendency arrays for Adams-bashforth scheme:
       nn=na
@@ -1428,7 +1498,7 @@ write(0, *) 'Liran CRM_ORC14 u',myrank_global,u
 !----------------------------------------------------------
         end do ! main loop
 !----------------------------------------------------------
-write(0, *) 'Liran finish main loop'
+!write(0, *) 'Liran finish main loop'
         tmp1 = 1._r8/ dble(nstop)
         t_rad = t_rad * tmp1
         qv_rad = qv_rad * tmp1
