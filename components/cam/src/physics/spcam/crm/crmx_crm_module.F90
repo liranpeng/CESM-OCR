@@ -1335,12 +1335,12 @@ write(13, *) 'before u org',crm_count,i,k,u(i,j,k)
 write(13, *) 'before w org',crm_count,i,k,w(i,j,k)
 write(13, *) 'before p org',crm_count,i,k,p(i,j,k)
 write(13, *) 'before t org',crm_count,i,k,t(i,j,k)
-write(13, *) 'before dudt1 org',crm_count,i,k,dudt(i,j,k,1)
-write(13, *) 'before dudt2 org',crm_count,i,k,dudt(i,j,k,2)
-write(13, *) 'before dudt3 org',crm_count,i,k,dudt(i,j,k,3)
-write(13, *) 'before dwdt1 org',crm_count,i,k,dwdt(i,j,k,1)
-write(13, *) 'before dwdt2 org',crm_count,i,k,dwdt(i,j,k,2)
-write(13, *) 'before dwdt3 org',crm_count,i,k,dwdt(i,j,k,3)
+!write(13, *) 'before dudt1 org',crm_count,i,k,dudt(i,j,k,1)
+!write(13, *) 'before dudt2 org',crm_count,i,k,dudt(i,j,k,2)
+!write(13, *) 'before dudt3 org',crm_count,i,k,dudt(i,j,k,3)
+!write(13, *) 'before dwdt1 org',crm_count,i,k,dwdt(i,j,k,1)
+!write(13, *) 'before dwdt2 org',crm_count,i,k,dwdt(i,j,k,2)
+!write(13, *) 'before dwdt3 org',crm_count,i,k,dwdt(i,j,k,3)
         enddo
       enddo
      enddo
@@ -1353,22 +1353,22 @@ if(myrank_global.eq.0) then
 !write(0, *) 'Liran CRM_org 1 p',myrank_global,p
 !write(0, *) 'Liran CRM_org 13 u',myrank_global,u
 !write(0, *) 'Liran CRM_org 13 du',myrank_global,dudt
-     do k=1,nzm
-      do j=1,ny
-        do i=1,nx
-write(13, *) 'after u',crm_count,i,k,u(i,j,k)
-write(13, *) 'after w',crm_count,i,k,w(i,j,k)
-write(13, *) 'after p',crm_count,i,k,p(i,j,k)
-write(13, *) 'after t',crm_count,i,k,t(i,j,k)
-write(13, *) 'after dudt1',crm_count,i,k,dudt(i,j,k,1)
-write(13, *) 'after dudt2',crm_count,i,k,dudt(i,j,k,1)
-write(13, *) 'after dudt3',crm_count,i,k,dudt(i,j,k,1)
-write(13, *) 'after dwdt1',crm_count,i,k,dwdt(i,j,k,1)
-write(13, *) 'after dwdt2',crm_count,i,k,dwdt(i,j,k,2)
-write(13, *) 'after dwdt3',crm_count,i,k,dwdt(i,j,k,3)
-        enddo
-      enddo
-     enddo
+!     do k=1,nzm
+!      do j=1,ny
+!        do i=1,nx
+!write(13, *) 'after u',crm_count,i,k,u(i,j,k)
+!write(13, *) 'after w',crm_count,i,k,w(i,j,k)
+!write(13, *) 'after p',crm_count,i,k,p(i,j,k)
+!write(13, *) 'after t',crm_count,i,k,t(i,j,k)
+!write(13, *) 'after dudt1',crm_count,i,k,dudt(i,j,k,1)
+!write(13, *) 'after dudt2',crm_count,i,k,dudt(i,j,k,1)
+!write(13, *) 'after dudt3',crm_count,i,k,dudt(i,j,k,1)
+!write(13, *) 'after dwdt1',crm_count,i,k,dwdt(i,j,k,1)
+!write(13, *) 'after dwdt2',crm_count,i,k,dwdt(i,j,k,2)
+!write(13, *) 'after dwdt3',crm_count,i,k,dwdt(i,j,k,3)
+!        enddo
+!      enddo
+!     enddo
 
 
 end if

@@ -59,8 +59,8 @@ n3j=3*ny_gl/2+1
  allocate (ff(nx+1,ny+2*YES3D,nzm))  ! local (subdomain's) version of f
  allocate (buff_slabs(nxp1,nyp2,nzslab,npressureslabs))
  allocate (buff_subs(nxp1,nyp2,nzslab,nsubdomains))
- allocate (bufp_slabs(nx, (1-YES3D):ny, nzslab,npressureslabs))
- allocate (bufp_subs(nx, (1-YES3D):ny, nzslab,nsubdomains))
+ allocate (bufp_slabs(0:nx, (1-YES3D):ny, nzslab,npressureslabs))
+ allocate (bufp_subs(0:nx, (1-YES3D):ny, nzslab,nsubdomains))
  allocate (work(nx2,ny2))
  allocate (trigxi(n3i))
  allocate (trigxj(n3j))
@@ -133,11 +133,11 @@ endif
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 if(myrank_global.eq.0) then
   !print*, 'Liran Check u0 org ',u
-  print*, 'Liran Check p0 org ',p
+ ! print*, 'Liran Check p0 org ',p
 end if
 call press_rhs()
 if(myrank_global.eq.0) then
-  print*, 'Liran Check p org ',p
+  !print*, 'Liran Check p org ',p
 end if 
 !-----------------------------------------------------------------	 
 !   Form the horizontal slabs of right-hand-sides of Poisson equation 
@@ -256,17 +256,16 @@ if(rank.lt.npressureslabs) then
 
  call fftfax_crm(nx_gl,ifaxi,trigxi)
  if(RUN3D) call fftfax_crm(ny_gl,ifaxj,trigxj)
-print*,'org fp',rank,fp
+!print*,'org fp',rank,fp
  do k=1,nzslab
-print*,'org fp k',k,fp(1,1,k)
+!print*,'org fp k',k,fp(1,1,k)
    call fft991_crm(fp(1,1,k),work,trigxi,ifaxi,1,nx2,nx_gl,ny_gl,-1)
 
   if(RUN3D) then
      call fft991_crm(fp(1,1,k),work,trigxj,ifaxj,nx2,1,ny_gl,nx_gl+1,-1)
   end if
-
  end do 
-
+!print*,'org after fp',rank,fp
 endif
 
 

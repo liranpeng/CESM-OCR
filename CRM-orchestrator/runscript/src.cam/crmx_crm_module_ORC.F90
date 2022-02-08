@@ -377,14 +377,14 @@ real(kind=core_rknd), dimension(nzm) :: &
        include 'mpif.h'   
         call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 crm_count = 0
-if (myrank_global <53) then
+!if (myrank_global <53) then
  ! ---------- basic comm pool size sanity checks by bloss -------------
-  923 format(I6.6)
-  write(crm_number,923) myrank_global
-  open(unit=13,file='crm.crm_debug.'//TRIM(crm_number),form='formatted')
-  write(13,*) 'Global: ',myrank_global
+!  923 format(I6.6)
+!  write(crm_number,923) myrank_global
+!  open(unit=13,file='crm.crm_debug.'//TRIM(crm_number),form='formatted')
+!  write(13,*) 'Global: ',myrank_global
   ! ----------- GCM handshake from spcam_drivers --------------
-end if
+!end if
 
 
         !write(0, *) 'Liran enter ORC',myrank_global ,nx       
@@ -1179,33 +1179,33 @@ write(13, *) 'before u',myrank_global,crm_count,i,k,u(i,j,k)
 write(13, *) 'before w',myrank_global,crm_count,i,k,w(i,j,k)
 write(13, *) 'before p',myrank_global,crm_count,i,k,p(i,j,k)
 write(13, *) 'before t',myrank_global,crm_count,i,k,t(i,j,k)
-write(13, *) 'before dudt1',myrank_global,crm_count,i,k,dudt(i,j,k,1)
-write(13, *) 'before dudt2',myrank_global,crm_count,i,k,dudt(i,j,k,2)
-write(13, *) 'before dudt3',myrank_global,crm_count,i,k,dudt(i,j,k,3)
-write(13, *) 'before dwdt1',myrank_global,crm_count,i,k,dwdt(i,j,k,1)
-write(13, *) 'before dwdt2',myrank_global,crm_count,i,k,dwdt(i,j,k,2)
-write(13, *) 'before dwdt3',myrank_global,crm_count,i,k,dwdt(i,j,k,3)
+!write(13, *) 'before dudt1',myrank_global,crm_count,i,k,dudt(i,j,k,1)
+!write(13, *) 'before dudt2',myrank_global,crm_count,i,k,dudt(i,j,k,2)
+!write(13, *) 'before dudt3',myrank_global,crm_count,i,k,dudt(i,j,k,3)
+!write(13, *) 'before dwdt1',myrank_global,crm_count,i,k,dwdt(i,j,k,1)
+!write(13, *) 'before dwdt2',myrank_global,crm_count,i,k,dwdt(i,j,k,2)
+!write(13, *) 'before dwdt3',myrank_global,crm_count,i,k,dwdt(i,j,k,3)
         enddo
       enddo
      enddo
      call pressure_ORC()
 !call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-     do k=1,nzm
-      do j=1,ny
-        do i=1,nx
-write(13, *) 'after u',myrank_global,crm_count,i,k,u(i,j,k)
-write(13, *) 'after w',myrank_global,crm_count,i,k,w(i,j,k)
-write(13, *) 'after p',myrank_global,crm_count,i,k,p(i,j,k)
-write(13, *) 'after t',myrank_global,crm_count,i,k,t(i,j,k)
-write(13, *) 'after dudt1',myrank_global,crm_count,i,k,dudt(i,j,k,1)
-write(13, *) 'after dudt2',myrank_global,crm_count,i,k,dudt(i,j,k,1)
-write(13, *) 'after dudt3',myrank_global,crm_count,i,k,dudt(i,j,k,1)
-write(13, *) 'after dwdt1',myrank_global,crm_count,i,k,dwdt(i,j,k,1)
-write(13, *) 'after dwdt2',myrank_global,crm_count,i,k,dwdt(i,j,k,2)
-write(13, *) 'after dwdt3',myrank_global,crm_count,i,k,dwdt(i,j,k,3)
-        enddo
-      enddo
-     enddo
+!     do k=1,nzm
+!      do j=1,ny
+!        do i=1,nx
+!write(13, *) 'after u',myrank_global,crm_count,i,k,u(i,j,k)
+!write(13, *) 'after w',myrank_global,crm_count,i,k,w(i,j,k)
+!write(13, *) 'after p',myrank_global,crm_count,i,k,p(i,j,k)
+!write(13, *) 'after t',myrank_global,crm_count,i,k,t(i,j,k)
+!write(13, *) 'after dudt1',myrank_global,crm_count,i,k,dudt(i,j,k,1)
+!write(13, *) 'after dudt2',myrank_global,crm_count,i,k,dudt(i,j,k,1)
+!write(13, *) 'after dudt3',myrank_global,crm_count,i,k,dudt(i,j,k,1)
+!write(13, *) 'after dwdt1',myrank_global,crm_count,i,k,dwdt(i,j,k,1)
+!write(13, *) 'after dwdt2',myrank_global,crm_count,i,k,dwdt(i,j,k,2)
+!write(13, *) 'after dwdt3',myrank_global,crm_count,i,k,dwdt(i,j,k,3)
+!        enddo
+!      enddo
+!     enddo
 
 
 

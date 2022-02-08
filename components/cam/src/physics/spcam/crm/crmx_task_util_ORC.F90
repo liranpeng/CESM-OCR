@@ -667,11 +667,11 @@ contains
          ! boundaries (for
          ! surface fluxes call
          w(1:nx,1:ny,nz) = sstxy(1:nx,1:ny)
-         write(0, *) 'Liran intask w1',rank,w
+         !write(0, *) 'Liran intask w1',rank,w
          call task_exchange(w,dimx1_w,dimx2_w,dimy1_w,dimy2_w,nz,1,1,1,1,3)   
          sstxy(0:nx,1-YES3D:ny) = w(0:nx,1-YES3D:ny,nz)
          w(0:nx+1,1-YES3D:ny+YES3D,nz) = 0. ! fill it back with 0s
-         write(0, *) 'Liran intask w2',rank,w
+         !write(0, *) 'Liran intask w2',rank,w
         endif
 
         if(flag.eq.2) then
