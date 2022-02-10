@@ -56,7 +56,7 @@ program TwoExecutableDriver
   integer,parameter :: flen       = structlen*pver+singlelen+1+20+pcols
   integer,parameter :: flen2      = 17*crm_nx*crm_ny*crm_nz + crm_nx*crm_ny*crm_nz*nmicro_fields+crm_nx*crm_ny
   integer,parameter :: structleno = 37
-  integer,parameter :: singleleno = 22
+  integer,parameter :: singleleno = 23
   integer,parameter :: rank_offset=2
   integer,parameter :: fleno      = structleno*pver+singleleno+1+20
   real(r8),dimension(flen ) :: inp_Var_Flat
@@ -360,6 +360,7 @@ write(13,*) 'Liran start send data back',myrank_crm
   out_Var_Flat(       20)                               = tauy_crm
   out_Var_Flat(       21)                               = z0m
   out_Var_Flat(       22)                               = timing_factor
+  out_Var_Flat(       23)                               = myrank_global
   out_Var_Flat(        1+singleleno:   pver+singleleno) = out01_qltend
   out_Var_Flat( 1*pver+1+singleleno: 2*pver+singleleno) = out02_qcltend
   out_Var_Flat( 2*pver+1+singleleno: 3*pver+singleleno) = out03_qiltend

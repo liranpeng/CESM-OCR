@@ -705,7 +705,7 @@ end if
           qn0(k) = qn0(k) * factor_xy
           qp0(k) = qp0(k) * factor_xy
           tke0(k) = tke0(k) * factor_xy
-
+print*,'check_org_work',k,u0(k),t0(k)
 #ifdef SPCAM_CLUBB_SGS
  ! Update thetav for CLUBB.  This is needed when we have a higher model top 
  ! than is in the sounding, because we subsequently use tv0 to initialize 

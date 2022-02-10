@@ -478,7 +478,7 @@ crm_count = 0
            prespot(k)=(1000./pres(k))**(rgas/cp)
            bet(k) = ggr/tl(plev-k+1)
            gamaz(k)=ggr/cp*z(k)
-            write(13, *) 'Check gamaz1',k,gamaz(k),z(k)
+           ! write(13, *) 'Check gamaz1',k,gamaz(k),z(k)
         end do ! k
 !        zi(nz) =  zint(plev-nz+2)
         zi(nz) = zint(plev-nz+2)-zint(plev+1) !+++mhwang, 2012-02-04
@@ -547,7 +547,7 @@ crm_count = 0
         w(1:nx,1:ny,1:nzm) = w_crm(1:nx,1:ny,1:nzm)
         tabs(1:nx,1:ny,1:nzm) = t_crm(1:nx,1:ny,1:nzm)
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-write(0, *) 'Liran CRM_ORC0 w',myrank_global,w
+!write(0, *) 'Liran CRM_ORC0 w',myrank_global,w
 
         micro_field(1:nx,1:ny,1:nzm,1:nmicro_fields) = micro_fields_crm(1:nx,1:ny,1:nzm,1:nmicro_fields)
 
@@ -582,7 +582,7 @@ write(0, *) 'Liran CRM_ORC0 w',myrank_global,w
 #endif 
 
         w(:,:,nz)=0.
-write(0, *) 'Liran CRM_ORC01 w',myrank_global,w
+!write(0, *) 'Liran CRM_ORC01 w',myrank_global,w
         wsub (:) = 0.      !used in clubb, +++mhwang
 
         !dudt(:,:,:,:) = 0.
@@ -626,11 +626,11 @@ write(0, *) 'Liran CRM_ORC01 w',myrank_global,w
 !---mhwang
           do j=1,ny
            do i=1,nx
-            write(13, *) 'Check t0',i,k,tabs(i,j,k),qcl(i,j,k),qci(i,j,k),qpl(i,j,k),qpi(i,j,k),gamaz(k)
+           ! write(13, *) 'Check t0',i,k,tabs(i,j,k),qcl(i,j,k),qci(i,j,k),qpl(i,j,k),qpi(i,j,k),gamaz(k)
             t(i,j,k) = tabs(i,j,k)+gamaz(k) &
                         -fac_cond*qcl(i,j,k)-fac_sub*qci(i,j,k) &
                         -fac_cond*qpl(i,j,k)-fac_sub*qpi(i,j,k)
-            write(13, *) 'Check t1',i,k,t(i,j,k)
+           ! write(13, *) 'Check t1',i,k,t(i,j,k)
             colprec=colprec+(qpl(i,j,k)+qpi(i,j,k))*pdel(plev-k+1)
             colprecs=colprecs+qpi(i,j,k)*pdel(plev-k+1)
             u0(k)=u0(k)+u(i,j,k)
@@ -1967,7 +1967,7 @@ write(13, *) 'before t',myrank_global,crm_count,i,k,t(i,j,k)
 !call sgs_deallocate()
 !call crm_deallocate()
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-write(0, *) 'Liran finish deallocate',myrank_global
+!write(0, *) 'Liran finish deallocate',myrank_global
 !call micro_deallocate()
         
 end subroutine crm_orc

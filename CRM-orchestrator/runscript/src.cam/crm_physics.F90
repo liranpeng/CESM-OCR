@@ -742,6 +742,7 @@ end subroutine crm_init_cnst
 ! 
 !-------------------------------------------------------------------------------------------
 #ifdef CRM
+   use crmx_params,         only: ggr,cp,fac_cond,fac_sub
    use spmd_utils,          only: masterproc,iam
    use shr_spfn_mod,        only: gamma => shr_spfn_gamma
    use time_manager,        only: is_first_step, get_nstep
@@ -953,7 +954,7 @@ end subroutine crm_init_cnst
    real(r8) tau00  ! surface stress
    real(r8) wnd  ! surface wnd
    real(r8) bflx   ! surface buoyancy flux (Km/s)
-   real(r8) :: out_precc,out_precl,out_precsc,out_precsl,out_cltot,out_clhgh,out_clmed,out_cllow,out_prectend, out_precstend,out_timing_factor 
+   real(r8) :: out_precc,out_precl,out_precsc,out_precsl,out_cltot,out_clhgh,out_clmed,out_cllow,out_prectend, out_precstend,out_timing_factor,out_global_rank 
    real(r8) :: out_ocnfrac,out_wnd,out_tau00,out_bflx,out_fluxu0,out_fluxv0,out_fluxt0,out_fluxq0,out_taux_crm,out_tauy_crm,out_z0m
    real(r8), dimension(pver) :: out_qltend,out_qcltend,out_qiltend,out_sltend,out_cld,out_cldtop,out_gicewp,out_gliqwp,out_mctot,out_mcup
    real(r8), dimension(pver) :: out_mcdn,out_mcuup,out_mcudn,out_spqc,out_spqi,out_spqs,out_spqg,out_spqr,out_mu_crm,out_md_crm,out_du_crm
@@ -1034,6 +1035,27 @@ end subroutine crm_init_cnst
    real(r8), allocatable :: spqclvar(:,:)
 
    real(r8)              :: spcld3d (pcols,pver)
+   real(r8) :: work_u(crm_nx, crm_ny, crm_nz)
+   real(r8) :: work_v(crm_nx, crm_ny, crm_nz)
+   real(r8) :: work_w(crm_nx, crm_ny, crm_nz)
+   real(r8) :: work_tabs(crm_nx, crm_ny, crm_nz)
+   real(r8) :: work_qcl(crm_nx, crm_ny, crm_nz)
+   real(r8) :: work_qci(crm_nx, crm_ny, crm_nz)
+   real(r8) :: work_qpl(crm_nx, crm_ny, crm_nz)
+   real(r8) :: work_qpi(crm_nx, crm_ny, crm_nz)
+   real(r8) :: work_qv(crm_nx, crm_ny, crm_nz)
+   real(r8) :: work_t(crm_nx, crm_ny, crm_nz)
+   real(r8) :: work_u0(crm_nz)
+   real(r8) :: work_v0(crm_nz)
+   real(r8) :: work_t0(crm_nz)
+   real(r8) :: work_t00(crm_nz)
+   real(r8) :: work_tabs0(crm_nz)
+   real(r8) :: work_q0(crm_nz)
+   real(r8) :: work_qv0(crm_nz)
+   real(r8) :: work_qn0(crm_nz)
+   real(r8) :: work_qp0(crm_nz)
+   real(r8) :: work_tke0(crm_nz)
+   real(r8) :: work_gamaz(crm_nz)
 
    real(r8) :: tmp4d(pcols,crm_nx, crm_ny, crm_nz)
    real(r8) :: tmp2d(pcols,pver)
@@ -1089,7 +1111,7 @@ end subroutine crm_init_cnst
    real(r8),dimension(flen2) :: Var_Flat2
    integer,parameter :: rank_offset=1
    integer,parameter :: structleno = 37
-   integer,parameter :: singleleno = 22
+   integer,parameter :: singleleno = 23
    integer,parameter :: fleno      = structleno*pver+singleleno+1+20
    integer,parameter :: nflat =  17*(crm_nx*crm_ny*crm_nz) + crm_nx*crm_ny*crm_nz*nmicro_fields+crm_nx*crm_ny
    real(r8),dimension(fleno+nflat) :: CRM_Var_Flat
@@ -1358,9 +1380,9 @@ end if
              cld_rad(i,:,:,k)      = 0._r8
          end do
        end do
-       do i=1,ncol
-         write(iulog,*) 'Check Init u: ',i,crm_u(i,:,:,:)
-       end do
+       !do i=1,ncol
+       !  write(iulog,*) 'Check Init u: ',i,crm_u(i,:,:,:)
+       !end do
        ! use radiation from grid-cell mean radctl on first time step
        prec_crm (:,:,:)          = 0._r8
        ptend_loc%q(:,:,1)        = 0._r8
@@ -1468,9 +1490,9 @@ end if
 
        call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 
-       do i=1,ncol
-         write(iulog,*) 'Check step2 u: ',myrank_global,i,crm_u(i,:,:,:)
-       end do
+       !do i=1,ncol
+       !  write(iulog,*) 'Check step2 u: ',myrank_global,i,crm_u(i,:,:,:)
+       !end do
 
 
        !write (iulog,*),'MPI init w1',myrank_global,crm_w(1,:,:,:)
@@ -1652,7 +1674,7 @@ end if
           ! =================================================
           dest = npes+state%crmrank0(i)*rank_offset
           i_save  = i+state%crmrank1(i)
-          write(iulog,*) 'Check step3 u: ',myrank_global,i,i_save,crm_u(i,:,:,:)
+          !write(iulog,*) 'Check step3 u: ',myrank_global,i,i_save,crm_u(i,:,:,:)
           call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           chnksz = crm_nx*crm_ny*crm_nz
           call get_gcol_all_p(lchnk, pcols, gcolindex)
@@ -1764,6 +1786,58 @@ end if
               end do
             end do
           end do
+
+          work_u(1:crm_nx,1:crm_ny,1:crm_nz)   = crm_u(i_save,1:crm_nx,1:crm_ny,1:crm_nz)
+          work_v(1:crm_nx,1:crm_ny,1:crm_nz)   = crm_v(i_save,1:crm_nx,1:crm_ny,1:crm_nz)*YES3D
+          work_qcl(1:crm_nx,1:crm_ny,1:crm_nz) = qc_crm(i_save,1:crm_nx,1:crm_ny,1:crm_nz) 
+          work_qci(1:crm_nx,1:crm_ny,1:crm_nz) = qi_crm(i_save,1:crm_nx,1:crm_ny,1:crm_nz)
+          work_qpl(1:crm_nx,1:crm_ny,1:crm_nz) = qpc_crm(i_save,1:crm_nx,1:crm_ny,1:crm_nz)
+          work_qpi(1:crm_nx,1:crm_ny,1:crm_nz) = qpi_crm(i_save,1:crm_nx,1:crm_ny,1:crm_nz)
+          work_w(1:crm_nx,1:crm_ny,1:crm_nz)   = crm_w(i_save,1:crm_nx,1:crm_ny,1:crm_nz)
+          work_tabs(1:nx,1:ny,1:nzm)           = crm_t(i_save,1:crm_nx,1:crm_ny,1:crm_nz)
+          do kk=1,crm_nz  
+            work_u0(kk) = 0.
+            work_v0(kk) = 0.
+            work_t0(kk) = 0.
+            work_t00(kk) = 0.
+            work_tabs0(kk) = 0.
+            work_q0(kk) = 0.
+            work_qv0(kk) = 0.
+            work_qn0(kk) = 0.
+            work_qp0(kk) = 0.
+            work_tke0(kk) = 0.
+            work_gamaz(kk)=ggr/cp*(state_loc%zm(i_save,pver-kk+1)-state_loc%zi(i_save,pver+1))
+            do jj=1,crm_ny
+              do ii=1,crm_nx
+                work_t(ii,jj,kk) = work_tabs(ii,jj,kk) + work_gamaz(kk) &
+                                   -fac_cond*work_qcl(ii,jj,kk)-fac_sub*work_qci(ii,jj,kk) &
+                                   -fac_cond*work_qpl(ii,jj,kk)-fac_sub*work_qpi(ii,jj,kk)
+                work_u0(kk)    = work_u0(kk)+work_u(ii,jj,kk)
+                work_v0(kk)    = work_v0(kk)+work_v(ii,jj,kk)
+                work_t0(kk)    = work_t0(kk)+work_t(ii,jj,kk)
+                work_t00(kk)   = work_t00(kk)+work_t(ii,jj,kk)+fac_cond*work_qpl(ii,jj,kk)+fac_sub*work_qpi(ii,jj,kk)
+                work_tabs0(kk) = work_tabs0(kk)+work_tabs(ii,jj,kk)
+                work_q0(kk)    = work_q0(kk)+work_qv(ii,jj,kk)+work_qcl(ii,jj,kk)+work_qci(ii,jj,kk)
+                work_qv0(kk)   = work_qv0(kk)+work_qv(ii,jj,kk)
+                work_qn0(kk)   = work_qn0(kk)+work_qcl(ii,jj,kk)+work_qci(ii,jj,kk)
+                work_qp0(kk)   = work_qp0(kk)+work_qpl(ii,jj,kk)+work_qpi(ii,jj,kk)
+                work_tke0(kk)  = work_tke0(kk)+work_tke0(kk)
+              end do
+            end do
+            work_u0(kk) = work_u0(kk) * (1._r8/dble(crm_nx*crm_ny))
+            work_v0(kk) = work_v0(kk) * (1._r8/dble(crm_nx*crm_ny))
+            work_t0(kk) = work_t0(kk) * (1._r8/dble(crm_nx*crm_ny))
+            work_tabs0(kk) = work_tabs0(kk) * (1._r8/dble(crm_nx*crm_ny))
+            work_q0(kk) = work_q0(kk) * (1._r8/dble(crm_nx*crm_ny))
+            work_qv0(kk) = work_qv0(kk) * (1._r8/dble(crm_nx*crm_ny))
+            work_qn0(kk) = work_qn0(kk) * (1._r8/dble(crm_nx*crm_ny))
+            work_qp0(kk) = work_qp0(kk) * (1._r8/dble(crm_nx*crm_ny))
+            work_tke0(kk) = work_tke0(kk) * (1._r8/dble(crm_nx*crm_ny))
+
+            print*,'check work',kk,work_u0(kk),work_t0(kk)
+          end do
+
+
           fcount = 17*chnksz
           do ii=1,crm_nx
             do jj=1,crm_ny
@@ -1792,7 +1866,7 @@ end if
               write (iulog,*),'Send Check',i_save,i,dest,ii
               call MPI_Send(Var_Flat(:)         ,flen,MPI_REAL8 ,dest,9018,MPI_COMM_WORLD,ierr)
               call MPI_Send(Var_Flat2(:)         ,flen2,MPI_REAL8,dest,9019,MPI_COMM_WORLD,ierr)
-              write (iulog,*),'MPI check send crm_t!',dest,i_save,i,crm_t(i_save,:,:,:)
+              !write (iulog,*),'MPI check send crm_t!',dest,i_save,i,crm_t(i_save,:,:,:)
             end if !if (i .eq. i_save) then
           end do  !do ii=1,ncol
 
@@ -1803,7 +1877,7 @@ end if
          nsubdomains_x  = 1
          call crm_define_grid()
          lchnk = state%lchnk
-        write (iulog,*),'MPI check input crm_t!',myrank_global,i_save,i,crm_t(i_save,:,:,:)
+        !write (iulog,*),'MPI check input crm_t!',myrank_global,i_save,i,crm_t(i_save,:,:,:)
          !write (iulog,*),'MPI check send crm_u!',dest,crm_u(i_save,:,:,:)
          !write (iulog,*),'MPI check input crm_u!',myrank_global,i_save,i,crm_u(i_save,:,:,:)
          !write (13,*),'MPI check input crm_w!',i_save,dest,crm_w(i_save,:,:,:)
@@ -1926,7 +2000,6 @@ end if
           call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           write (iulog,*),'MPI Recv start!',myrank_global,state%crmrank0(i)
           call MPI_Recv(CRM_Var_Flat,fleno+nflat,MPI_REAL8,MPI_ANY_SOURCE,8006,MPI_COMM_WORLD,status,ierr)
-
           out_precc               = CRM_Var_Flat(1 ) 
           out_precl               = CRM_Var_Flat(2 )
           out_precsc              = CRM_Var_Flat(3 )
@@ -1949,6 +2022,7 @@ end if
           out_tauy_crm            = CRM_Var_Flat(20)
           out_z0m                 = CRM_Var_Flat(21)
           out_timing_factor       = CRM_Var_Flat(22)
+          out_global_rank         = CRM_Var_Flat(23)
           out_qltend              = CRM_Var_Flat(        1+singleleno:  pver+singleleno)
           out_qcltend             = CRM_Var_Flat( 1*pver+1+singleleno:2*pver+singleleno) 
           out_qiltend             = CRM_Var_Flat( 2*pver+1+singleleno:3*pver+singleleno) 
@@ -2003,8 +2077,6 @@ end if
                 out_qpc_crm(ii,jj,kk)  = CRM_Var_Flat(fcount + 7 * chnksz) 
                 out_qpi_crm(ii,jj,kk)  = CRM_Var_Flat(fcount + 8 * chnksz) 
                 out_t_rad(ii,jj,kk)    = CRM_Var_Flat(fcount + 9 * chnksz) 
-                out_qv_rad(ii,jj,kk)   = CRM_Var_Flat(fcount + 10* chnksz) 
-                out_qc_rad(ii,jj,kk)   = CRM_Var_Flat(fcount + 11* chnksz) 
                 out_qi_rad(ii,jj,kk)   = CRM_Var_Flat(fcount + 12* chnksz) 
                 out_cld_rad(ii,jj,kk)  = CRM_Var_Flat(fcount + 13* chnksz) 
                 out_cld3d_crm(ii,jj,kk)= CRM_Var_Flat(fcount + 14* chnksz)
@@ -2035,79 +2107,14 @@ end if
           end do
          call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
          !write (iulog,*),'MPI Recv finish!',myrank_global,state%crmrank0(i),i,lchnk,lchnk_save
-         endif ! is this column column coupled to an external (orchestrated) CRM?
          lchnk = lchnk_save
         !end do
-#endif
 
-        !do i = 1,ncol
-!         nsubdomains_x  = 1
-!         call crm_define_grid()
-!         lchnk = state%lchnk
-!#ifdef ORCHESTRATOR
-         !call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-         !if (state%crmrank0(i) .ne. -2) then
-         !write (iulog,*),'CALL CRM!',myrank_global,i,lchnk,ORC_count
-         !write (iulog,*),'CALL CRM u!',crm_u(i,:,:,:)
-         !end if
-!#endif
-!         call crm (lchnk,      i,                                                                                            &
-!             state_loc%t(i,:),   state_loc%q(i,:,1),    state_loc%q(i,:,ixcldliq), state_loc%q(i,:,ixcldice),                &
-!             ul(:),              vl(:),                                                                                      &
-!             state_loc%ps(i),    state_loc%pmid(i,:),   state_loc%pdel(i,:),  state_loc%phis(i),                             &
-!             state_loc%zm(i,:),  state_loc%zi(i,:),     ztodt,                pver,                                          &
-!             ptend_loc%q(i,:,1), ptend_loc%q(i,:,ixcldliq),ptend_loc%q(i,:,ixcldice), ptend_loc%s(i,:),                      &
-!             crm_u(i,:,:,:),     crm_v(i,:,:,:),       crm_w(i,:,:,:),        crm_t(i,:,:,:),          crm_micro(i,:,:,:,:), &
-!             crm_qrad(i,:,:,:),                                                                                              &
-!             qc_crm(i,:,:,:),    qi_crm(i,:,:,:),      qpc_crm(i,:,:,:),      qpi_crm(i,:,:,:),                              &
-!             prec_crm(i,:,:),    t_rad(i,:,:,:),       qv_rad(i,:,:,:),                                                      &
-!             qc_rad(i,:,:,:),    qi_rad(i,:,:,:),      cld_rad(i,:,:,:),      cld3d_crm(i, :, :, :),                         &
-!#ifdef m2005
-!             nc_rad(i,:,:,:),    ni_rad(i,:,:,:),      qs_rad(i,:,:,:),       ns_rad(i,:,:,:),         wvar_crm(i,:,:,:),    &
-!             aut_crm(i,:,:,:),   acc_crm(i,:,:,:),     evpc_crm(i,:,:,:),     evpr_crm(i,:,:,:),       mlt_crm(i,:,:,:),     &
-!             sub_crm(i,:,:,:),   dep_crm(i,:,:,:),     con_crm(i,:,:,:),                                                     &
-!             aut_crm_a(i,:),     acc_crm_a(i,:),       evpc_crm_a(i,:),       evpr_crm_a(i,:),         mlt_crm_a(i,:),       &
-!             sub_crm_a(i,:),     dep_crm_a(i,:),       con_crm_a(i,:),                                                       &
-!#endif
-!             precc(i),           precl(i),             precsc(i),             precsl(i),                                     &
-!             cltot(i),           clhgh(i),             clmed(i),              cllow(i),                cld(i,:),  cldtop(i,:), &
-!             gicewp(i,:),        gliqwp(i,:),                                                                                &
-!             mctot(i,:),         mcup(i,:),            mcdn(i,:),             mcuup(i,:),              mcudn(i,:),           &
-!             spqc(i,:),          spqi(i,:),            spqs(i,:),             spqg(i,:),               spqr(i,:),            &
-!#ifdef m2005
-!             spnc(i,:),          spni(i,:),            spns(i,:),             spng(i,:),               spnr(i,:),            &
-!#ifdef MODAL_AERO
-!             naermod,            vaerosol,             hygro,                                                                &
-!#endif 
-!#endif
-!#ifdef SPCAM_CLUBB_SGS
-!             clubb_buffer(i,:,:,:,:),                                                                                        &
-!             crm_cld(i,:, :, :),                                                                                             &
-!             clubb_tk(i, :, :, :), clubb_tkh(i, :, :, :),                                                                    &
-!             relvar(i,:, :, :),  accre_enhan(i, :, :, :),  qclvar(i, :, :, :),                                               &
-!#endif
-!             crm_tk(i, :, :, :), crm_tkh(i, :, :, :),                                                                        &
-!             mu_crm(i,:),        md_crm(i,:),          du_crm(i,:),           eu_crm(i,:),                                   & 
-!             ed_crm(i,:),        jt_crm(i),            mx_crm(i),                                                            &
-!#ifdef m2005
-!             abnd(i,:,:,:,:),    abnd_tf(i,:,:,:,:),   massflxbnd(i,:,:,:,:), acen(i,:,:,:,:),         acen_tf(i,:,:,:,:),   &
-!             rhcen(i,:,:,:,:),   qcloudcen(i,:,:,:,:), qicecen(i,:,:,:,:),    qlsink_afcen(i,:,:,:,:),                       &
-!             precrcen(i,:,:,:,:),                      precsolidcen(i,:,:,:,:),                                              &
-!             qlsink_bfcen(i,:,:,:,:),                  qlsink_avgcen(i,:,:,:,:),                       praincen(i,:,:,:,:),  &
-!             wupthresh_bnd(i,:), wdownthresh_bnd(i,:),                                                                       &
-!             wwqui_cen(i,:),     wwqui_bnd(i,:),       wwqui_cloudy_cen(i,:), wwqui_cloudy_bnd(i,:),                         &
-!#endif
-!             tkez(i,:),          tkesgsz(i,:),         tk_crm(i, :),                                                         &
-!             flux_u(i,:),        flux_v(i,:),          flux_qt(i,:),          fluxsgs_qt(i,:),         flux_qp(i,:),         &
-!             precflux(i,:),      qt_ls(i,:),           qt_trans(i,:),         qp_trans(i,:),           qp_fall(i,:),         &
-!             qp_evp(i,:),        qp_src(i,:),          t_ls(i,:),             prectend(i),             precstend(i),         &
-!             cam_in%ocnfrac(i),  wnd,                  tau00,                 bflx,                                          & 
-!             fluxu0,             fluxv0,               fluxt0,                fluxq0,                                        & 
-!             taux_crm(i),        tauy_crm(i),          z0m(i),                timing_factor(i),        qtotcrm(i, :)         )   
+        write (iulog,*),'Check print0',state%crmrank0(i),i,int(out_global_rank)
 
-#ifdef ORCHESTRATOR
-        if (state%crmrank0(i) .ne. -2) then ! is this column coupled to an external CRM?
-          do ii=1,crm_nx
+         if (mod(int(out_global_rank),2).eq.0) then
+          write (iulog,*),'Check print 16',out_global_rank  
+          do ii=1,16
             do jj=1,crm_ny
               do kk=1,crm_nz
                 write (iulog,1111),lchnk,i,ii,kk,int(ztodt),crm_u(i,ii,jj,kk),out_crm_u(ii,jj,kk)
@@ -2116,7 +2123,20 @@ end if
               end do
             end do
           end do
-        endif
+         else
+          write (iulog,*),'Check print 32',out_global_rank
+          do ii=17,32
+            do jj=1,crm_ny
+              do kk=1,crm_nz
+                write (iulog,1111),lchnk,i,ii,kk,int(ztodt),crm_u(i,ii,jj,kk),out_crm_u(ii,jj,kk)
+                write (iulog,1112),lchnk,i,ii,kk,int(ztodt),crm_w(i,ii,jj,kk),out_crm_w(ii,jj,kk)
+                write (iulog,1113),lchnk,i,ii,kk,int(ztodt),crm_t(i,ii,jj,kk),out_crm_t(ii,jj,kk)
+              end do
+            end do
+          end do
+         endif
+        endif ! is this column column coupled to an external (orchestrated) CRM?
+
 1111  format ('C_u',5I4,2E15.6)
 1112  format ('C_w',5I4,2E15.6)
 1113  format ('C_t',5I4,2E15.6)
