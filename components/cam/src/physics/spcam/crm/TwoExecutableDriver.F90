@@ -39,6 +39,7 @@ program TwoExecutableDriver
         outin06_crm_qrad,outin07_qc_crm,outin08_qi_crm,outin09_qpc_crm,outin10_qpi_crm,outin12_t_rad,&
         outin13_qv_rad,outin14_qc_rad,outin15_qi_rad,outin16_cld_rad,outin17_cld3d_crm,crm_tk,crm_tkh,out_cld_rad
   real(r8), dimension(crm_nx,crm_ny) :: outin11_prec_crm
+  real(r8), dimension(crm_nz) :: outin_u0,outin_v0,outin_t0,outin_tabs0,outin_q0,outin_qv0,outin_qn0,outin_qp0,outin_tke0
   real(r8), allocatable :: flattened_crm_inout(:),out_Var_Flat(:)
   real(r8),dimension(crm_nx, crm_ny, crm_nz,nmicro_fields+1) :: outin05_crm_micro
   real (r8) :: precc,precl,precsc,precsl,cltot,clhgh,clmed,cllow,lon,lat
@@ -54,7 +55,7 @@ program TwoExecutableDriver
   integer,parameter :: structlen  = 49
   integer,parameter :: singlelen  = 30
   integer,parameter :: flen       = structlen*pver+singlelen+1+20+pcols
-  integer,parameter :: flen2      = 17*crm_nx*crm_ny*crm_nz + crm_nx*crm_ny*crm_nz*nmicro_fields+crm_nx*crm_ny
+  integer,parameter :: flen2      = 17*crm_nx*crm_ny*crm_nz + crm_nx*crm_ny*crm_nz*nmicro_fields+crm_nx*crm_ny+9*crm_nz
   integer,parameter :: structleno = 37
   integer,parameter :: singleleno = 23
   integer,parameter :: rank_offset=2
@@ -275,6 +276,21 @@ program TwoExecutableDriver
       outin11_prec_crm(ii,jj) = inp_Var_Flat2(fcount)
     end do
   end do
+
+  fcount = 17*chnksz + crm_nx*crm_ny*crm_nz*nmicro_fields+crm_nx*crm_ny
+  do kk=1,crm_nz
+    fcount = fcount + 1
+    outin_u0(kk)    = inp_Var_Flat2(fcount + 0 * crm_nz)
+    outin_v0(kk)    = inp_Var_Flat2(fcount + 1 * crm_nz)
+    outin_t0(kk)    = inp_Var_Flat2(fcount + 2 * crm_nz)
+    outin_tabs0(kk) = inp_Var_Flat2(fcount + 3 * crm_nz)
+    outin_q0(kk)    = inp_Var_Flat2(fcount + 4 * crm_nz)
+    outin_qv0(kk)   = inp_Var_Flat2(fcount + 5 * crm_nz)
+    outin_qn0(kk)   = inp_Var_Flat2(fcount + 6 * crm_nz)
+    outin_qp0(kk)   = inp_Var_Flat2(fcount + 7 * crm_nz)
+    outin_tke0(kk)  = inp_Var_Flat2(fcount + 8 * crm_nz)
+  end do
+
 ! Preparing to call the CRM
 
   !call mpi_comm_size(crm_comm_in, numproc_crm_in, ierr)
@@ -298,7 +314,8 @@ program TwoExecutableDriver
   !write (13,*),'CALL CRM_ORC m1!',myrank_global,outin05_crm_micro(crm_start_ind:crm_end_ind,:,:,1)
 
   call MPI_barrier(crm_comm_in, ierr)
-  call crm_orc (lon,lat,gcolindex,inp01_lchnk, inp02_i,                            &
+  call crm_orc(outin_u0,outin_v0,outin_t0,outin_tabs0,outin_q0,outin_qv0,outin_qn0,outin_qp0,outin_tke0, &
+            lon,lat,gcolindex,inp01_lchnk, inp02_i,                            &
             inp03_tl(:),inp04_ql(:),inp05_qccl(:),inp06_qiil(:), &
             inp07_ul(:),inp08_vl(:),inp09_ps,inp10_pmid(:),inp11_pdel(:), &
             inp12_phis,inp13_zm(:),inp14_zi(:),inp15_ztodt,pver, &

@@ -742,6 +742,7 @@ end subroutine crm_init_cnst
 ! 
 !-------------------------------------------------------------------------------------------
 #ifdef CRM
+   use crmx_micro_params
    use crmx_params,         only: ggr,cp,fac_cond,fac_sub
    use spmd_utils,          only: masterproc,iam
    use shr_spfn_mod,        only: gamma => shr_spfn_gamma
@@ -1044,7 +1045,10 @@ end subroutine crm_init_cnst
    real(r8) :: work_qpl(crm_nx, crm_ny, crm_nz)
    real(r8) :: work_qpi(crm_nx, crm_ny, crm_nz)
    real(r8) :: work_qv(crm_nx, crm_ny, crm_nz)
+   real(r8) :: work_q(crm_nx, crm_ny, crm_nz)
+   real(r8) :: work_qn(crm_nx, crm_ny, crm_nz)
    real(r8) :: work_t(crm_nx, crm_ny, crm_nz)
+   real(r8) :: work_qp(crm_nx, crm_ny, crm_nz)
    real(r8) :: work_u0(crm_nz)
    real(r8) :: work_v0(crm_nz)
    real(r8) :: work_t0(crm_nz)
@@ -1056,6 +1060,7 @@ end subroutine crm_init_cnst
    real(r8) :: work_qp0(crm_nz)
    real(r8) :: work_tke0(crm_nz)
    real(r8) :: work_gamaz(crm_nz)
+   real(r8) :: work_omn,work_omp
 
    real(r8) :: tmp4d(pcols,crm_nx, crm_ny, crm_nz)
    real(r8) :: tmp2d(pcols,pver)
@@ -1098,7 +1103,7 @@ end subroutine crm_init_cnst
    integer,parameter :: structlen = 49
    integer,parameter :: singlelen = 30
    integer,parameter :: flen      = structlen*pver+singlelen+1+20+pcols
-   integer,parameter :: flen2     = 17*crm_nx*crm_ny*crm_nz + crm_nx*crm_ny*crm_nz*nmicro_fields+crm_nx*crm_ny
+   integer,parameter :: flen2     = 17*crm_nx*crm_ny*crm_nz + crm_nx*crm_ny*crm_nz*nmicro_fields+crm_nx*crm_ny+9*crm_nz
    integer,dimension(structlen) :: blocklengths
    INTEGER,dimension(structlen) :: types
    integer :: crm_comm
@@ -1786,15 +1791,16 @@ end if
               end do
             end do
           end do
-
+          a_bg = 1./(tbgmax-tbgmin)
+          a_pr = 1./(tprmax-tprmin)
+          a_gr = 1./(tgrmax-tgrmin) 
           work_u(1:crm_nx,1:crm_ny,1:crm_nz)   = crm_u(i_save,1:crm_nx,1:crm_ny,1:crm_nz)
           work_v(1:crm_nx,1:crm_ny,1:crm_nz)   = crm_v(i_save,1:crm_nx,1:crm_ny,1:crm_nz)*YES3D
-          work_qcl(1:crm_nx,1:crm_ny,1:crm_nz) = qc_crm(i_save,1:crm_nx,1:crm_ny,1:crm_nz) 
-          work_qci(1:crm_nx,1:crm_ny,1:crm_nz) = qi_crm(i_save,1:crm_nx,1:crm_ny,1:crm_nz)
-          work_qpl(1:crm_nx,1:crm_ny,1:crm_nz) = qpc_crm(i_save,1:crm_nx,1:crm_ny,1:crm_nz)
-          work_qpi(1:crm_nx,1:crm_ny,1:crm_nz) = qpi_crm(i_save,1:crm_nx,1:crm_ny,1:crm_nz)
           work_w(1:crm_nx,1:crm_ny,1:crm_nz)   = crm_w(i_save,1:crm_nx,1:crm_ny,1:crm_nz)
           work_tabs(1:nx,1:ny,1:nzm)           = crm_t(i_save,1:crm_nx,1:crm_ny,1:crm_nz)
+          work_q(1:nx,1:ny,1:nzm)              = crm_micro(i_save,1:nx,1:ny,1:nzm,1)
+          work_qn(1:nx,1:ny,1:nzm)             = crm_micro(i_save,1:nx,1:ny,1:nzm,2)
+          work_qp = 0.
           do kk=1,crm_nz  
             work_u0(kk) = 0.
             work_v0(kk) = 0.
@@ -1809,6 +1815,13 @@ end if
             work_gamaz(kk)=ggr/cp*(state_loc%zm(i_save,pver-kk+1)-state_loc%zi(i_save,pver+1))
             do jj=1,crm_ny
               do ii=1,crm_nx
+                work_qv(ii,jj,kk) = work_q(ii,jj,kk) - work_qn(ii,jj,kk)
+                work_omn = max(0.,min(1.,(work_tabs(ii,jj,kk)-tbgmin)*a_bg))
+                work_qcl(ii,jj,kk) = work_qn(ii,jj,kk)*work_omn
+                work_qci(ii,jj,kk) = work_qn(ii,jj,kk)*(1.-work_omn)
+                work_omp = max(0.,min(1.,(work_tabs(ii,jj,kk)-tprmin)*a_pr))
+                work_qpl(ii,jj,kk) = work_qp(ii,jj,kk)*work_omp
+                work_qpi(ii,jj,kk) = work_qp(ii,jj,kk)*(1.-work_omp)
                 work_t(ii,jj,kk) = work_tabs(ii,jj,kk) + work_gamaz(kk) &
                                    -fac_cond*work_qcl(ii,jj,kk)-fac_sub*work_qci(ii,jj,kk) &
                                    -fac_cond*work_qpl(ii,jj,kk)-fac_sub*work_qpi(ii,jj,kk)
@@ -1833,10 +1846,8 @@ end if
             work_qn0(kk) = work_qn0(kk) * (1._r8/dble(crm_nx*crm_ny))
             work_qp0(kk) = work_qp0(kk) * (1._r8/dble(crm_nx*crm_ny))
             work_tke0(kk) = work_tke0(kk) * (1._r8/dble(crm_nx*crm_ny))
-
             print*,'check work',kk,work_u0(kk),work_t0(kk)
           end do
-
 
           fcount = 17*chnksz
           do ii=1,crm_nx
@@ -1856,6 +1867,19 @@ end if
               Var_Flat2(fcount) = prec_crm(i_save,ii,jj)
             end do
           end do
+          fcount = 17*chnksz + crm_nx*crm_ny*crm_nz*nmicro_fields+crm_nx*crm_ny
+          do kk=1,crm_nz
+            fcount = fcount + 1
+            Var_Flat2(fcount + 0 * crm_nz) = work_u0(kk)
+            Var_Flat2(fcount + 1 * crm_nz) = work_v0(kk)
+            Var_Flat2(fcount + 2 * crm_nz) = work_t0(kk)
+            Var_Flat2(fcount + 3 * crm_nz) = work_tabs0(kk)
+            Var_Flat2(fcount + 4 * crm_nz) = work_q0(kk)
+            Var_Flat2(fcount + 5 * crm_nz) = work_qv0(kk)
+            Var_Flat2(fcount + 6 * crm_nz) = work_qn0(kk)
+            Var_Flat2(fcount + 7 * crm_nz) = work_qp0(kk)
+            Var_Flat2(fcount + 8 * crm_nz) = work_tke0(kk)
+          end do
           write (13,9999),lchnk,i_save,state%crmrank0(i),dest,latitude0,longitude0
           9999  format ('lon-lat',4I4,2E15.6)
 
@@ -1866,7 +1890,6 @@ end if
               write (iulog,*),'Send Check',i_save,i,dest,ii
               call MPI_Send(Var_Flat(:)         ,flen,MPI_REAL8 ,dest,9018,MPI_COMM_WORLD,ierr)
               call MPI_Send(Var_Flat2(:)         ,flen2,MPI_REAL8,dest,9019,MPI_COMM_WORLD,ierr)
-              !write (iulog,*),'MPI check send crm_t!',dest,i_save,i,crm_t(i_save,:,:,:)
             end if !if (i .eq. i_save) then
           end do  !do ii=1,ncol
 

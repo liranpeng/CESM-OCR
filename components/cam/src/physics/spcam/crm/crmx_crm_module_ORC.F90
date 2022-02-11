@@ -14,7 +14,8 @@ public :: crm_orc
 
 contains
 
-subroutine crm_orc     (long,lati,gcolindex,lchnk, icol, &
+subroutine crm_orc(inu0,inv0,int0,intabs0,inq0,inqv0,inqn0,inqp0,intke0,&
+                       long,lati,gcolindex,lchnk, icol, &
                        tl, ql, qccl, qiil, ul, vl, &
                        ps, pmid, pdel, phis, &
                        zmid, zint, dt_gl, plev, &
@@ -154,6 +155,15 @@ subroutine crm_orc     (long,lati,gcolindex,lchnk, icol, &
 !         real(r8), intent(in) :: day00 ! initial day
          real(r8), intent(in) :: lati
          real(r8), intent(in) :: long
+         real(r8), intent(in) :: inu0(nzm)
+         real(r8), intent(in) :: inv0(nzm)
+         real(r8), intent(in) :: int0(nzm)
+         real(r8), intent(in) :: intabs0(nzm)
+         real(r8), intent(in) :: inq0(nzm)
+         real(r8), intent(in) :: inqv0(nzm)
+         real(r8), intent(in) :: inqn0(nzm)
+         real(r8), intent(in) :: inqp0(nzm)
+         real(r8), intent(in) :: intke0(nzm)
 !         real(r8), intent(in) :: pres00
 !         real(r8), intent(in) :: tabs_s0
 !         integer , intent(in) :: nrad0
@@ -609,54 +619,16 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 
 ! initialize sgs fields
         call sgs_init
-        
-        do k=1,nzm
-          
-          u0(k)=0.
-          v0(k)=0.
-          t0(k)=0.
-          t00(k)=0.
-          tabs0(k)=0.
-          q0(k)=0.
-          qv0(k)=0.
-!+++mhwang these are not initialized ??
-          qn0(k) = 0.0
-          qp0(k) = 0.0
-          tke0(k) = 0.0
-!---mhwang
-          do j=1,ny
-           do i=1,nx
-           ! write(13, *) 'Check t0',i,k,tabs(i,j,k),qcl(i,j,k),qci(i,j,k),qpl(i,j,k),qpi(i,j,k),gamaz(k)
-            t(i,j,k) = tabs(i,j,k)+gamaz(k) &
-                        -fac_cond*qcl(i,j,k)-fac_sub*qci(i,j,k) &
-                        -fac_cond*qpl(i,j,k)-fac_sub*qpi(i,j,k)
-           ! write(13, *) 'Check t1',i,k,t(i,j,k)
-            colprec=colprec+(qpl(i,j,k)+qpi(i,j,k))*pdel(plev-k+1)
-            colprecs=colprecs+qpi(i,j,k)*pdel(plev-k+1)
-            u0(k)=u0(k)+u(i,j,k)
-            v0(k)=v0(k)+v(i,j,k)
-            t0(k)=t0(k)+t(i,j,k)
-            t00(k)=t00(k)+t(i,j,k)+fac_cond*qpl(i,j,k)+fac_sub*qpi(i,j,k)
-            tabs0(k)=tabs0(k)+tabs(i,j,k)
-            q0(k)=q0(k)+qv(i,j,k)+qcl(i,j,k)+qci(i,j,k)
-            qv0(k) = qv0(k) + qv(i,j,k)
-            qn0(k) = qn0(k) + qcl(i,j,k) + qci(i,j,k)
-            qp0(k) = qp0(k) + qpl(i,j,k) + qpi(i,j,k)
-            tke0(k)=tke0(k)+tke(i,j,k)
-
-           end do
-          end do
-
-          u0(k) = u0(k) * factor_xy
-          v0(k) = v0(k) * factor_xy
-          t0(k) = t0(k) * factor_xy
-          t00(k) = t00(k) * factor_xy
-          tabs0(k) = tabs0(k) * factor_xy
-          q0(k) = q0(k) * factor_xy
-          qv0(k) = qv0(k) * factor_xy
-          qn0(k) = qn0(k) * factor_xy
-          qp0(k) = qp0(k) * factor_xy
-          tke0(k) = tke0(k) * factor_xy
+       do k=1,nzm 
+         u0(k) = inu0(k)
+         v0(k) = inv0(k)
+         t0(k) = int0(k)
+         tabs0(k) = intabs0(k)
+         q0(k) = inq0(k)
+         qv0(k) = inqv0(k)
+         qn0(k) = inqn0(k)
+         qp0(k) = inqp0(k)
+         tke0(k) = intke0(k)
 
 #ifdef SPCAM_CLUBB_SGS
  ! Update thetav for CLUBB.  This is needed when we have a higher model top 
