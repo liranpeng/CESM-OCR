@@ -372,14 +372,14 @@ call mpi_comm_size(MPI_COMM_WORLD, numproc_global, ierr)
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 
 
-if (myrank_global ==0) then
+!if (myrank_global ==0) then
  ! ---------- basic comm pool size sanity checks by bloss -------------
-  923 format(I6.6)
-  write(crm_number,923) myrank_global
-  open(unit=13,file='crm.org_debug.'//TRIM(crm_number),form='formatted')
-  write(13,*) 'Global: ',myrank_global
+  !923 format(I6.6)
+  !write(crm_number,923) myrank_global
+  !open(unit=13,file='crm.org_debug.'//TRIM(crm_number),form='formatted')
+  !write(13,*) 'Global: ',myrank_global
   ! ----------- GCM handshake from spcam_drivers --------------
-end if
+!end if
 
 
 

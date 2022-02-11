@@ -1299,14 +1299,6 @@ end subroutine crm_init_cnst
    endif
 
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-if (myrank_global == 0) then
- ! ---------- basic comm pool size sanity checks by bloss -------------
-  923 format(I6.6)
-  write(crm_number,923) myrank_global
-  open(unit=13,file='crm.log_debug.'//TRIM(crm_number),form='formatted')
-  write(13,*) 'Global: ',myrank_global
-  ! ----------- GCM handshake from spcam_drivers --------------
-end if
 
    !------------------------- 
    !------------------------- 
@@ -1880,7 +1872,7 @@ end if
             Var_Flat2(fcount + 7 * crm_nz) = work_qp0(kk)
             Var_Flat2(fcount + 8 * crm_nz) = work_tke0(kk)
           end do
-          write (13,9999),lchnk,i_save,state%crmrank0(i),dest,latitude0,longitude0
+         ! write (13,9999),lchnk,i_save,state%crmrank0(i),dest,latitude0,longitude0
           9999  format ('lon-lat',4I4,2E15.6)
 
           do ii=1,ncol
@@ -2100,6 +2092,8 @@ end if
                 out_qpc_crm(ii,jj,kk)  = CRM_Var_Flat(fcount + 7 * chnksz) 
                 out_qpi_crm(ii,jj,kk)  = CRM_Var_Flat(fcount + 8 * chnksz) 
                 out_t_rad(ii,jj,kk)    = CRM_Var_Flat(fcount + 9 * chnksz) 
+                out_qv_rad(ii,jj,kk)   = CRM_Var_Flat(fcount + 10* chnksz)
+                out_qc_rad(ii,jj,kk)   = CRM_Var_Flat(fcount + 11* chnksz)
                 out_qi_rad(ii,jj,kk)   = CRM_Var_Flat(fcount + 12* chnksz) 
                 out_cld_rad(ii,jj,kk)  = CRM_Var_Flat(fcount + 13* chnksz) 
                 out_cld3d_crm(ii,jj,kk)= CRM_Var_Flat(fcount + 14* chnksz)
@@ -2140,10 +2134,27 @@ end if
           do ii=1,16
             do jj=1,crm_ny
               do kk=1,crm_nz
+                crm_u(i,ii,jj,kk)  = out_crm_u(ii,jj,kk)
+                crm_v(i,ii,jj,kk)  = out_crm_v(ii,jj,kk)
+                crm_w(i,ii,jj,kk)  = out_crm_w(ii,jj,kk)
+                crm_t(i,ii,jj,kk)  = out_crm_t(ii,jj,kk)
+                crm_micro(i,ii,jj,kk,:)  = out_crm_micro(ii,jj,kk,:) 
+                crm_qrad(i,ii,jj,kk)  = out_crm_qrad(ii,jj,kk)
+                qc_crm(i,ii,jj,kk)  = out_qc_crm(ii,jj,kk)
+                qi_crm(i,ii,jj,kk)  = out_qi_crm(ii,jj,kk)
+                qpc_crm(i,ii,jj,kk)  = out_qpc_crm(ii,jj,kk)
+                qpi_crm(i,ii,jj,kk)  = out_qpi_crm(ii,jj,kk)
+                t_rad(i,ii,jj,kk)  = out_t_rad(ii,jj,kk)
+                qv_rad(i,ii,jj,kk)  = out_qv_rad(ii,jj,kk)
+                qc_rad(i,ii,jj,kk)  = out_qc_rad(ii,jj,kk)
+                qi_rad(i,ii,jj,kk)  = out_qi_crm(ii,jj,kk)
+                cld_rad(i,ii,jj,kk)  = out_cld_rad(ii,jj,kk) 
+                cld3d_crm(i,ii,jj,kk)  = out_cld3d_crm(ii,jj,kk)
                 write (iulog,1111),lchnk,i,ii,kk,int(ztodt),crm_u(i,ii,jj,kk),out_crm_u(ii,jj,kk)
                 write (iulog,1112),lchnk,i,ii,kk,int(ztodt),crm_w(i,ii,jj,kk),out_crm_w(ii,jj,kk)
                 write (iulog,1113),lchnk,i,ii,kk,int(ztodt),crm_t(i,ii,jj,kk),out_crm_t(ii,jj,kk)
               end do
+                prec_crm(i,ii,jj)  = out_prec_crm(ii,jj)
             end do
           end do
          else
@@ -2151,10 +2162,27 @@ end if
           do ii=17,32
             do jj=1,crm_ny
               do kk=1,crm_nz
+                crm_u(i,ii,jj,kk)  = out_crm_u(ii,jj,kk)
+                crm_v(i,ii,jj,kk)  = out_crm_v(ii,jj,kk)
+                crm_w(i,ii,jj,kk)  = out_crm_w(ii,jj,kk)
+                crm_t(i,ii,jj,kk)  = out_crm_t(ii,jj,kk)
+                crm_micro(i,ii,jj,kk,:)  = out_crm_micro(ii,jj,kk,:)
+                crm_qrad(i,ii,jj,kk)  = out_crm_qrad(ii,jj,kk)
+                qc_crm(i,ii,jj,kk)  = out_qc_crm(ii,jj,kk)
+                qi_crm(i,ii,jj,kk)  = out_qi_crm(ii,jj,kk)
+                qpc_crm(i,ii,jj,kk)  = out_qpc_crm(ii,jj,kk)
+                qpi_crm(i,ii,jj,kk)  = out_qpi_crm(ii,jj,kk)
+                t_rad(i,ii,jj,kk)  = out_t_rad(ii,jj,kk)
+                qv_rad(i,ii,jj,kk)  = out_qv_rad(ii,jj,kk)
+                qc_rad(i,ii,jj,kk)  = out_qc_rad(ii,jj,kk)
+                qi_rad(i,ii,jj,kk)  = out_qi_crm(ii,jj,kk)
+                cld_rad(i,ii,jj,kk)  = out_cld_rad(ii,jj,kk)
+                cld3d_crm(i,ii,jj,kk)  = out_cld3d_crm(ii,jj,kk)
                 write (iulog,1111),lchnk,i,ii,kk,int(ztodt),crm_u(i,ii,jj,kk),out_crm_u(ii,jj,kk)
                 write (iulog,1112),lchnk,i,ii,kk,int(ztodt),crm_w(i,ii,jj,kk),out_crm_w(ii,jj,kk)
                 write (iulog,1113),lchnk,i,ii,kk,int(ztodt),crm_t(i,ii,jj,kk),out_crm_t(ii,jj,kk)
               end do
+                prec_crm(i,ii,jj)  = out_prec_crm(ii,jj)
             end do
           end do
          endif
@@ -2183,7 +2211,7 @@ end if
               crm_qc(i,:,:,:) = crm_micro(i,:,:,:,11)
           endif
        if (i.eq.ncol) then
-       !  FlagEnd = 1
+         FlagEnd = 1
        endif
        end do ! i (loop over ncol)
        call t_stopf('crm_call')
