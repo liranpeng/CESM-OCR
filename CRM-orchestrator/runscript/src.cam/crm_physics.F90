@@ -960,7 +960,7 @@ end subroutine crm_init_cnst
    real(r8) wnd  ! surface wnd
    real(r8) bflx   ! surface buoyancy flux (Km/s)
    real(r8) :: out_precc,out_precl,out_precsc,out_precsl,out_cltot,out_clhgh,out_clmed,out_cllow,out_prectend, out_precstend,out_timing_factor,out_global_rank 
-   real(r8) :: out_ocnfrac,out_wnd,out_tau00,out_bflx,out_fluxu0,out_fluxv0,out_fluxt0,out_fluxq0,out_taux_crm,out_tauy_crm,out_z0m,out_it,out_ij
+   real(r8) :: out_ocnfrac,out_wnd,out_tau00,out_bflx,out_fluxu0,out_fluxv0,out_fluxt0,out_fluxq0,out_taux_crm,out_tauy_crm,out_z0m,out_it,out_jt
    real(r8), dimension(pver) :: out_qltend,out_qcltend,out_qiltend,out_sltend,out_cld,out_cldtop,out_gicewp,out_gliqwp,out_mctot,out_mcup
    real(r8), dimension(pver) :: out_mcdn,out_mcuup,out_mcudn,out_spqc,out_spqi,out_spqs,out_spqg,out_spqr,out_mu_crm,out_md_crm,out_du_crm
    real(r8), dimension(pver) :: out_eu_crm,out_ed_crm,out_tkez,out_tkesgsz,out_tk_crm,out_flux_u,out_flux_qt,out_fluxsgs_qt,out_flux_qp,out_qt_ls
@@ -1898,7 +1898,7 @@ print*,'Send t',i_save,ii,kk,crm_t(i_save,ii,jj,kk)
             !dest = state%crmrank0(i,ii)
             !i_save  = ii+state%crmrank1(ii)
             !if (i .eq. i_save) then
-              write (iulog,*),'Send Check',i_save,i,iorc,dest,crm_start_ind,crm_end_ind
+              write (iulog,*),'Send Check',i,iorc,dest,crm_start_ind,crm_end_ind
               call MPI_Send(Var_Flat(:)         ,flen,MPI_REAL8 ,dest,9018,MPI_COMM_WORLD,ierr)
               call MPI_Send(Var_Flat2(:)         ,flen2,MPI_REAL8,dest,9019,MPI_COMM_WORLD,ierr)
             !end if !if (i .eq. i_save) then
@@ -2073,7 +2073,7 @@ print*,'Send t',i_save,ii,kk,crm_t(i_save,ii,jj,kk)
           out_timing_factor       = CRM_Var_Flat(22)
           out_global_rank         = CRM_Var_Flat(23)
           out_it                  = CRM_Var_Flat(24)
-          out_ij                  = CRM_Var_Flat(25)
+          out_jt                  = CRM_Var_Flat(25)
           out_qltend              = CRM_Var_Flat(        1+singleleno:  pver+singleleno)
           out_qcltend             = CRM_Var_Flat( 1*pver+1+singleleno:2*pver+singleleno) 
           out_qiltend             = CRM_Var_Flat( 2*pver+1+singleleno:3*pver+singleleno) 
@@ -2165,33 +2165,33 @@ print*,'Send t',i_save,ii,kk,crm_t(i_save,ii,jj,kk)
 
         write (iulog,*),'Check print0',state%crmrank(i,iorc),i,int(out_global_rank)
          if (mod(int(out_global_rank),2).eq.0) then
-          write (iulog,*),'Check print 16',out_global_rank  
+          write (iulog,*),'Check print 16',out_global_rank,out_it,  
           do kk=1,crm_nz
             do jj=1,orc_ny
               do ii=1,orc_nx
-                orc_crm_u(i,ii+out_it,jj+out_ij,kk)  = out_crm_u(ii,jj,kk)
-                orc_crm_v(i,ii+out_it,jj+out_ij,kk)  = out_crm_v(ii,jj,kk)
-                orc_crm_w(i,ii+out_it,jj+out_ij,kk)  = out_crm_w(ii,jj,kk)
-                orc_crm_t(i,ii+out_it,jj+out_ij,kk)  = out_crm_t(ii,jj,kk)
-                orc_crm_micro(i,ii+out_it,jj+out_ij,kk,:)  = out_crm_micro(ii,jj,kk,:) 
-                orc_crm_qrad(i,ii+out_it,jj+out_ij,kk)  = out_crm_qrad(ii,jj,kk)
-                orc_qc_crm(i,ii+out_it,jj+out_ij,kk)  = out_qc_crm(ii,jj,kk)
-                orc_qi_crm(i,ii+out_it,jj+out_ij,kk)  = out_qi_crm(ii,jj,kk)
-                orc_qpc_crm(i,ii+out_it,jj+out_ij,kk)  = out_qpc_crm(ii,jj,kk)
-                orc_qpi_crm(i,ii+out_it,jj+out_ij,kk)  = out_qpi_crm(ii,jj,kk)
-                orc_t_rad(i,ii+out_it,jj+out_ij,kk)  = out_t_rad(ii,jj,kk)
-                orc_qv_rad(i,ii+out_it,jj+out_ij,kk)  = out_qv_rad(ii,jj,kk)
-                orc_qc_rad(i,ii+out_it,jj+out_ij,kk)  = out_qc_rad(ii,jj,kk)
-                orc_qi_rad(i,ii+out_it,jj+out_ij,kk)  = out_qi_crm(ii,jj,kk)
-                orc_cld_rad(i,ii+out_it,jj+out_ij,kk)  = out_cld_rad(ii,jj,kk) 
-                orc_cld3d_crm(i,ii+out_it,jj+out_ij,kk)  = out_cld3d_crm(ii,jj,kk)
+                orc_crm_u(i,ii+out_it,jj+out_jt,kk)  = out_crm_u(ii,jj,kk)
+                orc_crm_v(i,ii+out_it,jj+out_jt,kk)  = out_crm_v(ii,jj,kk)
+                orc_crm_w(i,ii+out_it,jj+out_jt,kk)  = out_crm_w(ii,jj,kk)
+                orc_crm_t(i,ii+out_it,jj+out_jt,kk)  = out_crm_t(ii,jj,kk)
+                orc_crm_micro(i,ii+out_it,jj+out_jt,kk,:)  = out_crm_micro(ii,jj,kk,:) 
+                orc_crm_qrad(i,ii+out_it,jj+out_jt,kk)  = out_crm_qrad(ii,jj,kk)
+                orc_qc_crm(i,ii+out_it,jj+out_jt,kk)  = out_qc_crm(ii,jj,kk)
+                orc_qi_crm(i,ii+out_it,jj+out_jt,kk)  = out_qi_crm(ii,jj,kk)
+                orc_qpc_crm(i,ii+out_it,jj+out_jt,kk)  = out_qpc_crm(ii,jj,kk)
+                orc_qpi_crm(i,ii+out_it,jj+out_jt,kk)  = out_qpi_crm(ii,jj,kk)
+                orc_t_rad(i,ii+out_it,jj+out_jt,kk)  = out_t_rad(ii,jj,kk)
+                orc_qv_rad(i,ii+out_it,jj+out_jt,kk)  = out_qv_rad(ii,jj,kk)
+                orc_qc_rad(i,ii+out_it,jj+out_jt,kk)  = out_qc_rad(ii,jj,kk)
+                orc_qi_rad(i,ii+out_it,jj+out_jt,kk)  = out_qi_crm(ii,jj,kk)
+                orc_cld_rad(i,ii+out_it,jj+out_jt,kk)  = out_cld_rad(ii,jj,kk) 
+                orc_cld3d_crm(i,ii+out_it,jj+out_jt,kk)  = out_cld3d_crm(ii,jj,kk)
               end do
             end do
           end do
 
             do jj=1,orc_ny
               do ii=1,orc_nx
-                orc_prec_crm(i,ii+out_it,jj+out_ij)  = out_prec_crm(ii,jj)
+                orc_prec_crm(i,ii+out_it,jj+out_jt)  = out_prec_crm(ii,jj)
               end do
             end do
 
