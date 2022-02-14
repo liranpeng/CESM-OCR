@@ -14,6 +14,9 @@ module physics_types
   use cam_abortutils,   only: endrun
   use phys_control,     only: waccmx_is
   use shr_const_mod,    only: shr_const_rwv
+#ifdef ORCHESTRATOR
+    use crmdims,         only:orc_nsubdomains 
+#endif
 
   implicit none
   !private          ! Make default type private to the module
@@ -65,6 +68,8 @@ module physics_types
      integer, dimension(:), allocatable :: &
           crmrank0,            &! pritch: first rank of CRM for each GCM column
           crmrank1              ! pritch: last rank of CRM for each GCM column
+     integer, dimension(:,:), allocatable :: crmrank
+     logical, dimension(:), allocatable :: isorchestrated      
 #endif
      real(r8), dimension(:), allocatable         :: &
           lat,     &! latitude (radians)
@@ -1501,9 +1506,12 @@ subroutine physics_state_alloc(state,lchnk,psetcols)
 #ifdef ORCHESTRATOR
 ! pritch:
   allocate(state%crmrank0(psetcols), stat=ierr)
+  allocate(state%isorchestrated(psetcols), stat=ierr)
   if ( ierr /= 0 ) call endrun('physics_state_alloc error: allocation error for state%crmank0')
   allocate(state%crmrank1(psetcols), stat=ierr)
   if ( ierr /= 0 ) call endrun('physics_state_alloc error: allocation error for state%crmrank1')
+  allocate(state%crmrank(psetcols,orc_nsubdomains), stat=ierr)
+  if ( ierr /= 0 ) call endrun('physics_state_alloc error: allocation error for state%crmrank')
 #endif
   allocate(state%lat(psetcols), stat=ierr)
   if ( ierr /= 0 ) call endrun('physics_state_alloc error: allocation error for state%lat')

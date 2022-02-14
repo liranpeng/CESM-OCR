@@ -3,7 +3,7 @@ program TwoExecutableDriver
   use shr_kind_mod,      only: i8 => SHR_KIND_I8
 !  use ppgrid,           only: pver
 !  use crmx_saturation, only:sat_mixrat_liq
-  use crmdims,         only: crm_nx, crm_ny, crm_nz
+  use crmdims,         only: crm_nx, crm_ny,crm_nz,orc_nx,orc_ny,orc_nsubdomains
   use crmx_crm_module_orc,     only: crm_orc
   use crmx_mpi
   use crmx_grid
@@ -35,13 +35,13 @@ program TwoExecutableDriver
 ! output ingrdients from CRM (to be sent)
   real(r8),dimension(pver) :: out01_qltend,out02_qcltend,out03_qiltend,out04_sltend
 ! inout ingredients:
-  real(r8), dimension(crm_nx,crm_ny,crm_nz) :: outin01_crm_u,outin02_crm_v,outin03_crm_w,outin04_crm_t,&
+  real(r8), dimension(orc_nx,orc_ny,crm_nz) :: outin01_crm_u,outin02_crm_v,outin03_crm_w,outin04_crm_t,&
         outin06_crm_qrad,outin07_qc_crm,outin08_qi_crm,outin09_qpc_crm,outin10_qpi_crm,outin12_t_rad,&
         outin13_qv_rad,outin14_qc_rad,outin15_qi_rad,outin16_cld_rad,outin17_cld3d_crm,crm_tk,crm_tkh,out_cld_rad
-  real(r8), dimension(crm_nx,crm_ny) :: outin11_prec_crm
+  real(r8), dimension(orc_nx,orc_ny) :: outin11_prec_crm
   real(r8), dimension(crm_nz) :: outin_u0,outin_v0,outin_t0,outin_tabs0,outin_q0,outin_qv0,outin_qn0,outin_qp0,outin_tke0
   real(r8), allocatable :: flattened_crm_inout(:),out_Var_Flat(:)
-  real(r8),dimension(crm_nx, crm_ny, crm_nz,nmicro_fields+1) :: outin05_crm_micro
+  real(r8),dimension(orc_nx, orc_ny, crm_nz,nmicro_fields+1) :: outin05_crm_micro
   real (r8) :: precc,precl,precsc,precsl,cltot,clhgh,clmed,cllow,lon,lat
   real (r8), dimension(pver) :: cld,cldtop,gicewp,gliqwp,mctot,mcup,mcdn,mcuup,mcudn
   real (r8), dimension(pver) :: spqc,spqi,spqs,spqg,spqr
@@ -51,13 +51,13 @@ program TwoExecutableDriver
   real(r8), dimension(20) :: qtotcrm
   real(r8) :: prectend,precstend,ocnfrac,wnd,tau00,bflx,fluxu0,fluxv0,fluxt0,fluxq0
   real(r8) :: taux_crm,tauy_crm,z0m,timing_factor,jt_crm,mx_crm
-  integer :: chnksz,nflat,fcount,ii,jj,kk,ll
+  integer :: chnksz,nflat,fcount,ii,jj,kk,ll,it,jt
   integer,parameter :: structlen  = 49
   integer,parameter :: singlelen  = 30
   integer,parameter :: flen       = structlen*pver+singlelen+1+20+pcols
-  integer,parameter :: flen2      = 17*crm_nx*crm_ny*crm_nz + crm_nx*crm_ny*crm_nz*nmicro_fields+crm_nx*crm_ny+9*crm_nz
+  integer,parameter :: flen2      = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields+orc_nx*orc_ny+9*crm_nz
   integer,parameter :: structleno = 37
-  integer,parameter :: singleleno = 23
+  integer,parameter :: singleleno = 25
   integer,parameter :: rank_offset=2
   integer,parameter :: fleno      = structleno*pver+singleleno+1+20
   real(r8),dimension(flen ) :: inp_Var_Flat
@@ -94,10 +94,11 @@ program TwoExecutableDriver
   call mpi_comm_size(crm_comm, numproc_crm, ierr)
   call mpi_comm_rank(crm_comm, myrank_crm, ierr)
 
-  crm_comm_color = int(myrank_crm/rank_offset)
+  crm_comm_color = int(myrank_crm/orc_nsubdomains)
   call mpi_comm_split(crm_comm, crm_comm_color, myrank_crm, crm_comm_in, ierr)
   call mpi_comm_size(crm_comm_in, numproc_crm_in, ierr)
   call mpi_comm_rank(crm_comm_in, myrank_crm_in, ierr)
+
   if(ierr.eq.0) then
   !bloss     write(13,*) 'CRM: successful call to mpi_split'
   else
@@ -110,7 +111,7 @@ program TwoExecutableDriver
   open(unit=13,file='crm.log.'//TRIM(crm_number),form='formatted')
   write(13,*) 'Global: ',MPI_COMM_WORLD,numproc_global,myrank_global
   write(13,*) 'CRM: ',crm_comm,numproc_crm,myrank_crm
-  write(13,*) 'CRM in: ',crm_comm_in,crm_comm_color,numproc_crm_in,myrank_crm_in
+  write(13,*) 'CRM in:',crm_comm_in,crm_comm_color,numproc_crm_in,myrank_crm_in
   ! ----------- GCM handshake from spcam_drivers --------------
   EndFlag  = 0
   !do i = 1,numproc_crm-1
@@ -140,8 +141,8 @@ program TwoExecutableDriver
   do while (EndFlag.eq.0)
   write(13,*) 'Enter Loop!!'
   ! ----------- Receive from cesm.exe/crm_physics inputs to CRM right before call to crm() ----------------
-  chnksz = crm_nx*crm_ny*crm_nz
-  nflat =  17*chnksz + crm_nx*crm_ny*crm_nz*nmicro_fields +crm_nx*crm_ny
+  chnksz = orc_nx*orc_ny*crm_nz
+  nflat =  17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields +orc_nx*orc_ny
 ! =====================================================================================
 ! Receive from GCM, in order, the input ingredients expected by crm subroutine:
 ! =====================================================================================
@@ -231,8 +232,8 @@ program TwoExecutableDriver
   qtotcrm(1:20)       = inp_Var_Flat(49*pver+2+singlelen:49*pver+21+singlelen)
   gcolindex(1:pcols)  = inp_Var_Flat(49*pver+22+singlelen:49*pver+21+singlelen+pcols)
   fcount = 0
-  do ii=1,crm_nx
-    do jj=1,crm_ny
+  do ii=1,orc_nx
+    do jj=1,orc_ny
       do kk=1,crm_nz
         fcount = fcount + 1
         outin01_crm_u(ii,jj,kk)    = inp_Var_Flat2(fcount)
@@ -252,14 +253,15 @@ program TwoExecutableDriver
         outin16_cld_rad(ii,jj,kk)  = inp_Var_Flat2(fcount + 14* chnksz)
         crm_tk(ii,jj,kk)           = inp_Var_Flat2(fcount + 15* chnksz)
         crm_tkh(ii,jj,kk)          = inp_Var_Flat2(fcount + 16* chnksz)
+write (13,*),'Receive t',ii,kk,outin04_crm_t(ii,jj,kk)
 !write (13,*),'CALL CRM_ORC ww!',myrank_global,ii,jj,kk,outin03_crm_w(ii,jj,kk)
       end do
     end do
   end do
 
   fcount = 17*chnksz
-  do ii=1,crm_nx
-    do jj=1,crm_ny
+  do ii=1,orc_nx
+    do jj=1,orc_ny
       do kk=1,crm_nz
         do ll=1,nmicro_fields
           fcount=fcount+1
@@ -269,15 +271,15 @@ program TwoExecutableDriver
     end do
   end do
 
-  fcount = 17*chnksz + crm_nx*crm_ny*crm_nz*nmicro_fields
-  do ii=1,crm_nx
-    do jj=1,crm_ny
+  fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields
+  do ii=1,orc_nx
+    do jj=1,orc_ny
       fcount = fcount + 1
       outin11_prec_crm(ii,jj) = inp_Var_Flat2(fcount)
     end do
   end do
 
-  fcount = 17*chnksz + crm_nx*crm_ny*crm_nz*nmicro_fields+crm_nx*crm_ny
+  fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields+orc_nx*orc_ny
   do kk=1,crm_nz
     fcount = fcount + 1
     outin_u0(kk)    = inp_Var_Flat2(fcount + 0 * crm_nz)
@@ -309,23 +311,24 @@ program TwoExecutableDriver
   !write(13,*) 'Liran crm check2->',nx,crm_nx,nsubdomains_x 
   call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
   !write (13,*),'CALL CRM_ORC u all!',myrank_global,outin01_crm_u
-  !write (13,*),'CALL CRM_ORC u!',myrank_global,inp01_lchnk,outin01_crm_u(crm_start_ind:crm_end_ind,:,:)
-  !write (13,*),'CALL CRM_ORC w!',myrank_global,inp01_lchnk,outin03_crm_w(crm_start_ind:crm_end_ind,:,:)
-  !write (13,*),'CALL CRM_ORC m1!',myrank_global,outin05_crm_micro(crm_start_ind:crm_end_ind,:,:,1)
-
+  write (13,*),'CALL CRM_ORC u!',myrank_global,inp01_lchnk,outin01_crm_u(:,:,:)
+  !write (13,*),'CALL CRM_ORC w!',myrank_global,inp01_lchnk,outin03_crm_w(:,:,:)
+  !write (13,*),'CALL CRM_ORC m1!',myrank_global,outin05_crm_micro(:,:,:,1)
+  it = 0
+  jt = 0
   call MPI_barrier(crm_comm_in, ierr)
-  call crm_orc(outin_u0,outin_v0,outin_t0,outin_tabs0,outin_q0,outin_qv0,outin_qn0,outin_qp0,outin_tke0, &
+  call crm_orc(it,jt,outin_u0,outin_v0,outin_t0,outin_tabs0,outin_q0,outin_qv0,outin_qn0,outin_qp0,outin_tke0, &
             lon,lat,gcolindex,inp01_lchnk, inp02_i,                            &
             inp03_tl(:),inp04_ql(:),inp05_qccl(:),inp06_qiil(:), &
             inp07_ul(:),inp08_vl(:),inp09_ps,inp10_pmid(:),inp11_pdel(:), &
             inp12_phis,inp13_zm(:),inp14_zi(:),inp15_ztodt,pver, &
             out01_qltend(:),out02_qcltend(:),out03_qiltend(:),out04_sltend(:),&
-            outin01_crm_u(crm_start_ind:crm_end_ind,:,:),outin02_crm_v(crm_start_ind:crm_end_ind,:,:),outin03_crm_w(crm_start_ind:crm_end_ind,:,:),&
-            outin04_crm_t(crm_start_ind:crm_end_ind,:,:),outin05_crm_micro(crm_start_ind:crm_end_ind,:,:,:),outin06_crm_qrad(crm_start_ind:crm_end_ind,:,:),&
-            outin07_qc_crm(crm_start_ind:crm_end_ind,:,:),outin08_qi_crm(crm_start_ind:crm_end_ind,:,:),outin09_qpc_crm(crm_start_ind:crm_end_ind,:,:),&
-            outin10_qpi_crm(crm_start_ind:crm_end_ind,:,:),outin11_prec_crm(crm_start_ind:crm_end_ind,:),outin12_t_rad(crm_start_ind:crm_end_ind,:,:),&
-            outin13_qv_rad(crm_start_ind:crm_end_ind,:,:),outin14_qc_rad(crm_start_ind:crm_end_ind,:,:),outin15_qi_rad(crm_start_ind:crm_end_ind,:,:),&
-            outin16_cld_rad(crm_start_ind:crm_end_ind,:,:),outin17_cld3d_crm(crm_start_ind:crm_end_ind,:,:),&
+            outin01_crm_u(:,:,:),outin02_crm_v(:,:,:),outin03_crm_w(:,:,:),&
+            outin04_crm_t(:,:,:),outin05_crm_micro(:,:,:,:),outin06_crm_qrad(:,:,:),&
+            outin07_qc_crm(:,:,:),outin08_qi_crm(:,:,:),outin09_qpc_crm(:,:,:),&
+            outin10_qpi_crm(:,:,:),outin11_prec_crm(:,:),outin12_t_rad(:,:,:),&
+            outin13_qv_rad(:,:,:),outin14_qc_rad(:,:,:),outin15_qi_rad(:,:,:),&
+            outin16_cld_rad(:,:,:),outin17_cld3d_crm(:,:,:),&
 #ifdef m2005 ! to be added.
 #endif            
             precc,precl,precsc,precsl,&
@@ -340,7 +343,7 @@ program TwoExecutableDriver
 #endif
 #ifdef SPCAM_CLUBB_SGS
 #endif
-            crm_tk( crm_start_ind:crm_end_ind, :, :), crm_tkh( crm_start_ind:crm_end_ind, :, :),&
+            crm_tk( :, :, :), crm_tkh( :, :, :),&
           mu_crm(:),        md_crm(:),          du_crm(:), eu_crm(:),&
              ed_crm(:),        jt_crm,            mx_crm,&
              tkez(:),          tkesgsz(:),         tk_crm( :),&
@@ -354,7 +357,7 @@ program TwoExecutableDriver
 ! ====================== DONE CALLING CRM -- TIME TO SEND OUTPUTS TO GCM
 write(13,*) 'CRM_ORC run finish',myrank_global
   call MPI_barrier(crm_comm_in, ierr)
-write(13,*) 'Liran start send data back',myrank_crm
+write(13,*) 'Liran start send data back',myrank_crm,it,jt
   out_Var_Flat(        1)                               = precc
   out_Var_Flat(        2)                               = precl
   out_Var_Flat(        3)                               = precsc
@@ -378,6 +381,8 @@ write(13,*) 'Liran start send data back',myrank_crm
   out_Var_Flat(       21)                               = z0m
   out_Var_Flat(       22)                               = timing_factor
   out_Var_Flat(       23)                               = myrank_global
+  out_Var_Flat(       24)                               = it
+  out_Var_Flat(       25)                               = jt
   out_Var_Flat(        1+singleleno:   pver+singleleno) = out01_qltend
   out_Var_Flat( 1*pver+1+singleleno: 2*pver+singleleno) = out02_qcltend
   out_Var_Flat( 2*pver+1+singleleno: 3*pver+singleleno) = out03_qiltend
@@ -418,8 +423,8 @@ write(13,*) 'Liran start send data back',myrank_crm
   out_Var_Flat(37*pver+1+singleleno:37*pver+20+singleleno) = qtotcrm(1:20)
 
   fcount = 37*pver+20+singleleno
-  do ii=1,crm_nx
-    do jj=1,crm_ny
+  do ii=1,orc_nx
+    do jj=1,orc_ny
       do kk=1,crm_nz
         fcount = fcount + 1
         out_Var_Flat(fcount)              = outin01_crm_u(ii,jj,kk)
@@ -443,8 +448,8 @@ write(13,*) 'Liran start send data back',myrank_crm
     end do
   end do
   fcount = 37*pver+20+singleleno + 16* chnksz
-  do ii=1,crm_nx
-    do jj=1,crm_ny
+  do ii=1,orc_nx
+    do jj=1,orc_ny
       do kk=1,crm_nz
         do ll=1,nmicro_fields
           fcount=fcount+1
@@ -453,9 +458,9 @@ write(13,*) 'Liran start send data back',myrank_crm
       end do
     end do
   end do
-  fcount = 37*pver+20+singleleno + 16* chnksz +  crm_nx*crm_ny*crm_nz*nmicro_fields
-  do ii=1,crm_nx
-    do jj=1,crm_ny
+  fcount = 37*pver+20+singleleno + 16* chnksz +  orc_nx*orc_ny*crm_nz*nmicro_fields
+  do ii=1,orc_nx
+    do jj=1,orc_ny
       fcount = fcount + 1
       out_Var_Flat(fcount) = outin11_prec_crm(ii,jj)
     end do

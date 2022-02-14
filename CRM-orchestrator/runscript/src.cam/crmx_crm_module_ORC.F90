@@ -14,7 +14,7 @@ public :: crm_orc
 
 contains
 
-subroutine crm_orc(inu0,inv0,int0,intabs0,inq0,inqv0,inqn0,inqp0,intke0,&
+subroutine crm_orc(it,jt,inu0,inv0,int0,intabs0,inq0,inqv0,inqn0,inqp0,intke0,&
                        long,lati,gcolindex,lchnk, icol, &
                        tl, ql, qccl, qiil, ul, vl, &
                        ps, pmid, pdel, phis, &
@@ -88,6 +88,7 @@ subroutine crm_orc(inu0,inv0,int0,intabs0,inq0,inqv0,inqn0,inqp0,intke0,&
         use crmx_task_init_mpi
         use crmx_crm_kurant_ORC
         use crmx_crm_pressure_ORC
+        use crmx_task_util_mpi
         use crmx_crmtracers
 #ifdef MODAL_AERO
         use modal_aero_data,   only: ntot_amode
@@ -166,7 +167,7 @@ subroutine crm_orc(inu0,inv0,int0,intabs0,inq0,inqv0,inqn0,inqp0,intke0,&
          real(r8), intent(in) :: intke0(nzm)
 !         real(r8), intent(in) :: pres00
 !         real(r8), intent(in) :: tabs_s0
-!         integer , intent(in) :: nrad0
+         integer , intent(inout) :: it,jt
 !         character *40 case0  ! 8-symbol id-string to identify a case-name
 
 
@@ -448,10 +449,8 @@ crm_count = 0
        
         call mpi_comm_size(crm_comm_in, myproc_crm_check, ierr)
         call mpi_comm_rank(crm_comm_in, myrank_crm_check, ierr) 
-        call task_init_ORC (crm_comm_in,myproc_crm_check,myrank_crm_check)
+        call task_init_ORC (crm_comm_in,myproc_crm_check,myrank_crm_check,it,jt)
         call setparm()
-!write(0, *) 'Liran CRM_ORC0 q002',myrank_global,q
-!        day0 = day00-dt_gl/86400.
 !        latitude = latitude00
 !        longitude = longitude00
 !        pres0 = pres00
@@ -619,6 +618,17 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 
 ! initialize sgs fields
         call sgs_init
+        do k=1,nzm 
+          do j=1,ny
+           do i=1,nx
+            t(i,j,k) = tabs(i,j,k)+gamaz(k) &
+                        -fac_cond*qcl(i,j,k)-fac_sub*qci(i,j,k) &
+                        -fac_cond*qpl(i,j,k)-fac_sub*qpi(i,j,k)
+            write(13, *) 'check t',i,k,tabs(i,j,k),t(i,j,k)
+           end do
+          end do
+        end do
+
        do k=1,nzm 
          u0(k) = inu0(k)
          v0(k) = inv0(k)

@@ -372,14 +372,14 @@ call mpi_comm_size(MPI_COMM_WORLD, numproc_global, ierr)
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 
 
-if (myrank_global ==0) then
+!if (myrank_global ==0) then
  ! ---------- basic comm pool size sanity checks by bloss -------------
-  923 format(I6.6)
-  write(crm_number,923) myrank_global
-  open(unit=13,file='crm.org_debug.'//TRIM(crm_number),form='formatted')
-  write(13,*) 'Global: ',myrank_global
+  !923 format(I6.6)
+  !write(crm_number,923) myrank_global
+  !open(unit=13,file='crm.org_debug.'//TRIM(crm_number),form='formatted')
+  !write(13,*) 'Global: ',myrank_global
   ! ----------- GCM handshake from spcam_drivers --------------
-end if
+!end if
 
 
 
@@ -980,22 +980,22 @@ print*,'check_org_work',k,u0(k),t0(k)
 !        nrad = nstop/nrad0
         day=day0
 
-     do k=1,nzm
-      do j=1,ny
-        do i=1,nx
-write(13, *) 'before org u0',crm_count,i,k,u(i,j,k)
-write(13, *) 'before org w0',crm_count,i,k,w(i,j,k)
-write(13, *) 'before org p0',crm_count,i,k,p(i,j,k)
-write(13, *) 'before org t0',crm_count,i,k,t(i,j,k)
-write(13, *) 'before org dudt10',crm_count,i,k,dudt(i,j,k,1)
-write(13, *) 'before org dudt20',crm_count,i,k,dudt(i,j,k,2)
-write(13, *) 'before org dudt30',crm_count,i,k,dudt(i,j,k,3)
-write(13, *) 'before org dwdt10',crm_count,i,k,dwdt(i,j,k,1)
-write(13, *) 'before org dwdt20',crm_count,i,k,dwdt(i,j,k,2)
-write(13, *) 'before org dwdt30',crm_count,i,k,dwdt(i,j,k,3)
-        enddo
-      enddo
-     enddo
+!     do k=1,nzm
+!      do j=1,ny
+!        do i=1,nx
+!write(13, *) 'before org u0',crm_count,i,k,u(i,j,k)
+!write(13, *) 'before org w0',crm_count,i,k,w(i,j,k)
+!write(13, *) 'before org p0',crm_count,i,k,p(i,j,k)
+!write(13, *) 'before org t0',crm_count,i,k,t(i,j,k)
+!write(13, *) 'before org dudt10',crm_count,i,k,dudt(i,j,k,1)
+!write(13, *) 'before org dudt20',crm_count,i,k,dudt(i,j,k,2)
+!write(13, *) 'before org dudt30',crm_count,i,k,dudt(i,j,k,3)
+!write(13, *) 'before org dwdt10',crm_count,i,k,dwdt(i,j,k,1)
+!write(13, *) 'before org dwdt20',crm_count,i,k,dwdt(i,j,k,2)
+!write(13, *) 'before org dwdt30',crm_count,i,k,dwdt(i,j,k,3)
+!        enddo
+!      enddo
+!     enddo
 
 !------------------------------------------------------------------
 !   Main time loop    
@@ -1328,22 +1328,22 @@ if(myrank_global.eq.0) then
 !write(0, *) 'Liran CRM_org 12 dw',myrank_global,dwdt
 
 crm_count = crm_count + 1
-     do k=1,nzm
-      do j=1,ny
-        do i=1,nx
-write(13, *) 'before u org',crm_count,i,k,u(i,j,k)
-write(13, *) 'before w org',crm_count,i,k,w(i,j,k)
-write(13, *) 'before p org',crm_count,i,k,p(i,j,k)
-write(13, *) 'before t org',crm_count,i,k,t(i,j,k)
+!     do k=1,nzm
+!      do j=1,ny
+!        do i=1,nx
+!write(13, *) 'before u org',crm_count,i,k,u(i,j,k)
+!write(13, *) 'before w org',crm_count,i,k,w(i,j,k)
+!write(13, *) 'before p org',crm_count,i,k,p(i,j,k)
+!write(13, *) 'before t org',crm_count,i,k,t(i,j,k)
 !write(13, *) 'before dudt1 org',crm_count,i,k,dudt(i,j,k,1)
 !write(13, *) 'before dudt2 org',crm_count,i,k,dudt(i,j,k,2)
 !write(13, *) 'before dudt3 org',crm_count,i,k,dudt(i,j,k,3)
 !write(13, *) 'before dwdt1 org',crm_count,i,k,dwdt(i,j,k,1)
 !write(13, *) 'before dwdt2 org',crm_count,i,k,dwdt(i,j,k,2)
 !write(13, *) 'before dwdt3 org',crm_count,i,k,dwdt(i,j,k,3)
-        enddo
-      enddo
-     enddo
+!        enddo
+!      enddo
+!     enddo
 
 
 end if

@@ -319,7 +319,9 @@ subroutine tphysbc_spcam (ztodt, state,   &
     use phys_control,    only: phys_getopts
     use sslt_rebin,      only: sslt_rebin_adv
     use qneg_module,     only: qneg3
-
+#ifdef ORCHESTRATOR
+    use crmdims,         only: orc_rank_total,orc_total,orc_nsubdomains
+#endif
     implicit none
 
     !
@@ -499,17 +501,22 @@ subroutine tphysbc_spcam (ztodt, state,   &
     ! pritch -- default, columns are not orchestrated:
     state%crmrank0(:ncol) = -2
     state%crmrank1(:ncol) = -2
+    state%crmrank         = -2
+    state%isorchestrated  = .false.
      if (myrank_global .eq. 0) then
        if (lchnk .eq. begchunk .and. masterproc) then
          write (iulog,*) 'MDEBUG YO on masterproc lchnk=',begchunk,endchunk,',ncols',ncol
          ! except (for now) the first six columns on masterproc...
-         do i=1,12
+         ! We might want to specify which column we want to use orc later  
+         do i=1,orc_total 
+           state%isorchestrated(i) = .true.
+         end do
+         do i=1,orc_rank_total
            ! each of which is to be linked (for now) to a single-core CRM in the external
            ! executable.
-           
            state%crmrank0(i) = i-1
          end do
-         do i=0,5
+         do i=0,orc_total-1
            state%crmrank1(2*i+1) = -i
            state%crmrank1(2*i+2) = -i-1
          end do
@@ -518,6 +525,13 @@ subroutine tphysbc_spcam (ztodt, state,   &
     ! pritch handshake -- attempt to surgically send lat,lon coords of GCM host
     ! to dedicated CRM rank:
       do i=1,ncol
+        if (state%isorchestrated(i)) then
+          do ii=1,orc_nsubdomains
+            state%crmrank(i,ii) = npes+(i-1)*orc_nsubdomains+ii-1
+          write (iulog,*) 'MDEBUG Liran =',i,ii,state%crmrank(i,ii),orc_total,state%isorchestrated(i)
+          end do
+        end if
+
         if (state%crmrank0(i) .ne. -2) then
           write (iulog,*) 'MDEBUG npes=',npes !--> note this is GCM npes, e.g.
           !validated at 50.

@@ -11,7 +11,7 @@ public :: task_init_ORC
 
 contains
 
-subroutine task_init_ORC(ncomm,npro,ntask)
+subroutine task_init_ORC(ncomm,npro,ntask,it,jt)
 		
 ! crm_comm_in,numproc_crm_in,myrank_crm_in
 !   Check things, initialize multitasking:
@@ -19,7 +19,7 @@ subroutine task_init_ORC(ncomm,npro,ntask)
 !use crmx_grid
 implicit none
 integer, intent(in) :: ncomm,npro,ntask
-integer itasks,ntasks,numproc_in_check,myrank_in_check,ierr,crm_comm_in_dup
+integer itasks,ntasks,numproc_in_check,it,jt,myrank_in_check,ierr,crm_comm_in_dup
 include 'mpif.h'
 if(YES3D .ne. 1 .and. YES3D .ne. 0) then
   print*,'YES3D is not 1 or 0. STOP'
@@ -46,6 +46,7 @@ else
   call mpi_comm_rank(crm_comm_in, myrank_in_check, ierr) 
   ntasks = myrank_in_check
   call task_start_ORC(rank,ntasks)
+  call task_rank_to_index_ORC(rank,it,jt)
 
   !call systemf('hostname')
 
