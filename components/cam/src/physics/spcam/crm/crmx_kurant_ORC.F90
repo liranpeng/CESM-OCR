@@ -22,9 +22,8 @@ real cfl, cfl_sgs,w_max,u_max
 integer myrank_global,ierr
 
 include 'mpif.h'
-
-allocate ( wm(nz) ) ! maximum vertical wind velocity
-allocate ( uhm(nz) ) ! maximum horizontal wind velocity
+allocate ( wm(nzm) ) ! maximum vertical wind velocity
+allocate ( uhm(nzm) ) ! maximum horizontal wind velocity
 
 ncycle = 1
 	

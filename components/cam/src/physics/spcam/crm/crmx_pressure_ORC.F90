@@ -143,7 +143,7 @@ endif
 !-----------------------------------------------------------------
 !  Compute the r.h.s. of the Poisson equation for pressure
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-!print*, 'Liran Check u0 ',myrank_global,u
+!print*, 'Liran Check c0 ',nzslab,nx_gl,nzm,nsubdomains
 !print*, 'Liran Check p0 ',myrank_global,p
 call press_rhs_ORC()
 !print*, 'Liran Check p ',myrank_global,p
@@ -332,6 +332,7 @@ do m = 0, nsubdomains-1
       do j = 1-YES3D,ny
        do i = 1,nx
          bufp_slabs(i,j,k,n_in) = buff_slabs(i,j,k,n_in)
+         !print*,rank,i,k,n_in,bufp_slabs(i,j,k,n_in)
        end do
       end do
      end do
@@ -411,6 +412,7 @@ do k=1,nzm
 end do 
 if(dompi) then
   call task_rank_to_index_ORC(rank,it,jt)
+!print*,'Liran check it',rank,it,jt
 else
   call task_rank_to_index(rank,it,jt)
 end if

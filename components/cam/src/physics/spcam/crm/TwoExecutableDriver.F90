@@ -39,7 +39,7 @@ program TwoExecutableDriver
         outin06_crm_qrad,outin07_qc_crm,outin08_qi_crm,outin09_qpc_crm,outin10_qpi_crm,outin12_t_rad,&
         outin13_qv_rad,outin14_qc_rad,outin15_qi_rad,outin16_cld_rad,outin17_cld3d_crm,crm_tk,crm_tkh,out_cld_rad
   real(r8), dimension(orc_nx,orc_ny) :: outin11_prec_crm
-  real(r8), dimension(crm_nz) :: outin_u0,outin_v0,outin_t0,outin_tabs0,outin_q0,outin_qv0,outin_qn0,outin_qp0,outin_tke0
+  real(r8), dimension(crm_nz) :: outin_u0,outin_v0,outin_t0,outin_t00,outin_tabs0,outin_q0,outin_qv0,outin_qn0,outin_qp0,outin_tke0
   real(r8), allocatable :: flattened_crm_inout(:),out_Var_Flat(:)
   real(r8),dimension(orc_nx, orc_ny, crm_nz,nmicro_fields+1) :: outin05_crm_micro
   real (r8) :: precc,precl,precsc,precsl,cltot,clhgh,clmed,cllow,lon,lat
@@ -55,7 +55,7 @@ program TwoExecutableDriver
   integer,parameter :: structlen  = 49
   integer,parameter :: singlelen  = 30
   integer,parameter :: flen       = structlen*pver+singlelen+1+20+pcols
-  integer,parameter :: flen2      = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields+orc_nx*orc_ny+9*crm_nz
+  integer,parameter :: flen2      = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields+orc_nx*orc_ny+10*crm_nz
   integer,parameter :: structleno = 37
   integer,parameter :: singleleno = 25
   integer,parameter :: rank_offset=2
@@ -232,9 +232,9 @@ program TwoExecutableDriver
   qtotcrm(1:20)       = inp_Var_Flat(49*pver+2+singlelen:49*pver+21+singlelen)
   gcolindex(1:pcols)  = inp_Var_Flat(49*pver+22+singlelen:49*pver+21+singlelen+pcols)
   fcount = 0
-  do ii=1,orc_nx
+  do kk=1,crm_nz
     do jj=1,orc_ny
-      do kk=1,crm_nz
+      do ii=1,orc_nx
         fcount = fcount + 1
         outin01_crm_u(ii,jj,kk)    = inp_Var_Flat2(fcount)
         outin02_crm_v(ii,jj,kk)    = inp_Var_Flat2(fcount + 1 * chnksz)
@@ -253,17 +253,17 @@ program TwoExecutableDriver
         outin16_cld_rad(ii,jj,kk)  = inp_Var_Flat2(fcount + 14* chnksz)
         crm_tk(ii,jj,kk)           = inp_Var_Flat2(fcount + 15* chnksz)
         crm_tkh(ii,jj,kk)          = inp_Var_Flat2(fcount + 16* chnksz)
-write (13,*),'Receive t',ii,kk,outin04_crm_t(ii,jj,kk)
+!write (13,*),'Receive t',ii,kk,outin04_crm_t(ii,jj,kk)
 !write (13,*),'CALL CRM_ORC ww!',myrank_global,ii,jj,kk,outin03_crm_w(ii,jj,kk)
       end do
     end do
   end do
 
   fcount = 17*chnksz
-  do ii=1,orc_nx
-    do jj=1,orc_ny
-      do kk=1,crm_nz
-        do ll=1,nmicro_fields
+  do ll=1,nmicro_fields
+    do kk=1,crm_nz
+      do jj=1,orc_ny
+        do ii=1,orc_nx
           fcount=fcount+1
           outin05_crm_micro(ii,jj,kk,ll) = inp_Var_Flat2(fcount)
         end do
@@ -272,8 +272,8 @@ write (13,*),'Receive t',ii,kk,outin04_crm_t(ii,jj,kk)
   end do
 
   fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields
-  do ii=1,orc_nx
-    do jj=1,orc_ny
+  do jj=1,orc_ny
+    do ii=1,orc_nx
       fcount = fcount + 1
       outin11_prec_crm(ii,jj) = inp_Var_Flat2(fcount)
     end do
@@ -285,12 +285,13 @@ write (13,*),'Receive t',ii,kk,outin04_crm_t(ii,jj,kk)
     outin_u0(kk)    = inp_Var_Flat2(fcount + 0 * crm_nz)
     outin_v0(kk)    = inp_Var_Flat2(fcount + 1 * crm_nz)
     outin_t0(kk)    = inp_Var_Flat2(fcount + 2 * crm_nz)
-    outin_tabs0(kk) = inp_Var_Flat2(fcount + 3 * crm_nz)
-    outin_q0(kk)    = inp_Var_Flat2(fcount + 4 * crm_nz)
-    outin_qv0(kk)   = inp_Var_Flat2(fcount + 5 * crm_nz)
-    outin_qn0(kk)   = inp_Var_Flat2(fcount + 6 * crm_nz)
-    outin_qp0(kk)   = inp_Var_Flat2(fcount + 7 * crm_nz)
-    outin_tke0(kk)  = inp_Var_Flat2(fcount + 8 * crm_nz)
+    outin_t00(kk)   = inp_Var_Flat2(fcount + 3 * crm_nz)
+    outin_tabs0(kk) = inp_Var_Flat2(fcount + 4 * crm_nz)
+    outin_q0(kk)    = inp_Var_Flat2(fcount + 5 * crm_nz)
+    outin_qv0(kk)   = inp_Var_Flat2(fcount + 6 * crm_nz)
+    outin_qn0(kk)   = inp_Var_Flat2(fcount + 7 * crm_nz)
+    outin_qp0(kk)   = inp_Var_Flat2(fcount + 8 * crm_nz)
+    outin_tke0(kk)  = inp_Var_Flat2(fcount + 9 * crm_nz)
   end do
 
 ! Preparing to call the CRM
@@ -311,13 +312,13 @@ write (13,*),'Receive t',ii,kk,outin04_crm_t(ii,jj,kk)
   !write(13,*) 'Liran crm check2->',nx,crm_nx,nsubdomains_x 
   call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
   !write (13,*),'CALL CRM_ORC u all!',myrank_global,outin01_crm_u
-  write (13,*),'CALL CRM_ORC u!',myrank_global,inp01_lchnk,outin01_crm_u(:,:,:)
+  !write (13,*),'CALL CRM_ORC u!',myrank_global,inp01_lchnk,outin01_crm_u(:,:,:)
   !write (13,*),'CALL CRM_ORC w!',myrank_global,inp01_lchnk,outin03_crm_w(:,:,:)
   !write (13,*),'CALL CRM_ORC m1!',myrank_global,outin05_crm_micro(:,:,:,1)
   it = 0
   jt = 0
   call MPI_barrier(crm_comm_in, ierr)
-  call crm_orc(it,jt,outin_u0,outin_v0,outin_t0,outin_tabs0,outin_q0,outin_qv0,outin_qn0,outin_qp0,outin_tke0, &
+  call crm_orc(it,jt,outin_u0,outin_v0,outin_t0,outin_t00,outin_tabs0,outin_q0,outin_qv0,outin_qn0,outin_qp0,outin_tke0, &
             lon,lat,gcolindex,inp01_lchnk, inp02_i,                            &
             inp03_tl(:),inp04_ql(:),inp05_qccl(:),inp06_qiil(:), &
             inp07_ul(:),inp08_vl(:),inp09_ps,inp10_pmid(:),inp11_pdel(:), &
@@ -423,9 +424,9 @@ write(13,*) 'Liran start send data back',myrank_crm,it,jt
   out_Var_Flat(37*pver+1+singleleno:37*pver+20+singleleno) = qtotcrm(1:20)
 
   fcount = 37*pver+20+singleleno
-  do ii=1,orc_nx
+  do kk=1,crm_nz
     do jj=1,orc_ny
-      do kk=1,crm_nz
+      do ii=1,orc_nx
         fcount = fcount + 1
         out_Var_Flat(fcount)              = outin01_crm_u(ii,jj,kk)
         out_Var_Flat(fcount + 1 * chnksz) = outin02_crm_v(ii,jj,kk)
@@ -448,9 +449,9 @@ write(13,*) 'Liran start send data back',myrank_crm,it,jt
     end do
   end do
   fcount = 37*pver+20+singleleno + 16* chnksz
-  do ii=1,orc_nx
+  do kk=1,crm_nz
     do jj=1,orc_ny
-      do kk=1,crm_nz
+      do ii=1,orc_nx
         do ll=1,nmicro_fields
           fcount=fcount+1
           out_Var_Flat(fcount) = outin05_crm_micro(ii,jj,kk,ll) 
@@ -459,8 +460,8 @@ write(13,*) 'Liran start send data back',myrank_crm,it,jt
     end do
   end do
   fcount = 37*pver+20+singleleno + 16* chnksz +  orc_nx*orc_ny*crm_nz*nmicro_fields
-  do ii=1,orc_nx
-    do jj=1,orc_ny
+  do jj=1,orc_ny
+    do ii=1,orc_nx
       fcount = fcount + 1
       out_Var_Flat(fcount) = outin11_prec_crm(ii,jj)
     end do

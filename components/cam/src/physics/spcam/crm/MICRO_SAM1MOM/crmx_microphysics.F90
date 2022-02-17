@@ -114,9 +114,7 @@ subroutine micro_init()
 !    call task_abort()
 !  end if
 #endif
-  !allocate(micro_field(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm, nmicro_fields))
-   if (.not. allocated(q)) allocate(q(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm)) ! total nonprecipitating water
-  !allocate(qp(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm)) ! total precipitating water
+  if (.not. allocated(q)) allocate(q(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm)) ! total nonprecipitating water
   if (.not. allocated(fluxbmk)) allocate(fluxbmk (nx, ny, 1:nmicro_fields)) ! surface flux of tracers
   if (.not. allocated(fluxtmk)) allocate(fluxtmk (nx, ny, 1:nmicro_fields)) ! top boundary flux of tracers
   if (.not. allocated(mkwle)) allocate( mkwle(nz,1:nmicro_fields))  ! resolved vertical flux
@@ -125,7 +123,6 @@ subroutine micro_init()
   if (.not. allocated(mklsadv)) allocate( mklsadv(nz,1:nmicro_fields))  ! tendency due to large-scale vertical advection
   if (.not. allocated(mkdiff)) allocate( mkdiff(nz,1:nmicro_fields))  ! tendency due to vertical diffusion
   if (.not. allocated(mstor)) allocate( mstor(nz,1:nmicro_fields))  ! storage terms of microphysical variables
-  !if (.not. allocated(qn)) allocate( qn(nx,ny,nzm))
   if (.not. allocated(qpsrc)) allocate( qpsrc(nz))
   if (.not. allocated(qpevp)) allocate( qpevp(nz))
 
@@ -175,7 +172,6 @@ qpsrc=0.
      end if
 
   end if
-
   mkwle = 0.
   mkwsb = 0.
   mkadv = 0.
