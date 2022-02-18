@@ -1111,7 +1111,7 @@ end subroutine crm_init_cnst
    integer,parameter :: structlen = 49
    integer,parameter :: singlelen = 30
    integer,parameter :: flen      = structlen*pver+singlelen+1+20+pcols
-   integer,parameter :: flen2     = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields+orc_nx*orc_ny+10*crm_nz
+   integer,parameter :: flen2     = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields+orc_nx*orc_ny
    integer,dimension(structlen) :: blocklengths
    INTEGER,dimension(structlen) :: types
    integer :: crm_comm
@@ -1811,71 +1811,13 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
               end do
             end do
           end do
+          !write (iulog,*),'check micro orc',i_save,crm_micro(i_save,:,:,:,:)
           fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields
           do jj=1,crm_ny
             do ii=crm_start_ind,crm_end_ind
               fcount = fcount + 1
               Var_Flat2(fcount) = prec_crm(i_save,ii,jj)
             end do
-          end do
-
-          a_bg = 1./(tbgmax-tbgmin)
-          a_pr = 1./(tprmax-tprmin)
-          a_gr = 1./(tgrmax-tgrmin) 
-          work_u(1:crm_nx,1:crm_ny,1:crm_nz)   = crm_u(i_save,1:crm_nx,1:crm_ny,1:crm_nz)
-          work_v(1:crm_nx,1:crm_ny,1:crm_nz)   = crm_v(i_save,1:crm_nx,1:crm_ny,1:crm_nz)*YES3D
-          work_w(1:crm_nx,1:crm_ny,1:crm_nz)   = crm_w(i_save,1:crm_nx,1:crm_ny,1:crm_nz)
-          work_tabs(1:crm_nx,1:crm_ny,1:nzm)   = crm_t(i_save,1:crm_nx,1:crm_ny,1:crm_nz)
-          work_q(1:crm_nx,1:crm_ny,1:nzm)      = crm_micro(i_save,1:crm_nx,1:crm_ny,1:nzm,1)
-          work_qn(1:crm_nx,1:crm_ny,1:nzm)     = crm_micro(i_save,1:crm_nx,1:crm_ny,1:nzm,3)
-          work_qp = 0.
-          do kk=1,crm_nz  
-            work_u0(kk) = 0.
-            work_v0(kk) = 0.
-            work_t0(kk) = 0.
-            work_t00(kk) = 0.
-            work_tabs0(kk) = 0.
-            work_q0(kk) = 0.
-            work_qv0(kk) = 0.
-            work_qn0(kk) = 0.
-            work_qp0(kk) = 0.
-            work_tke0(kk) = 0.
-            work_gamaz(kk)=ggr/cp*(state_loc%zm(i_save,pver-kk+1)-state_loc%zi(i_save,pver+1))
-            do jj=1,crm_ny
-              do ii=1,crm_nx
-                work_qv(ii,jj,kk)  = work_q(ii,jj,kk) - work_qn(ii,jj,kk)
-                work_omn           = max(0.,min(1.,(work_tabs(ii,jj,kk)-tbgmin)*a_bg))
-                work_qcl(ii,jj,kk) = work_qn(ii,jj,kk)*work_omn
-                work_qci(ii,jj,kk) = work_qn(ii,jj,kk)*(1.-work_omn)
-                work_omp           = max(0.,min(1.,(work_tabs(ii,jj,kk)-tprmin)*a_pr))
-                work_qpl(ii,jj,kk) = work_qp(ii,jj,kk)*work_omp
-                work_qpi(ii,jj,kk) = work_qp(ii,jj,kk)*(1.-work_omp)
-                work_t(ii,jj,kk)   = work_tabs(ii,jj,kk) + work_gamaz(kk) &
-                                     -fac_cond*work_qcl(ii,jj,kk)-fac_sub*work_qci(ii,jj,kk) &
-                                     -fac_cond*work_qpl(ii,jj,kk)-fac_sub*work_qpi(ii,jj,kk)
-                work_u0(kk)        = work_u0(kk)+work_u(ii,jj,kk)
-                work_v0(kk)        = work_v0(kk)+work_v(ii,jj,kk)
-                work_t0(kk)        = work_t0(kk)+work_t(ii,jj,kk)
-                work_t00(kk)       = work_t00(kk)+work_t(ii,jj,kk)+fac_cond*work_qpl(ii,jj,kk)+fac_sub*work_qpi(ii,jj,kk)
-                work_tabs0(kk)     = work_tabs0(kk)+work_tabs(ii,jj,kk)
-                work_q0(kk)        = work_q0(kk)+work_qv(ii,jj,kk)+work_qcl(ii,jj,kk)+work_qci(ii,jj,kk)
-                work_qv0(kk)       = work_qv0(kk)+work_qv(ii,jj,kk)
-                work_qn0(kk)       = work_qn0(kk)+work_qcl(ii,jj,kk)+work_qci(ii,jj,kk)
-                work_qp0(kk)       = work_qp0(kk)+work_qpl(ii,jj,kk)+work_qpi(ii,jj,kk)
-                work_tke0(kk)      = work_tke0(kk)+work_tke0(kk)
-              end do
-            end do
-            work_u0(kk)    = work_u0(kk)    * (1._r8/dble(crm_nx*crm_ny))
-            work_v0(kk)    = work_v0(kk)    * (1._r8/dble(crm_nx*crm_ny))
-            work_t0(kk)    = work_t0(kk)    * (1._r8/dble(crm_nx*crm_ny))
-            work_t00(kk)   = work_t00(kk)   * (1._r8/dble(crm_nx*crm_ny))
-            work_tabs0(kk) = work_tabs0(kk) * (1._r8/dble(crm_nx*crm_ny))
-            work_q0(kk)    = work_q0(kk)    * (1._r8/dble(crm_nx*crm_ny))
-            work_qv0(kk)   = work_qv0(kk)   * (1._r8/dble(crm_nx*crm_ny))
-            work_qn0(kk)   = work_qn0(kk)   * (1._r8/dble(crm_nx*crm_ny))
-            work_qp0(kk)   = work_qp0(kk)   * (1._r8/dble(crm_nx*crm_ny))
-            work_tke0(kk)  = work_tke0(kk)  * (1._r8/dble(crm_nx*crm_ny))
-            !write(iulog,*),'u0',dest,k,work_u0(kk),work_t0(kk),work_t00(kk),work_tabs0(kk),work_q0(kk),work_qv0(kk),work_qn0(kk),work_qp0(kk),work_tke0(kk)
           end do
 
           fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields+orc_nx*orc_ny
@@ -1892,10 +1834,10 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
             Var_Flat2(fcount + 8 * crm_nz) = work_qp0(kk)
             Var_Flat2(fcount + 9 * crm_nz) = work_tke0(kk)
           end do
-          write (iulog,*),'Send Check',i,iorc,dest,crm_start_ind,crm_end_ind
-          write (iulog,*),'Send Check qv0',i,iorc,work_qv0
-          write (iulog,*),'Send Check q',i,iorc,work_q
-          write (iulog,*),'Send Check qn',i,iorc,work_qn
+          !write (iulog,*),'Send Check',i,iorc,dest,crm_start_ind,crm_end_ind
+          !write (iulog,*),'Send Check qv0',i,iorc,work_qv0
+          !write (iulog,*),'Send Check q',i,iorc,work_q
+          !write (iulog,*),'Send Check qn',i,iorc,work_qn
           call MPI_Send(Var_Flat(:)         ,flen,MPI_REAL8 ,dest,9018,MPI_COMM_WORLD,ierr)
           call MPI_Send(Var_Flat2(:)         ,flen2,MPI_REAL8,dest,9019,MPI_COMM_WORLD,ierr)
           end do !do iorc=1,orc_nsubdomains
@@ -1908,7 +1850,10 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
          i_save  = i
          nsubdomains_x  = 1
          call crm_define_grid()
-         write (iulog,*),'call default crf',myrank_global,lchnk,i_save
+         !write (iulog,*),'call default crf',myrank_global,lchnk,i_save
+         !if (state%isorchestrated(i))then
+         !write (iulog,*),'check micro',i_save,crm_micro(i_save,:,:,:,:)
+         !endif
          call crm (lchnk,      i_save,                                                                                            &
              state_loc%t(i_save,:),   state_loc%q(i_save,:,1),    state_loc%q(i_save,:,ixcldliq), state_loc%q(i_save,:,ixcldice),                &
              ul(:),              vl(:),                                                                                      &
@@ -1964,7 +1909,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
              taux_crm(i_save),        tauy_crm(i_save),          z0m(i_save),                timing_factor(i_save),        qtotcrm(i_save, :)         )   
         ! end if   ! if (state%isorchestrated(i))then
        end do  !do i = 1,ncol
-
+       write (iulog,*),'Finish call crm module at rank: ',myrank_global
        do i = 1,ncol
         ! re: next args in call to crm () are ptend* which despite being declared inout are actually output.
 
@@ -2016,6 +1961,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           ! crm_physics -------
 #ifdef ORCHESTRATOR
          if (state%isorchestrated(i)) then
+         do iorc=1,orc_nsubdomains
          !if (state%crmrank0(i) .ne. -2) then ! is this column coupled to an external CRM?
           call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           write (iulog,*),'MPI Recv start!',myrank_global,state%crmrank(i,iorc),state%isorchestrated(i)
@@ -2133,7 +2079,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
          !write (iulog,*),'MPI Recv finish!',myrank_global,state%crmrank0(i),i,lchnk,lchnk_save
          lchnk = lchnk_save
         !end do
-
         !write (iulog,*),'Check print0',state%crmrank(i,iorc),i,int(out_global_rank)
          !if (mod(int(out_global_rank),2).eq.0) then
           it = int(out_it)
@@ -2163,7 +2108,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
               end do
             end do
           end do
-
             do jj=1,orc_ny
               do ii=1,orc_nx
                 orc_prec_crm(i,ii+it,jj+jt)  = out_prec_crm(ii,jj)
@@ -2182,8 +2126,8 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 1111  format ('C_u',5I4,2E15.6)
 1112  format ('C_w',5I4,2E15.6)
 1113  format ('C_t',5I4,2E15.6)
+       end do ! do iorc=1,orc_nsubdomains
         endif ! is this column column coupled to an external (orchestrated) CRM?
-
        end do !do i = 1,ncol
 
 #endif

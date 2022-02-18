@@ -14,8 +14,7 @@ public :: crm_orc
 
 contains
 
-subroutine crm_orc(it,jt,inu0,inv0,int0,int00,intabs0,inq0,inqv0,inqn0,inqp0,intke0,&
-                       long,lati,gcolindex,lchnk, icol, &
+subroutine crm_orc(it,jt,long,lati,gcolindex,lchnk, icol, &
                        tl, ql, qccl, qiil, ul, vl, &
                        ps, pmid, pdel, phis, &
                        zmid, zint, dt_gl, plev, &
@@ -156,16 +155,6 @@ subroutine crm_orc(it,jt,inu0,inv0,int0,int00,intabs0,inq0,inqv0,inqn0,inqp0,int
 !         real(r8), intent(in) :: day00 ! initial day
          real(r8), intent(in) :: lati
          real(r8), intent(in) :: long
-         real(r8), intent(in) :: inu0(nzm)
-         real(r8), intent(in) :: inv0(nzm)
-         real(r8), intent(in) :: int0(nzm)
-         real(r8), intent(in) :: int00(nzm)
-         real(r8), intent(in) :: intabs0(nzm)
-         real(r8), intent(in) :: inq0(nzm)
-         real(r8), intent(in) :: inqv0(nzm)
-         real(r8), intent(in) :: inqn0(nzm)
-         real(r8), intent(in) :: inqp0(nzm)
-         real(r8), intent(in) :: intke0(nzm)
 !         real(r8), intent(in) :: pres00
 !         real(r8), intent(in) :: tabs_s0
          integer , intent(inout) :: it,jt
@@ -344,8 +333,10 @@ subroutine crm_orc(it,jt,inu0,inv0,int0,int00,intabs0,inq0,inqv0,inqn0,inqp0,int
 #endif
 
 !  Local space:
+        integer, parameter :: nfield = 10
         real dummy(nz), t00(nz)
-        real tln(plev), qln(plev), qccln(plev), qiiln(plev), uln(plev), vln(plev)
+        real u0_3(plev),u0_2(plev),tln(plev), qln(plev), qccln(plev), qiiln(plev), uln(plev), vln(plev)
+        real buffer1(plev,nfield), buffer2(plev,nfield)
         !real cwp(nx,ny), cwph(nx,ny), cwpm(nx,ny), cwpl(nx,ny)
         real, allocatable, dimension(:,:)  :: cwp,cwph,cwpm,cwpl
         real(r8) factor_xy, idt_gl
@@ -488,7 +479,6 @@ crm_count = 0
            prespot(k)=(1000./pres(k))**(rgas/cp)
            bet(k) = ggr/tl(plev-k+1)
            gamaz(k)=ggr/cp*z(k)
-           ! write(13, *) 'Check gamaz1',k,gamaz(k),z(k)
         end do ! k
 !        zi(nz) =  zint(plev-nz+2)
         zi(nz) = zint(plev-nz+2)-zint(plev+1) !+++mhwang, 2012-02-04
@@ -551,17 +541,15 @@ crm_count = 0
         
         end if
 
-
         u(1:nx,1:ny,1:nzm) = u_crm(1:nx,1:ny,1:nzm)
         v(1:nx,1:ny,1:nzm) = v_crm(1:nx,1:ny,1:nzm)*YES3D
         w(1:nx,1:ny,1:nzm) = w_crm(1:nx,1:ny,1:nzm)
         tabs(1:nx,1:ny,1:nzm) = t_crm(1:nx,1:ny,1:nzm)
-call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-write(0, *) 'Liran CRM_ORC0 q',icol,q
-write(0, *) 'Liran CRM_ORC0 qn',icol,qn
-
-        micro_field(1:nx,1:ny,1:nzm,1:nmicro_fields) = micro_fields_crm(1:nx,1:ny,1:nzm,1:nmicro_fields)
-
+!call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+!write(0, *) 'Liran CRM_ORC0 q',icol,q
+!write(0, *) 'Liran CRM_ORC0 qn',icol,qn
+        micro_field = micro_fields_crm
+        !micro_field(1:nx,1:ny,1:nzm,1:nmicro_fields) = micro_fields_crm(1:nx,1:ny,1:nzm,1:nmicro_fields)
 #ifdef sam1mom
         qn(1:nx,1:ny,1:nzm) =  micro_fields_crm(1:nx,1:ny,1:nzm,3)
 #endif
@@ -593,7 +581,6 @@ write(0, *) 'Liran CRM_ORC0 qn',icol,qn
 #endif 
 
         w(:,:,nz)=0.
-!write(0, *) 'Liran CRM_ORC01 w',myrank_global,w
         wsub (:) = 0.      !used in clubb, +++mhwang
 
         !dudt(:,:,:,:) = 0.
@@ -631,18 +618,92 @@ write(0, *) 'Liran CRM_ORC0 qn',icol,qn
           end do
         end do
 
-       do k=1,nzm 
-         u0(k) = inu0(k)
-         v0(k) = inv0(k)
-         t0(k) = int0(k)
-         t00(k) = int00(k)
-         tabs0(k) = intabs0(k)
-         q0(k) = inq0(k)
-         qv0(k) = inqv0(k)
-         qn0(k) = inqn0(k)
-         qp0(k) = inqp0(k)
-         tke0(k) = intke0(k)
+!       do k=1,nzm 
+!         u0(k) = inu0(k)
+!         v0(k) = inv0(k)
+!         t0(k) = int0(k)
+!         t00(k) = int00(k)
+!         tabs0(k) = intabs0(k)
+!         q0(k) = inq0(k)
+!         qv0(k) = inqv0(k)
+!         qn0(k) = inqn0(k)
+!        qp0(k) = inqp0(k)
+!        tke0(k) = intke0(k)
 
+        do k=1,nzm
+          u0(k)=0.
+          v0(k)=0.
+          t0(k)=0.
+          t00(k)=0.
+          tabs0(k)=0.
+          q0(k)=0.
+          qv0(k)=0.
+!+++mhwang these are not initialized ??
+          qn0(k) = 0.0
+          qp0(k) = 0.0
+          tke0(k) = 0.0
+!---mhwang
+          do j=1,ny
+           do i=1,nx
+            t(i,j,k) = tabs(i,j,k)+gamaz(k) &
+                        -fac_cond*qcl(i,j,k)-fac_sub*qci(i,j,k) &
+                        -fac_cond*qpl(i,j,k)-fac_sub*qpi(i,j,k)
+            colprec=colprec+(qpl(i,j,k)+qpi(i,j,k))*pdel(plev-k+1)
+            colprecs=colprecs+qpi(i,j,k)*pdel(plev-k+1)
+            u0(k)=u0(k)+u(i,j,k)
+            v0(k)=v0(k)+v(i,j,k)
+            t0(k)=t0(k)+t(i,j,k)
+            t00(k)=t00(k)+t(i,j,k)+fac_cond*qpl(i,j,k)+fac_sub*qpi(i,j,k)
+            tabs0(k)=tabs0(k)+tabs(i,j,k)
+            q0(k)=q0(k)+qv(i,j,k)+qcl(i,j,k)+qci(i,j,k)
+            qv0(k) = qv0(k) + qv(i,j,k)
+            qn0(k) = qn0(k) + qcl(i,j,k) + qci(i,j,k)
+            qp0(k) = qp0(k) + qpl(i,j,k) + qpi(i,j,k)
+            tke0(k)=tke0(k)+tke(i,j,k)
+           end do
+          end do
+          u0(k) = u0(k) * factor_xy /float(nsubdomains)
+          v0(k) = v0(k) * factor_xy /float(nsubdomains)
+          t0(k) = t0(k) * factor_xy /float(nsubdomains)
+          t00(k) = t00(k) * factor_xy /float(nsubdomains)
+          tabs0(k) = tabs0(k) * factor_xy /float(nsubdomains)
+          q0(k) = q0(k) * factor_xy /float(nsubdomains)
+          qv0(k) = qv0(k) * factor_xy /float(nsubdomains)
+          qn0(k) = qn0(k) * factor_xy /float(nsubdomains)
+          qp0(k) = qp0(k) * factor_xy /float(nsubdomains)
+          tke0(k) = tke0(k) * factor_xy /float(nsubdomains)
+        end do
+        buffer1(:, 1) = u0(:)
+        buffer1(:, 2) = v0(:)
+        buffer1(:, 3) = t0(:)
+        buffer1(:, 4) = t00(:)
+        buffer1(:, 5) = tabs0(:)
+        buffer1(:, 6) = q0(:)
+        buffer1(:, 7) = qv0(:)
+        buffer1(:, 8) = qn0(:)
+        buffer1(:, 9) = qp0(:)
+        buffer1(:,10) = tke0(:)
+        call task_sum_real_ORC(buffer1,buffer2,nzm*nfield)
+        u0(:)    = buffer2(:, 1)
+        v0(:)    = buffer2(:, 2)
+        t0(:)    = buffer2(:, 3)
+        t00(:)   = buffer2(:, 4)
+        tabs0(:) = buffer2(:, 5)
+        q0(:)    = buffer2(:, 6)
+        qv0(:)   = buffer2(:, 7)
+        qn0(:)   = buffer2(:, 8)
+        qp0(:)   = buffer2(:, 9)
+        tke0(:)  = buffer2(:,10)
+write(0, *) 'Liran ORC u0',icol,u0
+write(0, *) 'Liran ORC t0',icol,t0
+write(0, *) 'Liran ORC t00',icol,t00
+write(0, *) 'Liran ORC tabs0',icol,tabs0
+write(0, *) 'Liran ORC q0',icol,q0
+write(0, *) 'Liran ORC qv0',icol,qv0
+write(0, *) 'Liran ORC qn0',icol,qn0
+write(0, *) 'Liran ORC qp0',icol,qp0
+
+        do k=1,nzm
 #ifdef SPCAM_CLUBB_SGS
  ! Update thetav for CLUBB.  This is needed when we have a higher model top 
  ! than is in the sounding, because we subsequently use tv0 to initialize 
@@ -668,7 +729,23 @@ write(0, *) 'Liran CRM_ORC0 qn',icol,qn
            
 
         end do ! k
+ 
+        !do k=1,nzm
 
+         ! u0_2(k)=0.
+         ! do j=1,ny
+         !  do i=1,nx
+         !   u0_2(k)=u0_2(k)+u(i,j,k)
+         !  end do
+         ! end do
+
+          !u0_2(k) = u0_2(k) * factor_xy/float(nsubdomains)
+        !end do !do k=1,nzm
+
+        !do k=1,nzm
+        !  write(0, *) 'Liran check u0',u0(k),u0_2(k)
+        !end do        
+ 
         uhl = u0(1)
         vhl = v0(1)
 
@@ -925,7 +1002,7 @@ write(0, *) 'Liran CRM_ORC0 qn',icol,qn
 !      do j=1,ny
 !        do i=1,nx
 !write(13, *) 'before u0',myrank_global,crm_count,i,k,u(i,j,k)
-write(13, *) 'before w0',icol,crm_count,i,k,w(i,j,k)
+!write(13, *) 'before w0',icol,crm_count,i,k,w(i,j,k)
 !write(13, *) 'before p0',myrank_global,crm_count,i,k,p(i,j,k)
 !write(13, *) 'before t0',myrank_global,crm_count,i,k,t(i,j,k)
 !write(13, *) 'before dudt10',myrank_global,crm_count,i,k,dudt(i,j,k,1)
@@ -989,12 +1066,12 @@ do while(nstep.lt.nstop)
 !write(0, *) 'Liran CRM_ORC2 qpi',myrank_global,qpi
 !write(0, *) 'Liran CRM_ORC2 qv0',myrank_global,qv0
 !write(0, *) 'Liran CRM_ORC2 qn0',myrank_global,qn0
-write(0, *) 'Liran CRM_ORC2 qv',icol,qv
-write(0, *) 'Liran CRM_ORC2 qv0',icol,qv0
-write(0, *) 'Liran CRM_ORC2 qcl',icol,qcl
-write(0, *) 'Liran CRM_ORC2 qci',icol,qci
-write(0, *) 'Liran CRM_ORC2 w',icol,w
-write(0, *) 'Liran CRM_ORC2 dwdt',icol,dwdt
+!write(0, *) 'Liran CRM_ORC2 qv',icol,qv
+!write(0, *) 'Liran CRM_ORC2 qv0',icol,qv0
+!write(0, *) 'Liran CRM_ORC2 qcl',icol,qcl
+!write(0, *) 'Liran CRM_ORC2 qci',icol,qci
+!write(0, *) 'Liran CRM_ORC2 w',icol,w
+!write(0, *) 'Liran CRM_ORC2 dwdt',icol,dwdt
 !write(0, *) 'Liran CRM_ORC12 t',myrank_global,t
 !write(0, *) 'Liran CRM_ORC12 dudt',myrank_global,dudt
      call buoyancy()
@@ -1004,11 +1081,11 @@ write(0, *) 'Liran CRM_ORC2 dwdt',icol,dwdt
 !---mhwangtest 
 !call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !write(0, *) 'Liran CRM_ORC21 dudt',myrank_global,dudt
-write(0, *) 'Liran CRM_ORC21 dwdt',icol,dwdt
+!write(0, *) 'Liran CRM_ORC21 dwdt',icol,dwdt
 !write(0, *) 'Liran CRM_ORC21 ut',myrank_global,utend
 !write(0, *) 'Liran CRM_ORC21 t',myrank_global,t
 !write(0, *) 'Liran CRM_ORC21 u',myrank_global,u
-write(0, *) 'Liran CRM_ORC21 w',icol,w
+!write(0, *) 'Liran CRM_ORC21 w',icol,w
 !------------------------------------------------------------
 !       Large-scale and surface forcing:
 
@@ -1560,6 +1637,22 @@ crm_count = crm_count + 1
         qiiln(ptop:plev) = qiiln(ptop:plev) * factor_xy
         uln(ptop:plev) = uln(ptop:plev) * factor_xy
         vln(ptop:plev) = vln(ptop:plev) * factor_xy
+
+        buffer1(:, 1) = tln(:)
+        buffer1(:, 2) = qln(:)
+        buffer1(:, 3) = qccln(:)
+        buffer1(:, 4) = qiiln(:)
+        buffer1(:, 5) = uln(:)
+        buffer1(:, 6) = vln(:)
+
+        call task_sum_real_ORC(buffer1,buffer2,nzm*nfield)
+
+        tln(:)   = buffer2(:, 1) 
+        qln(:)   = buffer2(:, 2)
+        qccln(:) = buffer2(:, 3)
+        qiiln(:) = buffer2(:, 4)
+        uln(:)   = buffer2(:, 5)
+        vln(:)   = buffer2(:, 6)
 
         sltend = cp * (tln - tl) * idt_gl
         qltend = (qln - ql) * idt_gl

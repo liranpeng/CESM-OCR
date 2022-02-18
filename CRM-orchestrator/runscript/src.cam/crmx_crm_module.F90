@@ -410,6 +410,20 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
         allocate ( cwpl (nx, ny))
         allocate (flag_top(nx, ny))
         call crm_allocate()
+
+!if(myrank_global.eq.0) then
+!        do k=1,nzm
+!          qv0(k)=0.
+!          do j=1,ny
+!           do i=1,nx
+!            qv0(k) = qv0(k) + qn(i,j,k)
+!           end do
+!          end do
+!          qv0(k) = qv0(k) * factor_xy
+!        end do    
+!write(0, *) 'Liran ORG qn0 check1',icol,qn0
+!end if
+
         dostatis = .false.    ! no statistics are collected. 
         idt_gl = 1._r8/dt_gl
         ptop = plev-nzm+1
@@ -556,11 +570,26 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
         tabs(1:nx,1:ny,1:nzm) = t_crm(1:nx,1:ny,1:nzm)
 
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-if(myrank_global.eq.0) then
-write(0, *) 'Liran CRM_org w',icol,w
-write(0, *) 'Liran CRM_org q00',icol,q
-write(0, *) 'Liran CRM_org qv00',icol,qv
-end if
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org w',icol,w
+!write(0, *) 'Liran CRM_org q00',icol,q
+!write(0, *) 'Liran CRM_org qv00',icol,qv
+!end if
+
+!if(myrank_global.eq.0) then
+!        do k=1,nzm
+!          qv0(k)=0.
+!          do j=1,ny
+!           do i=1,nx
+!            qv0(k) = qv0(k) + qn(i,j,k)
+!           end do
+!          end do
+!          qv0(k) = qv0(k) * factor_xy
+!        end do
+!write(0, *) 'Liran ORG qv10 check2',icol,qv0
+!end if
+
+        !micro_field = micro_fields_crm
         micro_field(1:nx,1:ny,1:nzm,1:nmicro_fields) = micro_fields_crm(1:nx,1:ny,1:nzm,1:nmicro_fields)
 #ifdef sam1mom
         qn(1:nx,1:ny,1:nzm) =  micro_fields_crm(1:nx,1:ny,1:nzm,3)
@@ -605,32 +634,42 @@ end if
         qp(1:nx,1:ny,1:nzm) = 0.
         CF3D(1:nx,1:ny,1:nzm) = 1.
 
-#ifdef CRM_DEBUG
-         do k=1,nzm
-          do j=1,ny
-           do i=1,nx
-             write(13, *) 'u01=',i,j,k,u(i,j,k)
-             write(13, *) 'v01=',i,j,k,v(i,j,k)
-             write(13, *) 'w01=',i,j,k,w(i,j,k)
-             write(13, *) 't01=',i,j,k,tabs(i,j,k)
-             write(13, *) 'tk01=',i,j,k,tk(i,j,k)
-             write(13, *) 'tkh01=',i,j,k,tkh(i,j,k)
-             write(13, *) 'tke01=',i,j,k,tke(i,j,k)
-           end do
-          end do
-         end do
-#endif
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org00 qv',icol,q
+!write(0, *) 'Liran CRM_org00 qv',icol,qv
+!write(0, *) 'Liran CRM_org00 qv0',icol,qv0
+!write(0, *) 'Liran CRM_org00 qcl',icol,qcl
+!write(0, *) 'Liran CRM_org00 qci',icol,qci
+!end if
 
-
-if(myrank_global.eq.0) then
-write(0, *) 'Liran CRM_org00 qv',icol,q
-write(0, *) 'Liran CRM_org00 qv',icol,qv
-write(0, *) 'Liran CRM_org00 qv0',icol,qv0
-write(0, *) 'Liran CRM_org00 qcl',icol,qcl
-write(0, *) 'Liran CRM_org00 qci',icol,qci
-end if
+!if(myrank_global.eq.0) then
+!        do k=1,nzm
+!          qv0(k)=0.
+!          do j=1,ny
+!           do i=1,nx
+!            qv0(k) = qv0(k) + qn(i,j,k)
+!           end do
+!          end do
+!          qv0(k) = qv0(k) * factor_xy
+!        end do
+!write(0, *) 'Liran ORG qv0 check2',icol,qv0
+!end if
 
         call micro_init
+
+!if(myrank_global.eq.0) then
+!        do k=1,nzm
+!          qv0(k)=0.
+!          do j=1,ny
+!           do i=1,nx
+!            qv0(k) = qv0(k) + qn(i,j,k)
+!           end do
+!          end do
+!          qv0(k) = qv0(k) * factor_xy
+!        end do
+!write(0, *) 'Liran ORG qv0 check3',icol,qv0
+!end if
+
 #ifdef CRM_DEBUG
          do k=1,nzm
           do j=1,ny
@@ -740,6 +779,20 @@ end if
           qg0(k) = ql(l)+qccl(l)+qiil(l)
 
         end do ! k
+
+if(myrank_global.eq.0) then
+write(0, *) 'Liran ORG u0',icol,u0
+write(0, *) 'Liran ORG t0',icol,t0
+write(0, *) 'Liran ORG t00',icol,t00
+write(0, *) 'Liran ORG tabs0',icol,tabs0
+write(0, *) 'Liran ORG q0',icol,q0
+write(0, *) 'Liran ORG qv0',icol,qv0
+write(0, *) 'Liran ORG qn0',icol,qn0
+write(0, *) 'Liran ORG qp0',icol,qp0
+end if
+
+
+
 
         uhl = u0(1)
         vhl = v0(1)
@@ -1075,27 +1128,27 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !       Buoyancy term:
 	     
 !call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-if(myrank_global.eq.0) then
+!if(myrank_global.eq.0) then
 !write(0, *) 'Liran CRM_org 3 u',myrank_global,u
 !write(0, *) 'Liran CRM_org 3 du',myrank_global,dudt
 !write(0, *) 'Liran CRM_org 3 dw',icol,dwdt
-write(0, *) 'Liran CRM_org2 qv',icol,qv
-write(0, *) 'Liran CRM_org2 qv0',icol,qv0
-write(0, *) 'Liran CRM_org2 qcl',icol,qcl
-write(0, *) 'Liran CRM_org2 qci',icol,qci
+!write(0, *) 'Liran CRM_org2 qv',icol,qv
+!write(0, *) 'Liran CRM_org2 qv0',icol,qv0
+!write(0, *) 'Liran CRM_org2 qcl',icol,qcl
+!write(0, *) 'Liran CRM_org2 qci',icol,qci
 !write(0, *) 'Liran CRM_org2 qcl',myrank_global,qcl
 !write(0, *) 'Liran CRM_org2 qci',myrank_global,qci
 !write(0, *) 'Liran CRM_org2 qpl',myrank_global,qpl
 !write(0, *) 'Liran CRM_org2 qpi',myrank_global,qpi
 !write(0, *) 'Liran CRM_org2 qv0',myrank_global,qv0
 !write(0, *) 'Liran CRM_org2 qn0',myrank_global,qn0
-write(0, *) 'Liran CRM_org2 w',icol,w
-end if
+!write(0, *) 'Liran CRM_org2 w',icol,w
+!end if
      call buoyancy()
-if(myrank_global.eq.0) then
-write(0, *) 'Liran CRM_org w',icol,w
-write(0, *) 'Liran CRM_org dwdt',icol,dwdt
-end if
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org w',icol,w
+!write(0, *) 'Liran CRM_org dwdt',icol,dwdt
+!end if
 !+++mhwangtest
 ! test water conservtion problem
         ntotal_step = ntotal_step + 1.

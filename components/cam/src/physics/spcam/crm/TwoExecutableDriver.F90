@@ -55,7 +55,7 @@ program TwoExecutableDriver
   integer,parameter :: structlen  = 49
   integer,parameter :: singlelen  = 30
   integer,parameter :: flen       = structlen*pver+singlelen+1+20+pcols
-  integer,parameter :: flen2      = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields+orc_nx*orc_ny+10*crm_nz
+  integer,parameter :: flen2      = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields+orc_nx*orc_ny
   integer,parameter :: structleno = 37
   integer,parameter :: singleleno = 25
   integer,parameter :: rank_offset=2
@@ -279,21 +279,6 @@ program TwoExecutableDriver
     end do
   end do
 
-  fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields+orc_nx*orc_ny
-  do kk=1,crm_nz
-    fcount = fcount + 1
-    outin_u0(kk)    = inp_Var_Flat2(fcount + 0 * crm_nz)
-    outin_v0(kk)    = inp_Var_Flat2(fcount + 1 * crm_nz)
-    outin_t0(kk)    = inp_Var_Flat2(fcount + 2 * crm_nz)
-    outin_t00(kk)   = inp_Var_Flat2(fcount + 3 * crm_nz)
-    outin_tabs0(kk) = inp_Var_Flat2(fcount + 4 * crm_nz)
-    outin_q0(kk)    = inp_Var_Flat2(fcount + 5 * crm_nz)
-    outin_qv0(kk)   = inp_Var_Flat2(fcount + 6 * crm_nz)
-    outin_qn0(kk)   = inp_Var_Flat2(fcount + 7 * crm_nz)
-    outin_qp0(kk)   = inp_Var_Flat2(fcount + 8 * crm_nz)
-    outin_tke0(kk)  = inp_Var_Flat2(fcount + 9 * crm_nz)
-  end do
-
 ! Preparing to call the CRM
 
   !call mpi_comm_size(crm_comm_in, numproc_crm_in, ierr)
@@ -318,8 +303,7 @@ program TwoExecutableDriver
   it = 0
   jt = 0
   call MPI_barrier(crm_comm_in, ierr)
-  call crm_orc(it,jt,outin_u0,outin_v0,outin_t0,outin_t00,outin_tabs0,outin_q0,outin_qv0,outin_qn0,outin_qp0,outin_tke0, &
-            lon,lat,gcolindex,inp01_lchnk, inp02_i,                            &
+  call crm_orc(it,jt,lon,lat,gcolindex,inp01_lchnk, inp02_i,                            &
             inp03_tl(:),inp04_ql(:),inp05_qccl(:),inp06_qiil(:), &
             inp07_ul(:),inp08_vl(:),inp09_ps,inp10_pmid(:),inp11_pdel(:), &
             inp12_phis,inp13_zm(:),inp14_zi(:),inp15_ztodt,pver, &
@@ -449,10 +433,10 @@ write(13,*) 'Liran start send data back',myrank_crm,it,jt
     end do
   end do
   fcount = 37*pver+20+singleleno + 16* chnksz
-  do kk=1,crm_nz
-    do jj=1,orc_ny
-      do ii=1,orc_nx
-        do ll=1,nmicro_fields
+  do ll=1,nmicro_fields
+    do kk=1,crm_nz
+      do jj=1,orc_ny
+        do ii=1,orc_nx
           fcount=fcount+1
           out_Var_Flat(fcount) = outin05_crm_micro(ii,jj,kk,ll) 
         end do
