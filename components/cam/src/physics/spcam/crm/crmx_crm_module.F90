@@ -589,6 +589,10 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !write(0, *) 'Liran ORG qv10 check2',icol,qv0
 !end if
 
+if(myrank_global.eq.0) then
+write(0, *) 'Liran CRM_org00 qn',icol,qn
+end if
+
         !micro_field = micro_fields_crm
         micro_field(1:nx,1:ny,1:nzm,1:nmicro_fields) = micro_fields_crm(1:nx,1:ny,1:nzm,1:nmicro_fields)
 #ifdef sam1mom
@@ -635,7 +639,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
         CF3D(1:nx,1:ny,1:nzm) = 1.
 
 !if(myrank_global.eq.0) then
-!write(0, *) 'Liran CRM_org00 qv',icol,q
+!write(0, *) 'Liran CRM_org00 qn',icol,qn
 !write(0, *) 'Liran CRM_org00 qv',icol,qv
 !write(0, *) 'Liran CRM_org00 qv0',icol,qv0
 !write(0, *) 'Liran CRM_org00 qcl',icol,qcl
@@ -790,9 +794,6 @@ write(0, *) 'Liran ORG qv0',icol,qv0
 write(0, *) 'Liran ORG qn0',icol,qn0
 write(0, *) 'Liran ORG qp0',icol,qp0
 end if
-
-
-
 
         uhl = u0(1)
         vhl = v0(1)

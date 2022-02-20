@@ -19,6 +19,7 @@ program TwoExecutableDriver
   !integer :: myrank_crm, numproc_crm,myrank_crm_in, numproc_crm_in
   integer :: ierr,status
   integer, parameter :: nmicro_fields = 2   ! total number of prognostic water vars
+  integer, parameter :: nmicro_fields_total = 3
   integer, parameter :: pcols = 16
   integer, parameter :: pver = 26
   integer :: i,from,EndFlag,crm_step,crm_start_ind,crm_end_ind
@@ -41,7 +42,7 @@ program TwoExecutableDriver
   real(r8), dimension(orc_nx,orc_ny) :: outin11_prec_crm
   real(r8), dimension(crm_nz) :: outin_u0,outin_v0,outin_t0,outin_t00,outin_tabs0,outin_q0,outin_qv0,outin_qn0,outin_qp0,outin_tke0
   real(r8), allocatable :: flattened_crm_inout(:),out_Var_Flat(:)
-  real(r8),dimension(orc_nx, orc_ny, crm_nz,nmicro_fields+1) :: outin05_crm_micro
+  real(r8),dimension(orc_nx, orc_ny, crm_nz,nmicro_fields_total) :: outin05_crm_micro
   real (r8) :: precc,precl,precsc,precsl,cltot,clhgh,clmed,cllow,lon,lat
   real (r8), dimension(pver) :: cld,cldtop,gicewp,gliqwp,mctot,mcup,mcdn,mcuup,mcudn
   real (r8), dimension(pver) :: spqc,spqi,spqs,spqg,spqr
@@ -55,7 +56,7 @@ program TwoExecutableDriver
   integer,parameter :: structlen  = 49
   integer,parameter :: singlelen  = 30
   integer,parameter :: flen       = structlen*pver+singlelen+1+20+pcols
-  integer,parameter :: flen2      = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields+orc_nx*orc_ny
+  integer,parameter :: flen2      = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny
   integer,parameter :: structleno = 37
   integer,parameter :: singleleno = 25
   integer,parameter :: rank_offset=2
@@ -142,7 +143,7 @@ program TwoExecutableDriver
   write(13,*) 'Enter Loop!!'
   ! ----------- Receive from cesm.exe/crm_physics inputs to CRM right before call to crm() ----------------
   chnksz = orc_nx*orc_ny*crm_nz
-  nflat =  17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields +orc_nx*orc_ny
+  nflat =  17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields_total +orc_nx*orc_ny
 ! =====================================================================================
 ! Receive from GCM, in order, the input ingredients expected by crm subroutine:
 ! =====================================================================================
@@ -260,7 +261,7 @@ program TwoExecutableDriver
   end do
 
   fcount = 17*chnksz
-  do ll=1,nmicro_fields
+  do ll=1,nmicro_fields_total
     do kk=1,crm_nz
       do jj=1,orc_ny
         do ii=1,orc_nx
@@ -270,8 +271,7 @@ program TwoExecutableDriver
       end do
     end do
   end do
-
-  fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields
+  fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields_total
   do jj=1,orc_ny
     do ii=1,orc_nx
       fcount = fcount + 1
@@ -433,7 +433,7 @@ write(13,*) 'Liran start send data back',myrank_crm,it,jt
     end do
   end do
   fcount = 37*pver+20+singleleno + 16* chnksz
-  do ll=1,nmicro_fields
+  do ll=1,nmicro_fields_total
     do kk=1,crm_nz
       do jj=1,orc_ny
         do ii=1,orc_nx
@@ -443,7 +443,7 @@ write(13,*) 'Liran start send data back',myrank_crm,it,jt
       end do
     end do
   end do
-  fcount = 37*pver+20+singleleno + 16* chnksz +  orc_nx*orc_ny*crm_nz*nmicro_fields
+  fcount = 37*pver+20+singleleno + 16* chnksz +  orc_nx*orc_ny*crm_nz*nmicro_fields_total
   do jj=1,orc_ny
     do ii=1,orc_nx
       fcount = fcount + 1

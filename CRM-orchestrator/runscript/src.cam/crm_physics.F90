@@ -786,6 +786,7 @@ end subroutine crm_init_cnst
     use crmdims,         only:orc_rank_total,orc_total,orc_nsubdomains,orc_nx,orc_ny
 #endif
 
+   integer, parameter :: nmicro_fields_total = 3
    real(r8), intent(in)              :: ztodt                          ! 2 delta t (model time increment)
    type(physics_state), intent(in)   :: state   
    type(physics_tend), intent(in)    :: tend
@@ -968,11 +969,11 @@ end subroutine crm_init_cnst
    real(r8), dimension(20)   :: out_qtotcrm
    real(r8), dimension(crm_nx, crm_ny, crm_nz) :: out_crm_u,out_crm_v,out_crm_w,out_crm_t,out_crm_qrad,out_qc_crm,out_qi_crm,out_qpc_crm
    real(r8), dimension(crm_nx, crm_ny, crm_nz) :: out_qpi_crm,out_t_rad,out_qv_rad,out_qc_rad,out_qi_rad,out_cld_rad,out_cld3d_crm,out_crm_tk,out_crm_tkh
-   real(r8), dimension(crm_nx, crm_ny, crm_nz,nmicro_fields) ::  out_crm_micro
+   real(r8), dimension(crm_nx, crm_ny, crm_nz,nmicro_fields_total) ::  out_crm_micro
    real(r8), dimension(crm_nx, crm_ny) :: out_prec_crm
    real(r8), dimension(pcols, crm_nx, crm_ny, crm_nz) :: orc_crm_u,orc_crm_v,orc_crm_w,orc_crm_t,orc_crm_qrad,orc_qc_crm,orc_qi_crm,orc_qpc_crm
    real(r8), dimension(pcols, crm_nx, crm_ny, crm_nz) :: orc_qpi_crm,orc_t_rad,orc_qv_rad,orc_qc_rad,orc_qi_rad,orc_cld_rad,orc_cld3d_crm
-   real(r8), dimension(pcols, crm_nx, crm_ny, crm_nz,nmicro_fields) :: orc_crm_micro 
+   real(r8), dimension(pcols, crm_nx, crm_ny, crm_nz,nmicro_fields_total) :: orc_crm_micro 
    real(r8), dimension(pcols, crm_nx, crm_ny) :: orc_prec_crm
    real(r8) taux_crm(pcols)  ! zonal CRM surface stress perturbation
    real(r8) tauy_crm(pcols)  ! merid CRM surface stress perturbation
@@ -1111,7 +1112,7 @@ end subroutine crm_init_cnst
    integer,parameter :: structlen = 49
    integer,parameter :: singlelen = 30
    integer,parameter :: flen      = structlen*pver+singlelen+1+20+pcols
-   integer,parameter :: flen2     = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields+orc_nx*orc_ny
+   integer,parameter :: flen2     = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny
    integer,dimension(structlen) :: blocklengths
    INTEGER,dimension(structlen) :: types
    integer :: crm_comm
@@ -1126,7 +1127,7 @@ end subroutine crm_init_cnst
    integer,parameter :: structleno = 37
    integer,parameter :: singleleno = 25
    integer,parameter :: fleno      = structleno*pver+singleleno+1+20
-   integer,parameter :: nflat =  17*(orc_nx*orc_ny*crm_nz) + orc_nx*orc_ny*crm_nz*nmicro_fields+orc_nx*orc_ny
+   integer,parameter :: nflat =  17*(orc_nx*orc_ny*crm_nz) + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny
    real(r8),dimension(fleno+nflat) :: CRM_Var_Flat
 #endif
    zero = 0.0_r8
@@ -1139,7 +1140,7 @@ end subroutine crm_init_cnst
 
    call t_startf ('crm')
 
-   allocate(crm_micro(pcols,crm_nx,crm_ny,crm_nz,nmicro_fields+1))
+   allocate(crm_micro(pcols,crm_nx,crm_ny,crm_nz,nmicro_fields_total))
 
    ! Initialize stuff:
    call cnst_get_ind('CLDLIQ', ixcldliq)
@@ -1801,7 +1802,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           end do
 
           fcount = 17*chnksz
-          do ll=1,nmicro_fields
+          do ll=1,nmicro_fields_total
             do kk=1,crm_nz
               do jj=1,crm_ny
                 do ii=crm_start_ind,crm_end_ind
@@ -1811,8 +1812,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
               end do
             end do
           end do
-          !write (iulog,*),'check micro orc',i_save,crm_micro(i_save,:,:,:,:)
-          fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields
+          fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields_total
           do jj=1,crm_ny
             do ii=crm_start_ind,crm_end_ind
               fcount = fcount + 1
@@ -1820,7 +1820,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
             end do
           end do
 
-          fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields+orc_nx*orc_ny
+          fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny
           do kk=1,crm_nz
             fcount = fcount + 1
             Var_Flat2(fcount + 0 * crm_nz) = work_u0(kk)
@@ -2057,10 +2057,10 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           end do
 
           fcount = 37*pver+20+singleleno + 17*chnksz
-          do kk=1,crm_nz
-            do jj=1,orc_ny
-              do ii=1,orc_nx
-                do ll=1,nmicro_fields
+          do ll=1,nmicro_fields_total
+            do kk=1,crm_nz
+              do jj=1,orc_ny
+                do ii=1,orc_nx
                   fcount=fcount+1
                   out_crm_micro(ii,jj,kk,ll) = CRM_Var_Flat(fcount)
                 end do
@@ -2068,7 +2068,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
             end do
           end do
 
-          fcount = 37*pver+20+singleleno + 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields
+          fcount = 37*pver+20+singleleno + 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields_total
           do jj=1,orc_ny
             do ii=1,orc_nx
               fcount = fcount + 1

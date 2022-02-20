@@ -14,7 +14,7 @@ set NNODE = 2
 #   define case
 ## ====================================================================
 setenv CCSMTAG     CESM-OCR
-setenv CASE        SPdev_liran_1mom_v739
+setenv CASE        SPdev_liran_1mom_v746
 #bloss(2021-01-22): Revert to basic case for testing
 #setenv CASESET     HIST_CAM%SPCAMS_CLM50%SP_CICE%PRES_DOCN%DOM_RTM_SGLC_SWAV
 #setenv CASERES     f19_f19_mg17
@@ -32,7 +32,7 @@ setenv SCRIPTDIR   $HOME/repositories/$CCSMTAG/CRM-orchestrator/runscript
 set crm_nx         = 32         # <<< change this one!
 set crm_ny         = 1
 set crm_dx         = 4000
-set crm_dt         = 0.1
+set crm_dt         = 5
 set crm_nz         = 24
 ## ====================================================================
 #   define directories <Please make sure the directories are correct>
@@ -79,10 +79,7 @@ sed -e "s/NPN/$NPNN/g; s/NNODE/$NNODE/g; s/CASE_FOLDER/$CASE/g" $HOME/repositori
 sed -e "s/GCM_pcount/$pcount/g; s/CRM_pcount/$CRM_pcount/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/env_mach_specific.sample  > $CASEROOT/env_mach_specific.xml
 sed -e "s/NXX/$crm_nx/g; s/NYY/$crm_ny/g; s/DXX/$crm_dx/g; s/DTT/$crm_dt/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/config_component.sample > $HOME/repositories/CESM-OCR/components/cam/cime_config/config_component.xml
 #cat <<EOF >> user_nl_cam
-#nhtfrq =   1
-#mfilt  = 1
-#avgflag_pertape = 'A'
-#fincl1 = 'CRM_U','CRM_W','CRM_T'
+#atm_cpl_dt = 20
 #EOF
 xmlchange --file env_batch.xml --id JOB_QUEUE --val $queue
 xmlchange --file env_workflow.xml --id JOB_WALLCLOCK_TIME --val $run_time

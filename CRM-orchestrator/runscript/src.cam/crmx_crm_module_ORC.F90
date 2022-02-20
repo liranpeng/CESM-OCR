@@ -694,14 +694,14 @@ crm_count = 0
         qn0(:)   = buffer2(:, 8)
         qp0(:)   = buffer2(:, 9)
         tke0(:)  = buffer2(:,10)
-write(0, *) 'Liran ORC u0',icol,u0
-write(0, *) 'Liran ORC t0',icol,t0
-write(0, *) 'Liran ORC t00',icol,t00
-write(0, *) 'Liran ORC tabs0',icol,tabs0
-write(0, *) 'Liran ORC q0',icol,q0
-write(0, *) 'Liran ORC qv0',icol,qv0
-write(0, *) 'Liran ORC qn0',icol,qn0
-write(0, *) 'Liran ORC qp0',icol,qp0
+!write(0, *) 'Liran ORC u0',icol,u0
+!write(0, *) 'Liran ORC t0',icol,t0
+!write(0, *) 'Liran ORC t00',icol,t00
+!write(0, *) 'Liran ORC tabs0',icol,tabs0
+!write(0, *) 'Liran ORC q0',icol,q0
+!write(0, *) 'Liran ORC qv0',icol,qv0
+!write(0, *) 'Liran ORC qn0',icol,qn0
+!write(0, *) 'Liran ORC qp0',icol,qp0
 
         do k=1,nzm
 #ifdef SPCAM_CLUBB_SGS
