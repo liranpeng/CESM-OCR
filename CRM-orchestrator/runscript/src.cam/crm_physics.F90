@@ -1812,6 +1812,8 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
               end do
             end do
           end do
+
+          !write (iulog,*),'Finish send: ', crm_micro(i_save,:,:,:,3) 
           fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields_total
           do jj=1,crm_ny
             do ii=crm_start_ind,crm_end_ind
@@ -1854,6 +1856,10 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
          !if (state%isorchestrated(i))then
          !write (iulog,*),'check micro',i_save,crm_micro(i_save,:,:,:,:)
          !endif
+        if (state%isorchestrated(i))then
+        !write(iulog,*) 'check na:',na,nb,nc
+        !write(iulog,*) 'Before default crm:',i_save,crm_micro(i_save,:,:,:,3)
+        end if
          call crm (lchnk,      i_save,                                                                                            &
              state_loc%t(i_save,:),   state_loc%q(i_save,:,1),    state_loc%q(i_save,:,ixcldliq), state_loc%q(i_save,:,ixcldice),                &
              ul(:),              vl(:),                                                                                      &
@@ -1907,6 +1913,9 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
              cam_in%ocnfrac(i_save),  wnd,                  tau00,                 bflx,                                          & 
              fluxu0,             fluxv0,               fluxt0,                fluxq0,                                        & 
              taux_crm(i_save),        tauy_crm(i_save),          z0m(i_save),                timing_factor(i_save),        qtotcrm(i_save, :)         )   
+        if (state%isorchestrated(i))then
+        !write(iulog,*) 'After default crm:',i_save,crm_micro(i_save,:,:,:,3)
+        end if
         ! end if   ! if (state%isorchestrated(i))then
        end do  !do i = 1,ncol
        write (iulog,*),'Finish call crm module at rank: ',myrank_global
@@ -2085,7 +2094,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           jt = int(out_jt)
           icheck_iorc = mod(int(out_global_rank-npes),orc_nsubdomains)
           icheck_column = (int(out_global_rank)-npes-icheck_iorc+1)/orc_nsubdomains+1
-          !write (iulog,*),'Check print 16',int(out_global_rank),it,jt,icheck_column,icheck_iorc 
+          write (iulog,*),'Receive data from->',int(out_global_rank),it,jt,icheck_column,icheck_iorc 
           do kk=1,crm_nz
             do jj=1,orc_ny
               do ii=1,orc_nx
@@ -2113,7 +2122,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
                 orc_prec_crm(i,ii+it,jj+jt)  = out_prec_crm(ii,jj)
               end do
             end do
-          !write (iulog,*),'Check print 17',int(out_global_rank),it,jt,icheck_column,icheck_iorc
+          !write (iulog,*),'Check print 17',int(out_global_rank),it,jt,icheck_column,icheck_iorc,out_crm_u
           do kk=1,crm_nz
             do jj=1,orc_ny
               do ii=1,orc_nx

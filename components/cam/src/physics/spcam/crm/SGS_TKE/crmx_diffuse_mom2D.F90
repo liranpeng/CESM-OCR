@@ -53,6 +53,9 @@ do k=1,nzm
     dudt(i,j,k,na)=dudt(i,j,k,na)-(fu(i,j,k)-fu(ib,j,k))
     dvdt(i,j,k,na)=dvdt(i,j,k,na)-(fv(i,j,k)-fv(ib,j,k))
     dwdt(i,j,kc,na)=dwdt(i,j,kc,na)-(fw(i,j,k)-fw(ib,j,k))
+    if (dudt(i,j,k,na).gt.100) then
+      print*,'Wrong check',i,k,na,dudt(i,j,k,na),tk(i,j,k),tkx,fu(i,j,k),fu(ib,j,k),u(i+1,j,k),u(i,j,k)
+    end if
    end do  
 end do 
 

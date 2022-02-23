@@ -271,6 +271,7 @@ program TwoExecutableDriver
       end do
     end do
   end do
+!write(13,*) 'CRM receive',myrank_crm,  outin05_crm_micro(:,:,:,3)
   fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields_total
   do jj=1,orc_ny
     do ii=1,orc_nx
@@ -302,7 +303,18 @@ program TwoExecutableDriver
   !write (13,*),'CALL CRM_ORC m1!',myrank_global,outin05_crm_micro(:,:,:,1)
   it = 0
   jt = 0
-  call MPI_barrier(crm_comm_in, ierr)
+  !call MPI_barrier(crm_comm_in, ierr)
+  write(13,*) 'check orc receive crm_u:',outin01_crm_u(1:10,1,1)
+  write(13,*) 'check orc receive crm_w:',outin03_crm_w(1:10,1,1)
+  write(13,*) 'check orc receive crm_t:',outin04_crm_t(1:10,1,1)
+  write(13,*) 'check orc receive crm_micro:',outin05_crm_micro(1:10,1,1,3)
+  write(13,*) 'check orc receive crm_qrad:',outin06_crm_qrad(1:10,1,1)
+  write(13,*) 'check orc receive crm_qc:',outin07_qc_crm(1:10,1,1)
+  write(13,*) 'check orc receive crm_qi:',outin08_qi_crm(1:10,1,1)
+  write(13,*) 'check orc receive crm_qpc:',outin09_qpc_crm(1:10,1,1)
+  write(13,*) 'check orc receive crm_qpi:',outin10_qpi_crm(1:10,1,1)
+  write(13,*) 'check orc receive crm_trad:',outin12_t_rad(1:10,1,1)
+  write(13,*) 'check orc receive crm_qvrad:', outin13_qv_rad(1:10,1,1)
   call crm_orc(it,jt,lon,lat,gcolindex,inp01_lchnk, inp02_i,                            &
             inp03_tl(:),inp04_ql(:),inp05_qccl(:),inp06_qiil(:), &
             inp07_ul(:),inp08_vl(:),inp09_ps,inp10_pmid(:),inp11_pdel(:), &
@@ -340,6 +352,18 @@ program TwoExecutableDriver
              taux_crm,        tauy_crm,          z0m, timing_factor,        qtotcrm( :)         &
             )
 ! ====================== DONE CALLING CRM -- TIME TO SEND OUTPUTS TO GCM
+  write(13,*) 'check orc after crm_u:',outin01_crm_u(1:10,1,1)
+  write(13,*) 'check orc after crm_w:',outin03_crm_w(1:10,1,1)
+  write(13,*) 'check orc after crm_t:',outin04_crm_t(1:10,1,1)
+  write(13,*) 'check orc after crm_micro:',outin05_crm_micro(1:10,1,1,3)
+  write(13,*) 'check orc after crm_qrad:',outin06_crm_qrad(1:10,1,1)
+  write(13,*) 'check orc after crm_qc:',outin07_qc_crm(1:10,1,1)
+  write(13,*) 'check orc after crm_qi:',outin08_qi_crm(1:10,1,1)
+  write(13,*) 'check orc after crm_qpc:',outin09_qpc_crm(1:10,1,1)
+  write(13,*) 'check orc after crm_qpi:',outin10_qpi_crm(1:10,1,1)
+  write(13,*) 'check orc after crm_trad:',outin12_t_rad(1:10,1,1)
+  write(13,*) 'check orc after crm_qvrad:', outin13_qv_rad(1:10,1,1)
+
 write(13,*) 'CRM_ORC run finish',myrank_global
   call MPI_barrier(crm_comm_in, ierr)
 write(13,*) 'Liran start send data back',myrank_crm,it,jt
@@ -443,6 +467,7 @@ write(13,*) 'Liran start send data back',myrank_crm,it,jt
       end do
     end do
   end do
+  !write(13,*) 'CRM send',myrank_crm,  outin01_crm_u
   fcount = 37*pver+20+singleleno + 16* chnksz +  orc_nx*orc_ny*crm_nz*nmicro_fields_total
   do jj=1,orc_ny
     do ii=1,orc_nx

@@ -1,5 +1,5 @@
 
-subroutine forcing
+subroutine forcing(printflag)
 	
         use crmx_vars
         use crmx_params
@@ -8,7 +8,7 @@ subroutine forcing
         implicit none
 
         real coef,qneg,qpoz, factor
-        integer i,j,k,nneg
+        integer i,j,k,nneg,printflag
 
         coef = 1./3600.
 
@@ -18,8 +18,16 @@ subroutine forcing
             qneg = 0.
             nneg = 0
 
+if (printflag.eq.1) then
+print*,'Liran ttend org',k,ttend(k),utend(k),qtend(k)
+end if
+if (printflag.eq.2) then
+print*,'Liran ttend',k,ttend(k),utend(k),qtend(k)
+end if
+
             do j=1,ny
              do i=1,nx
+
               t(i,j,k)=t(i,j,k) + ttend(k) * dtn
               micro_field(i,j,k,index_water_vapor)=micro_field(i,j,k,index_water_vapor) + qtend(k) * dtn
               if(micro_field(i,j,k,index_water_vapor).lt.0.) then

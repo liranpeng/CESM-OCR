@@ -330,7 +330,7 @@ subroutine crm        (lchnk, icol, &
         real(r8) factor_xy, idt_gl
         real tmp1, tmp2
         real u2z,v2z,w2z
-        integer i,j,k,l,ptop,nn,icyc, nstatsteps
+        integer i,j,k,l,ptop,nn,icyc, nstatsteps,printflag
         integer kx
         real(r8), parameter :: umax = 0.5*crm_dx/crm_dt ! maxumum ampitude of the l.s. wind
         real(r8), parameter :: wmin = 2.   ! minimum up/downdraft velocity for stat
@@ -365,7 +365,7 @@ real(kind=core_rknd), dimension(nzm) :: &
 integer numproc_global,myrank_global,ierr,rankprint,crm_count
 
 include 'mpif.h'
-
+printflag = 0
 rankprint = 30
 crm_count = 0
 call mpi_comm_size(MPI_COMM_WORLD, numproc_global, ierr)
@@ -589,16 +589,15 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !write(0, *) 'Liran ORG qv10 check2',icol,qv0
 !end if
 
-if(myrank_global.eq.0) then
-write(0, *) 'Liran CRM_org00 qn',icol,qn
-end if
 
         !micro_field = micro_fields_crm
         micro_field(1:nx,1:ny,1:nzm,1:nmicro_fields) = micro_fields_crm(1:nx,1:ny,1:nzm,1:nmicro_fields)
 #ifdef sam1mom
         qn(1:nx,1:ny,1:nzm) =  micro_fields_crm(1:nx,1:ny,1:nzm,3)
 #endif
-
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org00 qn',icol,qn
+!end if
 #ifdef m2005
         cloudliq(1:nx,1:ny,1:nzm) = micro_fields_crm(1:nx,1:ny,1:nzm,11)
 #endif
@@ -637,7 +636,7 @@ end if
         p(1:nx,1:ny,1:nzm) = 0.
         qp(1:nx,1:ny,1:nzm) = 0.
         CF3D(1:nx,1:ny,1:nzm) = 1.
-
+        tke = 0.
 !if(myrank_global.eq.0) then
 !write(0, *) 'Liran CRM_org00 qn',icol,qn
 !write(0, *) 'Liran CRM_org00 qv',icol,qv
@@ -660,7 +659,9 @@ end if
 !end if
 
         call micro_init
-
+if(myrank_global.eq.0) then
+write(0, *) 'Liran CRM_org01 na',icol,na
+end if
 !if(myrank_global.eq.0) then
 !        do k=1,nzm
 !          qv0(k)=0.
@@ -785,6 +786,7 @@ end if
         end do ! k
 
 if(myrank_global.eq.0) then
+!write(0, *) 'Liran ORG na nb nc',na,nb,nc
 write(0, *) 'Liran ORG u0',icol,u0
 write(0, *) 'Liran ORG t0',icol,t0
 write(0, *) 'Liran ORG t00',icol,t00
@@ -793,6 +795,7 @@ write(0, *) 'Liran ORG q0',icol,q0
 write(0, *) 'Liran ORG qv0',icol,qv0
 write(0, *) 'Liran ORG qn0',icol,qn0
 write(0, *) 'Liran ORG qp0',icol,qp0
+write(0, *) 'Liran ORG tke0',icol,tke0
 end if
 
         uhl = u0(1)
@@ -1129,7 +1132,10 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !       Buoyancy term:
 	     
 !call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-!if(myrank_global.eq.0) then
+if(myrank_global.eq.0) then
+if (icol .lt. 7) then
+printflag = 2
+end if
 !write(0, *) 'Liran CRM_org 3 u',myrank_global,u
 !write(0, *) 'Liran CRM_org 3 du',myrank_global,dudt
 !write(0, *) 'Liran CRM_org 3 dw',icol,dwdt
@@ -1144,11 +1150,22 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !write(0, *) 'Liran CRM_org2 qv0',myrank_global,qv0
 !write(0, *) 'Liran CRM_org2 qn0',myrank_global,qn0
 !write(0, *) 'Liran CRM_org2 w',icol,w
-!end if
-     call buoyancy()
-!if(myrank_global.eq.0) then
-!write(0, *) 'Liran CRM_org w',icol,w
-!write(0, *) 'Liran CRM_org dwdt',icol,dwdt
+!write(0, *) 'Liran org tabs0',icol,tabs0
+!write(0, *) 'Liran org qv0',icol,qv0
+!write(0, *) 'Liran org qn0',icol,qn0
+!write(0, *) 'Liran org tabs',icol,tabs
+!write(0, *) 'Liran org qv',icol,qv
+!write(0, *) 'Liran org q',icol,q
+!write(0, *) 'Liran org qn',icol,qn
+!write(0, *) 'Liran org bet',icol,bet
+!write(0, *) 'Liran org qp0',icol,qp0
+!write(0, *) 'Liran org qpi',icol,qpi
+!write(0, *) 'Liran org dwdt',icol,na,dwdt
+!write(0, *) 'Liran org qcl',icol,qcl
+end if
+     call buoyancy(printflag)
+!if(printflag.eq.2) then
+!write(0, *) 'Liran CRM_org dwdt',icol,na,nstep,icyc,dwdt
 !end if
 !+++mhwangtest
 ! test water conservtion problem
@@ -1165,7 +1182,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !write(0, *) 'Liran CRM_org 4 dw',myrank_global,dwdt
 !write(0, *) 'Liran CRM_org 4 w',myrank_global,w
 !end if
-     call forcing()
+     call forcing(printflag)
 
      do k=1,nzm
       do j=1,ny
@@ -1198,7 +1215,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
       end if
 #endif  /*CLUBB_SGS*/ 
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-!if(myrank_global.eq.0) then
+!if(printflag.eq.2) then
 !write(0, *) 'Liran CRM_org 6 u',myrank_global,u
 !write(0, *) 'Liran CRM_org 6 t',myrank_global,t
 !end if
@@ -1206,18 +1223,18 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !     Update scalar boundaries after large-scale processes:
 
      call boundaries(3)
-if(myrank_global.eq.0) then
+!if(printflag.eq.2) then
 !write(0, *) 'Liran CRM_org 7 w',myrank_global,w
 !write(0, *) 'Liran CRM_org 7 t',myrank_global,t
-end if
+!end if
 !---------------------------------------------------------
 !     Update boundaries for velocities:
 
       call boundaries(0)
-if(myrank_global.eq.0) then
+!if(printflag.eq.2) then
 !write(0, *) 'Liran CRM_org 8 w',myrank_global,w
 !write(0, *) 'Liran CRM_org 8 t',myrank_global,t
-end if
+!end if
 !-----------------------------------------------
 !     surface fluxes:
 
@@ -1226,11 +1243,11 @@ end if
 !-----------------------------------------------------------
 !  SGS physics:
 !call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-if(myrank_global.eq.0) then
+!if(printflag.eq.2) then
 !write(0, *) 'Liran CRM_org 7 u',myrank_global,u
 !write(0, *) 'Liran CRM_org 7 du',myrank_global,dudt
 !write(0, *) 'Liran CRM_org 7 dw',myrank_global,dwdt
-end if   
+!end if   
     if (dosgs) call sgs_proc()
 
 #ifdef CRM_DEBUG
@@ -1305,7 +1322,7 @@ end if
 !----------------------------------------------------------
 !     Fill boundaries for SGS diagnostic fields:
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-!if(myrank_global.eq.0) then
+!if(printflag.eq.2) then
 !write(0, *) 'Liran CRM_org 8 u',myrank_global,u
 !write(0, *) 'Liran CRM_org 8 du',myrank_global,dudt
 !end if
@@ -1313,17 +1330,17 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !-----------------------------------------------
 !       advection of momentum:
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-!if(myrank_global.eq.0) then
+!if(printflag.eq.2) then
 !write(0, *) 'Liran CRM_org 9 u',myrank_global,u
 !write(0, *) 'Liran CRM_org 9 du',myrank_global,dudt
 !end if
      call advect_mom()
 
-if(myrank_global.eq.0) then
+!if(printflag.eq.2) then
 !write(0, *) 'Liran CRM_org 9 u',myrank_global,u
 !write(0, *) 'Liran CRM_org 9 du',myrank_global,dudt
 !write(0, *) 'Liran CRM_org 9 dw',myrank_global,dwdt
-end if
+!end if
 #ifdef CRM_DEBUG
          do k=1,nzm
           do j=1,ny
@@ -1344,17 +1361,17 @@ end if
 !----------------------------------------------------------
 !	SGS effects on momentum:
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-!if(myrank_global.eq.0) then
+!if(printflag.eq.2) then
 !write(0, *) 'Liran CRM_org 10 u',myrank_global,u
 !write(0, *) 'Liran CRM_org 10 du',myrank_global,dudt
 !end if
      if(dosgs) call sgs_mom()
 
-if(myrank_global.eq.0) then
+!if(printflag.eq.2) then
 !write(0, *) 'Liran CRM_org 10 u',myrank_global,u
 !write(0, *) 'Liran CRM_org 10 du',myrank_global,dudt
 !write(0, *) 'Liran CRM_org 10 dw',myrank_global,dwdt
-end if
+!end if
 
 #ifdef CLUBB_CRM_OLD
      if ( doclubb ) then
@@ -1393,16 +1410,16 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !---------------------------------------------------------
 !       compute rhs of the Poisson equation and solve it for pressure. 
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-if(myrank_global.eq.0) then
+if(printflag.eq.2) then
 !write(0, *) 'Liran CRM_org 12 u',myrank_global,u
 !write(0, *) 'Liran CRM_org 12 w',myrank_global,w
 !write(0, *) 'Liran CRM_org 12 du',myrank_global,dudt
 !write(0, *) 'Liran CRM_org 12 dw',myrank_global,dwdt
 
 crm_count = crm_count + 1
-!     do k=1,nzm
+!     do k=5,7
 !      do j=1,ny
-!        do i=1,nx
+!        do i=1,16
 !write(13, *) 'before u org',crm_count,i,k,u(i,j,k)
 !write(13, *) 'before w org',crm_count,i,k,w(i,j,k)
 !write(13, *) 'before p org',crm_count,i,k,p(i,j,k)
@@ -1421,20 +1438,20 @@ crm_count = crm_count + 1
 end if
      call pressure()
 
-if(myrank_global.eq.0) then
+if(printflag.eq.2) then
 !write(0, *) 'Liran CRM_org 1 p',myrank_global,p
 !write(0, *) 'Liran CRM_org 13 u',myrank_global,u
 !write(0, *) 'Liran CRM_org 13 du',myrank_global,dudt
-!     do k=1,nzm
+!     do k=5,7
 !      do j=1,ny
-!        do i=1,nx
-!write(13, *) 'after u',crm_count,i,k,u(i,j,k)
-!write(13, *) 'after w',crm_count,i,k,w(i,j,k)
-!write(13, *) 'after p',crm_count,i,k,p(i,j,k)
-!write(13, *) 'after t',crm_count,i,k,t(i,j,k)
+!        do i=1,16
+!write(13, *) 'after u org ',crm_count,i,k,u(i,j,k)
+!write(13, *) 'after w org ',crm_count,i,k,w(i,j,k)
+!write(13, *) 'after p org ',crm_count,i,k,p(i,j,k)
+!write(13, *) 'after t org ',crm_count,i,k,t(i,j,k)
 !write(13, *) 'after dudt1',crm_count,i,k,dudt(i,j,k,1)
-!write(13, *) 'after dudt2',crm_count,i,k,dudt(i,j,k,1)
-!write(13, *) 'after dudt3',crm_count,i,k,dudt(i,j,k,1)
+!write(13, *) 'after dudt2',crm_count,i,k,dudt(i,j,k,2)
+!write(13, *) 'after dudt3',crm_count,i,k,dudt(i,j,k,3)
 !write(13, *) 'after dwdt1',crm_count,i,k,dwdt(i,j,k,1)
 !write(13, *) 'after dwdt2',crm_count,i,k,dwdt(i,j,k,2)
 !write(13, *) 'after dwdt3',crm_count,i,k,dwdt(i,j,k,3)
@@ -1481,7 +1498,7 @@ end if
 !    Convert velocity back from nondimensional form:
 
       call uvw()
-#ifdef CRM_DEBUG
+if(printflag.eq.2) then
          do k=1,nzm
           do j=1,ny
            do i=1,nx
@@ -1497,7 +1514,7 @@ end if
            end do
           end do
          end do
-#endif
+endif
 !----------------------------------------------------------
 !     Update boundaries for scalars to prepare for SGS effects:
 
@@ -1579,7 +1596,7 @@ end if
       na=nc
       nc=nb
       nb=nn
-
+!write(0, *) 'Liran ORG2 na nb nc',na,nb,nc
    end do ! icycle	
           
 !----------------------------------------------------------

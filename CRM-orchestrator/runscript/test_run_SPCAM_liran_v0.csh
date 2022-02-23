@@ -14,7 +14,7 @@ set NNODE = 2
 #   define case
 ## ====================================================================
 setenv CCSMTAG     CESM-OCR
-setenv CASE        SPdev_liran_1mom_v746
+setenv CASE        SPdev_liran_1mom_v805
 #bloss(2021-01-22): Revert to basic case for testing
 #setenv CASESET     HIST_CAM%SPCAMS_CLM50%SP_CICE%PRES_DOCN%DOM_RTM_SGLC_SWAV
 #setenv CASERES     f19_f19_mg17
@@ -32,7 +32,7 @@ setenv SCRIPTDIR   $HOME/repositories/$CCSMTAG/CRM-orchestrator/runscript
 set crm_nx         = 32         # <<< change this one!
 set crm_ny         = 1
 set crm_dx         = 4000
-set crm_dt         = 5
+set crm_dt         = 1
 set crm_nz         = 24
 ## ====================================================================
 #   define directories <Please make sure the directories are correct>
