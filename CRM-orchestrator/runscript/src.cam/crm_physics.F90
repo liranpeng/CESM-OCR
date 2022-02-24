@@ -2244,7 +2244,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           t_ls(icheck_column,kk)                           = out_t_ls(kk)
           prectend(icheck_column)                          = out_prectend
           precstend(icheck_column)                         = out_precstend
-          cam_in%ocnfrac(icheck_column)                    = out_ocnfrac
+          !cam_in%ocnfrac(icheck_column)                    = out_ocnfrac
        end do
 
         do kk=1,20
