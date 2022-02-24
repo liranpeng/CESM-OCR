@@ -503,6 +503,7 @@ subroutine tphysbc_spcam (ztodt, state,   &
     state%crmrank1(:ncol) = -2
     state%crmrank         = -2
     state%isorchestrated  = .false.
+    state%isofflinecrm    = .true.
      if (myrank_global .eq. 0) then
        if (lchnk .eq. begchunk .and. masterproc) then
          write (iulog,*) 'MDEBUG YO on masterproc lchnk=',begchunk,endchunk,',ncols',ncol
@@ -510,6 +511,8 @@ subroutine tphysbc_spcam (ztodt, state,   &
          ! We might want to specify which column we want to use orc later  
          do i=1,orc_total 
            state%isorchestrated(i) = .true.
+           ! ====> Turn on online CRM Here
+            state%isofflinecrm    = .false.
          end do
          do i=1,orc_rank_total
            ! each of which is to be linked (for now) to a single-core CRM in the external

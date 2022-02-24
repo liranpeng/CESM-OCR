@@ -14,7 +14,7 @@ set NNODE = 2
 #   define case
 ## ====================================================================
 setenv CCSMTAG     CESM-OCR
-setenv CASE        SPdev_liran_1mom_v805
+setenv CASE        SPdev_liran_1mom_v808
 #bloss(2021-01-22): Revert to basic case for testing
 #setenv CASESET     HIST_CAM%SPCAMS_CLM50%SP_CICE%PRES_DOCN%DOM_RTM_SGLC_SWAV
 #setenv CASERES     f19_f19_mg17
@@ -78,9 +78,9 @@ cd  $CASEROOT
 sed -e "s/NPN/$NPNN/g; s/NNODE/$NNODE/g; s/CASE_FOLDER/$CASE/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.sample > $CASEROOT/.case.run
 sed -e "s/GCM_pcount/$pcount/g; s/CRM_pcount/$CRM_pcount/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/env_mach_specific.sample  > $CASEROOT/env_mach_specific.xml
 sed -e "s/NXX/$crm_nx/g; s/NYY/$crm_ny/g; s/DXX/$crm_dx/g; s/DTT/$crm_dt/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/config_component.sample > $HOME/repositories/CESM-OCR/components/cam/cime_config/config_component.xml
-#cat <<EOF >> user_nl_cam
-#atm_cpl_dt = 20
-#EOF
+cat <<EOF >> user_nl_drv
+atm_cpl_dt = 10
+EOF
 xmlchange --file env_batch.xml --id JOB_QUEUE --val $queue
 xmlchange --file env_workflow.xml --id JOB_WALLCLOCK_TIME --val $run_time
 #xmlchange --file env_run.xml --id RUN_STARTDATE --val $run_start_date

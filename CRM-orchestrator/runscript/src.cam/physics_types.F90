@@ -69,7 +69,7 @@ module physics_types
           crmrank0,            &! pritch: first rank of CRM for each GCM column
           crmrank1              ! pritch: last rank of CRM for each GCM column
      integer, dimension(:,:), allocatable :: crmrank
-     logical, dimension(:), allocatable :: isorchestrated      
+     logical, dimension(:), allocatable :: isorchestrated,isofflinecrm      
 #endif
      real(r8), dimension(:), allocatable         :: &
           lat,     &! latitude (radians)
@@ -1507,6 +1507,7 @@ subroutine physics_state_alloc(state,lchnk,psetcols)
 ! pritch:
   allocate(state%crmrank0(psetcols), stat=ierr)
   allocate(state%isorchestrated(psetcols), stat=ierr)
+  allocate(state%isofflinecrm(psetcols), stat=ierr)
   if ( ierr /= 0 ) call endrun('physics_state_alloc error: allocation error for state%crmank0')
   allocate(state%crmrank1(psetcols), stat=ierr)
   if ( ierr /= 0 ) call endrun('physics_state_alloc error: allocation error for state%crmrank1')

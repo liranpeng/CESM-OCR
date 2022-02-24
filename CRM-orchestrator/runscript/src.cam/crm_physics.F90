@@ -961,10 +961,10 @@ end subroutine crm_init_cnst
    real(r8) wnd  ! surface wnd
    real(r8) bflx   ! surface buoyancy flux (Km/s)
    real(r8) :: out_precc,out_precl,out_precsc,out_precsl,out_cltot,out_clhgh,out_clmed,out_cllow,out_prectend, out_precstend,out_timing_factor,out_global_rank 
-   real(r8) :: out_ocnfrac,out_wnd,out_tau00,out_bflx,out_fluxu0,out_fluxv0,out_fluxt0,out_fluxq0,out_taux_crm,out_tauy_crm,out_z0m,out_it,out_jt
+   real(r8) :: out_ocnfrac,out_wnd,out_tau00,out_bflx,out_fluxu0,out_fluxv0,out_fluxt0,out_fluxq0,out_taux_crm,out_tauy_crm,out_z0m,out_it,out_jt,out_jt_crm,out_mx_crm
    real(r8), dimension(pver) :: out_qltend,out_qcltend,out_qiltend,out_sltend,out_cld,out_cldtop,out_gicewp,out_gliqwp,out_mctot,out_mcup
    real(r8), dimension(pver) :: out_mcdn,out_mcuup,out_mcudn,out_spqc,out_spqi,out_spqs,out_spqg,out_spqr,out_mu_crm,out_md_crm,out_du_crm
-   real(r8), dimension(pver) :: out_eu_crm,out_ed_crm,out_tkez,out_tkesgsz,out_tk_crm,out_flux_u,out_flux_qt,out_fluxsgs_qt,out_flux_qp,out_qt_ls
+   real(r8), dimension(pver) :: out_eu_crm,out_ed_crm,out_tkez,out_tkesgsz,out_tk_crm,out_flux_u,out_precflux,out_flux_v,out_flux_qt,out_fluxsgs_qt,out_flux_qp,out_qt_ls
    real(r8), dimension(pver) :: out_qt_trans,out_qp_trans,out_qp_fall,out_qp_evp,out_qp_src, out_t_ls
    real(r8), dimension(20)   :: out_qtotcrm
    real(r8), dimension(crm_nx, crm_ny, crm_nz) :: out_crm_u,out_crm_v,out_crm_w,out_crm_t,out_crm_qrad,out_qc_crm,out_qi_crm,out_qpc_crm
@@ -1124,8 +1124,8 @@ end subroutine crm_init_cnst
    real(r8),dimension(flen) :: Var_Flat
    real(r8),dimension(flen2) :: Var_Flat2
    integer,parameter :: rank_offset=1
-   integer,parameter :: structleno = 37
-   integer,parameter :: singleleno = 25
+   integer,parameter :: structleno = 39
+   integer,parameter :: singleleno = 27
    integer,parameter :: fleno      = structleno*pver+singleleno+1+20
    integer,parameter :: nflat =  17*(orc_nx*orc_ny*crm_nz) + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny
    real(r8),dimension(fleno+nflat) :: CRM_Var_Flat
@@ -1860,6 +1860,8 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
         !write(iulog,*) 'check na:',na,nb,nc
         !write(iulog,*) 'Before default crm:',i_save,crm_micro(i_save,:,:,:,3)
         end if
+ 
+        if (state%isofflinecrm(i))then
          call crm (lchnk,      i_save,                                                                                            &
              state_loc%t(i_save,:),   state_loc%q(i_save,:,1),    state_loc%q(i_save,:,ixcldliq), state_loc%q(i_save,:,ixcldice),                &
              ul(:),              vl(:),                                                                                      &
@@ -1913,6 +1915,8 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
              cam_in%ocnfrac(i_save),  wnd,                  tau00,                 bflx,                                          & 
              fluxu0,             fluxv0,               fluxt0,                fluxq0,                                        & 
              taux_crm(i_save),        tauy_crm(i_save),          z0m(i_save),                timing_factor(i_save),        qtotcrm(i_save, :)         )   
+
+        end if !if (state%isofflinecrm(i))then
         if (state%isorchestrated(i))then
         !write(iulog,*) 'After default crm:',i_save,crm_micro(i_save,:,:,:,3)
         end if
@@ -2000,6 +2004,8 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           out_global_rank         = CRM_Var_Flat(23)
           out_it                  = CRM_Var_Flat(24)
           out_jt                  = CRM_Var_Flat(25)
+          out_jt_crm              = CRM_Var_Flat(26)
+          out_mx_crm              = CRM_Var_Flat(27)
           out_qltend              = CRM_Var_Flat(        1+singleleno:  pver+singleleno)
           out_qcltend             = CRM_Var_Flat( 1*pver+1+singleleno:2*pver+singleleno) 
           out_qiltend             = CRM_Var_Flat( 2*pver+1+singleleno:3*pver+singleleno) 
@@ -2027,17 +2033,19 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           out_tkesgsz(:)          = CRM_Var_Flat(24*pver+1+singleleno:25*pver+singleleno)
           out_tk_crm(:)           = CRM_Var_Flat(25*pver+1+singleleno:26*pver+singleleno)
           out_flux_u(:)           = CRM_Var_Flat(26*pver+1+singleleno:27*pver+singleleno)
-          out_flux_qt(:)          = CRM_Var_Flat(27*pver+1+singleleno:28*pver+singleleno) 
-          out_fluxsgs_qt(:)       = CRM_Var_Flat(28*pver+1+singleleno:29*pver+singleleno) 
-          out_flux_qp(:)          = CRM_Var_Flat(29*pver+1+singleleno:30*pver+singleleno) 
-          out_qt_ls(:)            = CRM_Var_Flat(30*pver+1+singleleno:31*pver+singleleno) 
-          out_qt_trans(:)         = CRM_Var_Flat(31*pver+1+singleleno:32*pver+singleleno) 
-          out_qp_trans(:)         = CRM_Var_Flat(32*pver+1+singleleno:33*pver+singleleno)
-          out_qp_fall(:)          = CRM_Var_Flat(33*pver+1+singleleno:34*pver+singleleno)
-          out_qp_evp(:)           = CRM_Var_Flat(34*pver+1+singleleno:35*pver+singleleno)
-          out_qp_src(:)           = CRM_Var_Flat(35*pver+1+singleleno:36*pver+singleleno)
-          out_t_ls(:)             = CRM_Var_Flat(36*pver+1+singleleno:37*pver+singleleno)
-          out_qtotcrm(1:20)       = CRM_Var_Flat(37*pver+1+singleleno:37*pver+20+singleleno)
+          out_flux_v(:)           = CRM_Var_Flat(27*pver+1+singleleno:28*pver+singleleno)
+          out_flux_qt(:)          = CRM_Var_Flat(28*pver+1+singleleno:29*pver+singleleno) 
+          out_fluxsgs_qt(:)       = CRM_Var_Flat(29*pver+1+singleleno:30*pver+singleleno) 
+          out_flux_qp(:)          = CRM_Var_Flat(30*pver+1+singleleno:31*pver+singleleno) 
+          out_precflux(:)         = CRM_Var_Flat(31*pver+1+singleleno:32*pver+singleleno)
+          out_qt_ls(:)            = CRM_Var_Flat(32*pver+1+singleleno:33*pver+singleleno) 
+          out_qt_trans(:)         = CRM_Var_Flat(33*pver+1+singleleno:34*pver+singleleno) 
+          out_qp_trans(:)         = CRM_Var_Flat(34*pver+1+singleleno:35*pver+singleleno)
+          out_qp_fall(:)          = CRM_Var_Flat(35*pver+1+singleleno:36*pver+singleleno)
+          out_qp_evp(:)           = CRM_Var_Flat(36*pver+1+singleleno:37*pver+singleleno)
+          out_qp_src(:)           = CRM_Var_Flat(37*pver+1+singleleno:38*pver+singleleno)
+          out_t_ls(:)             = CRM_Var_Flat(38*pver+1+singleleno:39*pver+singleleno)
+          out_qtotcrm(1:20)       = CRM_Var_Flat(39*pver+1+singleleno:39*pver+20+singleleno)
 
           fcount = 37*pver+20+singleleno
           do kk=1,crm_nz
@@ -2089,7 +2097,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
          lchnk = lchnk_save
         !end do
         !write (iulog,*),'Check print0',state%crmrank(i,iorc),i,int(out_global_rank)
-         !if (mod(int(out_global_rank),2).eq.0) then
+         if (state%isofflinecrm(i)) then
           it = int(out_it)
           jt = int(out_jt)
           icheck_iorc = mod(int(out_global_rank-npes),orc_nsubdomains)
@@ -2135,6 +2143,115 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 1111  format ('C_u',5I4,2E15.6)
 1112  format ('C_w',5I4,2E15.6)
 1113  format ('C_t',5I4,2E15.6)
+        else
+          cltot  (icheck_column)                           = out_cltot 
+          clhgh  (icheck_column)                           = out_clhgh
+          clmed  (icheck_column)                           = out_clmed
+          cllow  (icheck_column)                           = out_cllow
+          precc  (icheck_column)                           = out_precc
+          precl  (icheck_column)                           = out_precl
+          precsc (icheck_column)                           = out_precsc
+          precsl (icheck_column)                           = out_precsl
+          wnd                                              = out_wnd
+          tau00                                            = out_tau00
+          bflx                                             = out_bflx
+          fluxu0                                           = out_fluxu0
+          fluxv0                                           = out_fluxv0
+          fluxt0                                           = out_fluxt0
+          fluxq0                                           = out_fluxq0
+          taux_crm(icheck_column)                          = out_taux_crm
+          tauy_crm(icheck_column)                          = out_tauy_crm
+          z0m(icheck_column)                               = out_z0m
+          timing_factor(icheck_column)                     = out_timing_factor
+          jt_crm(icheck_column)                            = out_jt_crm
+          mx_crm(icheck_column)                            = out_mx_crm
+
+          do kk=1,crm_nz
+            do jj=1,orc_ny
+              do ii=1,orc_nx
+               crm_tk   (icheck_column,ii+it,jj+jt,kk)            = out_crm_tk   (ii, jj, kk)
+               crm_tkh  (icheck_column,ii+it,jj+jt,kk)            = out_crm_tkh  (ii, jj, kk) 
+               crm_u    (icheck_column,ii+it,jj+jt,kk)            = out_crm_u    (ii, jj, kk)
+               crm_v    (icheck_column,ii+it,jj+jt,kk)            = out_crm_v    (ii, jj, kk)
+               crm_w    (icheck_column,ii+it,jj+jt,kk)            = out_crm_w    (ii, jj, kk)
+               crm_t    (icheck_column,ii+it,jj+jt,kk)            = out_crm_t    (ii, jj, kk)
+               t_rad    (icheck_column,ii+it,jj+jt,kk)            = out_t_rad    (ii, jj, kk)
+               qv_rad   (icheck_column,ii+it,jj+jt,kk)            = out_qv_rad   (ii, jj, kk)
+               qc_rad   (icheck_column,ii+it,jj+jt,kk)            = out_qc_rad   (ii, jj, kk)
+               qi_rad   (icheck_column,ii+it,jj+jt,kk)            = out_qi_rad   (ii, jj, kk)
+               cld_rad  (icheck_column,ii+it,jj+jt,kk)            = out_cld_rad  (ii, jj, kk)
+               cld3d_crm(icheck_column,ii+it,jj+jt,kk)            = out_cld3d_crm(ii, jj, kk)
+              end do
+            end do
+          end do
+
+            do jj=1,orc_ny
+              do ii=1,orc_nx
+               prec_crm(icheck_column,ii+it,jj+jt)              = out_prec_crm (ii, jj)
+              end do
+            end do
+
+
+          do ll=1,nmicro_fields_total
+            do kk=1,crm_nz
+              do jj=1,orc_ny
+                do ii=1,orc_nx
+                 crm_micro(icheck_column,ii+it,jj+jt,kk,ll)       = out_crm_micro(ii,jj,kk,ll)
+                end do
+              end do
+            end do
+          end do
+
+        do kk=1,crm_nz
+          ptend_loc%q(icheck_column,kk,1)                  = out_qltend(kk)
+          ptend_loc%q(icheck_column,kk,ixcldliq)           = out_qcltend(kk)
+          ptend_loc%q(icheck_column,kk,ixcldice)           = out_qiltend(kk)
+          ptend_loc%s(icheck_column,kk)                    = out_sltend(kk)
+          cld(icheck_column,kk)                            = out_cld(kk)
+          cldtop(icheck_column,kk)                         = out_cldtop(kk)
+          gicewp(icheck_column,kk)                         = out_gicewp(kk)
+          gliqwp(icheck_column,kk)                         = out_gliqwp(kk)
+          mctot(icheck_column,kk)                          = out_mctot (kk)
+          mcup(icheck_column,kk)                           = out_mcup(kk)
+          mcdn(icheck_column,kk)                           = out_mcdn(kk)
+          mcuup(icheck_column,kk)                          = out_mcuup(kk)
+          mcudn(icheck_column,kk)                          = out_mcudn (kk)
+          spqc(icheck_column,kk)                           = out_spqc(kk)
+          spqi(icheck_column,kk)                           = out_spqi(kk)
+          spqs(icheck_column,kk)                           = out_spqs(kk)
+          spqg(icheck_column,kk)                           = out_spqg(kk)
+          spqr(icheck_column,kk)                           = out_spqr  (kk)
+          mu_crm(icheck_column,kk)                         = out_mu_crm(kk)
+          md_crm(icheck_column,kk)                         = out_md_crm(kk)
+          du_crm(icheck_column,kk)                         = out_du_crm(kk)
+          eu_crm(icheck_column,kk)                         = out_eu_crm(kk)
+          ed_crm(icheck_column,kk)                         = out_ed_crm(kk)
+          tkez(icheck_column,kk)                           = out_tkez(kk)
+          tkesgsz(icheck_column,kk)                        = out_tkesgsz(kk)
+          tk_crm(icheck_column,kk)                         = out_tk_crm(kk)
+          flux_u(icheck_column,kk)                         = out_flux_u(kk)
+          flux_v(icheck_column,kk)                         = out_flux_v(kk)
+          flux_qt(icheck_column,kk)                        = out_flux_qt(kk)
+          fluxsgs_qt(icheck_column,kk)                     = out_fluxsgs_qt(kk)
+          flux_qp(icheck_column,kk)                        = out_flux_qp(kk)
+          precflux(icheck_column,kk)                       = out_precflux(kk) 
+          qt_ls(icheck_column,kk)                          = out_qt_ls(kk)
+          qt_trans(icheck_column,kk)                       = out_qt_trans(kk)
+          qp_trans(icheck_column,kk)                       = out_qp_trans(kk)
+          qp_fall(icheck_column,kk)                        = out_qp_fall(kk)
+          qp_evp(icheck_column,kk)                         = out_qp_evp(kk)
+          qp_src(icheck_column,kk)                         = out_qp_src(kk)
+          t_ls(icheck_column,kk)                           = out_t_ls(kk)
+          prectend(icheck_column)                          = out_prectend
+          precstend(icheck_column)                         = out_precstend
+          cam_in%ocnfrac(icheck_column)                    = out_ocnfrac
+       end do
+
+        do kk=1,20
+          qtotcrm(icheck_column,kk)                        = out_qtotcrm(kk) 
+        end do
+
+        end if !if (state%isofflinecrm(i)) then
        end do ! do iorc=1,orc_nsubdomains
         endif ! is this column column coupled to an external (orchestrated) CRM?
        end do !do i = 1,ncol

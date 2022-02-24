@@ -57,8 +57,8 @@ program TwoExecutableDriver
   integer,parameter :: singlelen  = 30
   integer,parameter :: flen       = structlen*pver+singlelen+1+20+pcols
   integer,parameter :: flen2      = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny
-  integer,parameter :: structleno = 37
-  integer,parameter :: singleleno = 25
+  integer,parameter :: structleno = 39
+  integer,parameter :: singleleno = 27
   integer,parameter :: rank_offset=2
   integer,parameter :: fleno      = structleno*pver+singleleno+1+20
   real(r8),dimension(flen ) :: inp_Var_Flat
@@ -304,17 +304,17 @@ program TwoExecutableDriver
   it = 0
   jt = 0
   !call MPI_barrier(crm_comm_in, ierr)
-  write(13,*) 'check orc receive crm_u:',outin01_crm_u(1:10,1,1)
-  write(13,*) 'check orc receive crm_w:',outin03_crm_w(1:10,1,1)
-  write(13,*) 'check orc receive crm_t:',outin04_crm_t(1:10,1,1)
-  write(13,*) 'check orc receive crm_micro:',outin05_crm_micro(1:10,1,1,3)
-  write(13,*) 'check orc receive crm_qrad:',outin06_crm_qrad(1:10,1,1)
-  write(13,*) 'check orc receive crm_qc:',outin07_qc_crm(1:10,1,1)
-  write(13,*) 'check orc receive crm_qi:',outin08_qi_crm(1:10,1,1)
-  write(13,*) 'check orc receive crm_qpc:',outin09_qpc_crm(1:10,1,1)
-  write(13,*) 'check orc receive crm_qpi:',outin10_qpi_crm(1:10,1,1)
-  write(13,*) 'check orc receive crm_trad:',outin12_t_rad(1:10,1,1)
-  write(13,*) 'check orc receive crm_qvrad:', outin13_qv_rad(1:10,1,1)
+  !write(13,*) 'check orc receive crm_u:',outin01_crm_u(1:10,1,1)
+  !write(13,*) 'check orc receive crm_w:',outin03_crm_w(1:10,1,1)
+  !write(13,*) 'check orc receive crm_t:',outin04_crm_t(1:10,1,1)
+  !write(13,*) 'check orc receive crm_micro:',outin05_crm_micro(1:10,1,1,3)
+  !write(13,*) 'check orc receive crm_qrad:',outin06_crm_qrad(1:10,1,1)
+  !write(13,*) 'check orc receive crm_qc:',outin07_qc_crm(1:10,1,1)
+  !write(13,*) 'check orc receive crm_qi:',outin08_qi_crm(1:10,1,1)
+  !write(13,*) 'check orc receive crm_qpc:',outin09_qpc_crm(1:10,1,1)
+  !write(13,*) 'check orc receive crm_qpi:',outin10_qpi_crm(1:10,1,1)
+  !write(13,*) 'check orc receive crm_trad:',outin12_t_rad(1:10,1,1)
+  !write(13,*) 'check orc receive crm_qvrad:', outin13_qv_rad(1:10,1,1)
   call crm_orc(it,jt,lon,lat,gcolindex,inp01_lchnk, inp02_i,                            &
             inp03_tl(:),inp04_ql(:),inp05_qccl(:),inp06_qiil(:), &
             inp07_ul(:),inp08_vl(:),inp09_ps,inp10_pmid(:),inp11_pdel(:), &
@@ -352,17 +352,17 @@ program TwoExecutableDriver
              taux_crm,        tauy_crm,          z0m, timing_factor,        qtotcrm( :)         &
             )
 ! ====================== DONE CALLING CRM -- TIME TO SEND OUTPUTS TO GCM
-  write(13,*) 'check orc after crm_u:',outin01_crm_u(1:10,1,1)
-  write(13,*) 'check orc after crm_w:',outin03_crm_w(1:10,1,1)
-  write(13,*) 'check orc after crm_t:',outin04_crm_t(1:10,1,1)
-  write(13,*) 'check orc after crm_micro:',outin05_crm_micro(1:10,1,1,3)
-  write(13,*) 'check orc after crm_qrad:',outin06_crm_qrad(1:10,1,1)
-  write(13,*) 'check orc after crm_qc:',outin07_qc_crm(1:10,1,1)
-  write(13,*) 'check orc after crm_qi:',outin08_qi_crm(1:10,1,1)
-  write(13,*) 'check orc after crm_qpc:',outin09_qpc_crm(1:10,1,1)
-  write(13,*) 'check orc after crm_qpi:',outin10_qpi_crm(1:10,1,1)
-  write(13,*) 'check orc after crm_trad:',outin12_t_rad(1:10,1,1)
-  write(13,*) 'check orc after crm_qvrad:', outin13_qv_rad(1:10,1,1)
+  !write(13,*) 'check orc after crm_u:',outin01_crm_u(1:10,1,1)
+  !write(13,*) 'check orc after crm_w:',outin03_crm_w(1:10,1,1)
+  !write(13,*) 'check orc after crm_t:',outin04_crm_t(1:10,1,1)
+  !write(13,*) 'check orc after crm_micro:',outin05_crm_micro(1:10,1,1,3)
+  !write(13,*) 'check orc after crm_qrad:',outin06_crm_qrad(1:10,1,1)
+  !write(13,*) 'check orc after crm_qc:',outin07_qc_crm(1:10,1,1)
+  !write(13,*) 'check orc after crm_qi:',outin08_qi_crm(1:10,1,1)
+  !write(13,*) 'check orc after crm_qpc:',outin09_qpc_crm(1:10,1,1)
+  !write(13,*) 'check orc after crm_qpi:',outin10_qpi_crm(1:10,1,1)
+  !write(13,*) 'check orc after crm_trad:',outin12_t_rad(1:10,1,1)
+  !write(13,*) 'check orc after crm_qvrad:', outin13_qv_rad(1:10,1,1)
 
 write(13,*) 'CRM_ORC run finish',myrank_global
   call MPI_barrier(crm_comm_in, ierr)
@@ -392,6 +392,8 @@ write(13,*) 'Liran start send data back',myrank_crm,it,jt
   out_Var_Flat(       23)                               = myrank_global
   out_Var_Flat(       24)                               = it
   out_Var_Flat(       25)                               = jt
+  out_Var_Flat(       26)                               = jt_crm
+  out_Var_Flat(       27)                               = mx_crm
   out_Var_Flat(        1+singleleno:   pver+singleleno) = out01_qltend
   out_Var_Flat( 1*pver+1+singleleno: 2*pver+singleleno) = out02_qcltend
   out_Var_Flat( 2*pver+1+singleleno: 3*pver+singleleno) = out03_qiltend
@@ -419,17 +421,19 @@ write(13,*) 'Liran start send data back',myrank_crm,it,jt
   out_Var_Flat(24*pver+1+singleleno:25*pver+singleleno) = tkesgsz(:)
   out_Var_Flat(25*pver+1+singleleno:26*pver+singleleno) = tk_crm(:)
   out_Var_Flat(26*pver+1+singleleno:27*pver+singleleno) = flux_u(:)
-  out_Var_Flat(27*pver+1+singleleno:28*pver+singleleno) = flux_qt(:)
-  out_Var_Flat(28*pver+1+singleleno:29*pver+singleleno) = fluxsgs_qt(:)
-  out_Var_Flat(29*pver+1+singleleno:30*pver+singleleno) = flux_qp(:)
-  out_Var_Flat(30*pver+1+singleleno:31*pver+singleleno) = qt_ls(:)
-  out_Var_Flat(31*pver+1+singleleno:32*pver+singleleno) = qt_trans(:)
-  out_Var_Flat(32*pver+1+singleleno:33*pver+singleleno) = qp_trans(:)
-  out_Var_Flat(33*pver+1+singleleno:34*pver+singleleno) = qp_fall(:)
-  out_Var_Flat(34*pver+1+singleleno:35*pver+singleleno) = qp_evp(:)
-  out_Var_Flat(35*pver+1+singleleno:36*pver+singleleno) = qp_src(:)
-  out_Var_Flat(36*pver+1+singleleno:37*pver+singleleno) = t_ls(:)
-  out_Var_Flat(37*pver+1+singleleno:37*pver+20+singleleno) = qtotcrm(1:20)
+  out_Var_Flat(27*pver+1+singleleno:28*pver+singleleno) = flux_v(:)
+  out_Var_Flat(28*pver+1+singleleno:29*pver+singleleno) = flux_qt(:)
+  out_Var_Flat(29*pver+1+singleleno:30*pver+singleleno) = fluxsgs_qt(:)
+  out_Var_Flat(30*pver+1+singleleno:31*pver+singleleno) = flux_qp(:)
+  out_Var_Flat(31*pver+1+singleleno:32*pver+singleleno) = precflux(:)
+  out_Var_Flat(32*pver+1+singleleno:33*pver+singleleno) = qt_ls(:)
+  out_Var_Flat(33*pver+1+singleleno:34*pver+singleleno) = qt_trans(:)
+  out_Var_Flat(34*pver+1+singleleno:35*pver+singleleno) = qp_trans(:)
+  out_Var_Flat(35*pver+1+singleleno:36*pver+singleleno) = qp_fall(:)
+  out_Var_Flat(36*pver+1+singleleno:37*pver+singleleno) = qp_evp(:)
+  out_Var_Flat(37*pver+1+singleleno:38*pver+singleleno) = qp_src(:)
+  out_Var_Flat(38*pver+1+singleleno:39*pver+singleleno) = t_ls(:)
+  out_Var_Flat(39*pver+1+singleleno:39*pver+20+singleleno) = qtotcrm(1:20)
 
   fcount = 37*pver+20+singleleno
   do kk=1,crm_nz
