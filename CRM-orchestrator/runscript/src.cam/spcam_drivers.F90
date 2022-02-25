@@ -512,7 +512,7 @@ subroutine tphysbc_spcam (ztodt, state,   &
          do i=1,orc_total 
            state%isorchestrated(i) = .true.
            ! ====> Turn on online CRM Here
-            state%isofflinecrm    = .false.
+            !state%isofflinecrm    = .false.
          end do
          do i=1,orc_rank_total
            ! each of which is to be linked (for now) to a single-core CRM in the external
