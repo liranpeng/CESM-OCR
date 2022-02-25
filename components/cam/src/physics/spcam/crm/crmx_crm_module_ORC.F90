@@ -894,7 +894,7 @@ write(0, *) 'Liran ORC tke0',icol,tke0
         !call get_gcol_all_p(lchnk, pcols, gcolindex)
         iseed = gcolindex(icol)
         if(u(1,1,1).eq.u(2,1,1).and.u(3,1,2).eq.u(4,1,2)) &
-                    call setperturb(iseed)
+                    call setperturb_ORC(iseed)
 
 #ifndef SPCAM_CLUBB_SGS
 !--------------------------
