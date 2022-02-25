@@ -42,15 +42,17 @@ do k=1,nzm
     t02(k) = t02(k) + t(i,j,k)/(nx*ny)
   end do
  end do
+end do !bloss(ORC): Separate perturbation and energy conservation
 
 ! energy conservation +++mhwang (2012-06)
- do j=1, ny
-  do i=1, nx
-    if(k.le.5) then
+do k=1, nzm
+ if(k.le.5) then
+   do j=1, ny
+    do i=1, nx
       t(i,j,k) = t(i,j,k) * t0(k)/t02(k)
-    end if 
+    end do
   end do
- end do
+ end if
 end do
 
 deallocate(rndm_seed)
