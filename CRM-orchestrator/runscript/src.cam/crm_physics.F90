@@ -960,12 +960,26 @@ end subroutine crm_init_cnst
    real(r8) tau00  ! surface stress
    real(r8) wnd  ! surface wnd
    real(r8) bflx   ! surface buoyancy flux (Km/s)
+   real(r8) :: temp_diff_crm_u,temp_diff_crm_v,temp_diff_crm_w,temp_diff_crm_t,temp_diff_crm_micro1,temp_diff_crm_micro2,temp_diff_crm_micro3
+   real(r8) :: temp_diff_crm_qrad,temp_diff_qc_crm,temp_diff_qi_crm,temp_diff_qpc_crm,temp_diff_qpi_crm,temp_diff_t_rad,temp_diff_qv_rad,temp_diff_qi_rad,temp_diff_cld_rad,temp_diff_cld3d_crm
    real(r8) :: out_precc,out_precl,out_precsc,out_precsl,out_cltot,out_clhgh,out_clmed,out_cllow,out_prectend, out_precstend,out_timing_factor,out_global_rank 
    real(r8) :: out_ocnfrac,out_wnd,out_tau00,out_bflx,out_fluxu0,out_fluxv0,out_fluxt0,out_fluxq0,out_taux_crm,out_tauy_crm,out_z0m,out_it,out_jt,out_jt_crm,out_mx_crm
    real(r8), dimension(pver) :: out_qltend,out_qcltend,out_qiltend,out_sltend,out_cld,out_cldtop,out_gicewp,out_gliqwp,out_mctot,out_mcup
    real(r8), dimension(pver) :: out_mcdn,out_mcuup,out_mcudn,out_spqc,out_spqi,out_spqs,out_spqg,out_spqr,out_mu_crm,out_md_crm,out_du_crm
    real(r8), dimension(pver) :: out_eu_crm,out_ed_crm,out_tkez,out_tkesgsz,out_tk_crm,out_flux_u,out_precflux,out_flux_v,out_flux_qt,out_fluxsgs_qt,out_flux_qp,out_qt_ls
    real(r8), dimension(pver) :: out_qt_trans,out_qp_trans,out_qp_fall,out_qp_evp,out_qp_src, out_t_ls
+   real(r8), dimension(pver) :: work_crm_u,work_crm_v,work_crm_w,work_crm_t,work_crm_micro1,work_crm_micro2,work_crm_micro3
+   real(r8), dimension(pver) :: work_org_crm_u,work_org_crm_v,work_org_crm_w,work_org_crm_t,work_org_crm_micro1,work_org_crm_micro2,work_org_crm_micro3
+   real(r8), dimension(pver) :: work_crm_qrad,work_qc_crm,work_qi_crm,work_qpc_crm,work_qpi_crm,work_t_rad
+   real(r8), dimension(pver) :: work_org_crm_qrad,work_org_qc_crm,work_org_qi_crm,work_org_qpc_crm,work_org_qpi_crm,work_org_t_rad
+   real(r8), dimension(pver) :: work_qv_rad,work_qc_rad,work_qi_rad,work_cld_rad,work_cld3d_crm
+   real(r8), dimension(pver) :: work_org_qv_rad,work_org_qc_rad,work_org_qi_rad,work_org_cld_rad,work_org_cld3d_crm
+   real(r8), dimension(pver) :: diff_crm_u,maxdiff_crm_u,sqrt_crm_u,diff_crm_v,maxdiff_crm_v,sqrt_crm_v,diff_crm_w,maxdiff_crm_w,sqrt_crm_w,diff_crm_t,maxdiff_crm_t,sqrt_crm_t
+   real(r8), dimension(pver) :: diff_crm_micro3,maxdiff_crm_micro3,sqrt_crm_micro3,diff_crm_micro2,maxdiff_crm_micro2,sqrt_crm_micro2,diff_crm_micro1,maxdiff_crm_micro1,sqrt_crm_micro1
+   real(r8), dimension(pver) :: diff_crm_qrad,maxdiff_crm_qrad,sqrt_crm_qrad,diff_qc_rad,maxdiff_qc_rad,sqrt_qc_rad,diff_qi_crm,maxdiff_qi_crm,sqrt_qi_crm,diff_qc_crm,maxdiff_qc_crm,sqrt_qc_crm
+   real(r8), dimension(pver) :: diff_qpc_crm,maxdiff_qpc_crm,sqrt_qpc_crm,diff_qpi_crm,maxdiff_qpi_crm,sqrt_qpi_crm,diff_t_rad,maxdiff_t_rad,sqrt_t_rad,diff_qv_rad,maxdiff_qv_rad,sqrt_qv_rad
+   real(r8), dimension(pver) :: diff_qi_rad,maxdiff_qi_rad,sqrt_qi_rad,diff_cld_rad,maxdiff_cld_rad,sqrt_cld_rad,diff_cld3d_crm,maxdiff_cld3d_crm,sqrt_cld3d_crm
+
    real(r8), dimension(20)   :: out_qtotcrm
    real(r8), dimension(crm_nx, crm_ny, crm_nz) :: out_crm_u,out_crm_v,out_crm_w,out_crm_t,out_crm_qrad,out_qc_crm,out_qi_crm,out_qpc_crm
    real(r8), dimension(crm_nx, crm_ny, crm_nz) :: out_qpi_crm,out_t_rad,out_qv_rad,out_qc_rad,out_qi_rad,out_cld_rad,out_cld3d_crm,out_crm_tk,out_crm_tkh
@@ -2105,6 +2119,59 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
          if (state%isofflinecrm(i)) then
           write (iulog,*),'Receive data from->',int(out_global_rank),it,jt,icheck_column,icheck_iorc 
           do kk=1,crm_nz
+            work_crm_u(kk)      = 0.0
+            work_crm_v(kk)      = 0.0
+            work_crm_w(kk)      = 0.0
+            work_crm_t(kk)      = 0.0
+            work_crm_micro1(kk) = 0.0
+            work_crm_micro2(kk) = 0.0
+            work_crm_micro3(kk) = 0.0
+            work_crm_qrad(kk)   = 0.0
+            work_qc_crm(kk)     = 0.0
+            work_qi_crm(kk)     = 0.0
+            work_qpc_crm(kk)    = 0.0
+            work_qpi_crm(kk)    = 0.0
+            work_t_rad(kk)      = 0.0
+            work_qv_rad(kk)     = 0.0
+            work_qc_rad(kk)     = 0.0
+            work_qi_rad(kk)     = 0.0
+            work_cld_rad(kk)    = 0.0
+            work_cld3d_crm(kk)  = 0.0
+            work_org_crm_u(kk)      = 0.0
+            work_org_crm_v(kk)      = 0.0
+            work_org_crm_w(kk)      = 0.0
+            work_org_crm_t(kk)      = 0.0
+            work_org_crm_micro1(kk) = 0.0
+            work_org_crm_micro2(kk) = 0.0
+            work_org_crm_micro3(kk) = 0.0
+            work_org_crm_qrad(kk)   = 0.0
+            work_org_qc_crm(kk)     = 0.0
+            work_org_qi_crm(kk)     = 0.0
+            work_org_qpc_crm(kk)    = 0.0
+            work_org_qpi_crm(kk)    = 0.0
+            work_org_t_rad(kk)      = 0.0
+            work_org_qv_rad(kk)     = 0.0
+            work_org_qc_rad(kk)     = 0.0
+            work_org_qi_rad(kk)     = 0.0
+            work_org_cld_rad(kk)    = 0.0
+            work_org_cld3d_crm(kk)  = 0.0
+            temp_diff_crm_u         = -99999.9 
+            temp_diff_crm_v         = -99999.9
+            temp_diff_crm_w         = -99999.9
+            temp_diff_crm_t         = -99999.9
+            temp_diff_crm_micro1         = -99999.9
+            temp_diff_crm_micro2         = -99999.9
+            temp_diff_crm_micro3         = -99999.9
+            temp_diff_crm_qrad         = -99999.9
+            temp_diff_qc_crm         = -99999.9
+            temp_diff_qi_crm         = -99999.9
+            temp_diff_qpc_crm         = -99999.9
+            temp_diff_qpi_crm         = -99999.9
+            temp_diff_t_rad         = -99999.9
+            temp_diff_qv_rad         = -99999.9
+            temp_diff_qi_rad         = -99999.9
+            temp_diff_cld_rad         = -99999.9
+            temp_diff_cld3d_crm         = -99999.9
             do jj=1,orc_ny
               do ii=1,orc_nx
                 orc_crm_u    (icheck_column,ii+it,jj+jt,kk)    = out_crm_u    (ii,jj,kk)
@@ -2123,15 +2190,211 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
                 orc_qi_rad   (icheck_column,ii+it,jj+jt,kk)    = out_qi_crm   (ii,jj,kk)
                 orc_cld_rad  (icheck_column,ii+it,jj+jt,kk)    = out_cld_rad  (ii,jj,kk) 
                 orc_cld3d_crm(icheck_column,ii+it,jj+jt,kk)    = out_cld3d_crm(ii,jj,kk)
+                work_org_crm_u(kk)       = work_org_crm_u(kk)     + crm_u(icheck_column,ii+it,jj+jt,kk)
+                work_org_crm_v(kk)       = work_org_crm_v(kk)     + crm_v(icheck_column,ii+it,jj+jt,kk)
+                work_org_crm_w(kk)       = work_org_crm_w(kk)     + crm_w(icheck_column,ii+it,jj+jt,kk)
+                work_org_crm_t(kk)       = work_org_crm_t(kk)     + crm_t(icheck_column,ii+it,jj+jt,kk)
+                work_org_crm_micro1(kk)  = work_org_crm_micro1(kk) + crm_micro(icheck_column,ii+it,jj+jt,kk,1)
+                work_org_crm_micro2(kk)  = work_org_crm_micro2(kk) + crm_micro(icheck_column,ii+it,jj+jt,kk,2)
+                work_org_crm_micro3(kk)  = work_org_crm_micro3(kk) + crm_micro(icheck_column,ii+it,jj+jt,kk,3)
+                work_org_crm_qrad(kk)    = work_org_crm_qrad(kk)  + crm_qrad(icheck_column,ii+it,jj+jt,kk)
+                work_org_qc_crm(kk)      = work_org_qc_crm(kk)    + qc_crm(icheck_column,ii+it,jj+jt,kk)
+                work_org_qi_crm(kk)      = work_org_qi_crm(kk)    + qi_crm(icheck_column,ii+it,jj+jt,kk)
+                work_org_qpc_crm(kk)     = work_org_qpc_crm(kk)   + qpc_crm(icheck_column,ii+it,jj+jt,kk)
+                work_org_qpi_crm(kk)     = work_org_qpi_crm(kk)   + qpi_crm(icheck_column,ii+it,jj+jt,kk)
+                work_org_t_rad(kk)       = work_org_t_rad(kk)     + t_rad(icheck_column,ii+it,jj+jt,kk)
+                work_org_qv_rad(kk)      = work_org_qv_rad(kk)    + qv_rad(icheck_column,ii+it,jj+jt,kk)
+                work_org_qc_rad(kk)      = work_org_qc_rad(kk)    + qc_rad(icheck_column,ii+it,jj+jt,kk)
+                work_org_qi_rad(kk)      = work_org_qi_rad(kk)    + qi_crm(icheck_column,ii+it,jj+jt,kk)
+                work_org_cld_rad(kk)     = work_org_cld_rad(kk)   + cld_rad(icheck_column,ii+it,jj+jt,kk)
+                work_org_cld3d_crm(kk)   = work_org_cld3d_crm(kk) + cld3d_crm(icheck_column,ii+it,jj+jt,kk)
+                work_crm_u(kk)       = work_crm_u(kk)     + out_crm_u(ii,jj,kk)
+                work_crm_v(kk)       = work_crm_v(kk)     + out_crm_v(ii,jj,kk)
+                work_crm_w(kk)       = work_crm_w(kk)     + out_crm_w(ii,jj,kk)
+                work_crm_t(kk)       = work_crm_t(kk)     + out_crm_t(ii,jj,kk)
+                work_crm_micro1(kk)  = work_crm_micro1(kk) + out_crm_micro(ii,jj,kk,1)
+                work_crm_micro2(kk)  = work_crm_micro2(kk) + out_crm_micro(ii,jj,kk,2)
+                work_crm_micro3(kk)  = work_crm_micro3(kk) + out_crm_micro(ii,jj,kk,3) 
+                work_crm_qrad(kk)    = work_crm_qrad(kk)  + out_crm_qrad(ii,jj,kk)
+                work_qc_crm(kk)      = work_qc_crm(kk)    + out_qc_crm(ii,jj,kk)
+                work_qi_crm(kk)      = work_qi_crm(kk)    + out_qi_crm(ii,jj,kk)
+                work_qpc_crm(kk)     = work_qpc_crm(kk)   + out_qpc_crm(ii,jj,kk)
+                work_qpi_crm(kk)     = work_qpi_crm(kk)   + out_qpi_crm(ii,jj,kk)
+                work_t_rad(kk)       = work_t_rad(kk)     + out_t_rad(ii,jj,kk)
+                work_qv_rad(kk)      = work_qv_rad(kk)    + out_qv_rad(ii,jj,kk)
+                work_qc_rad(kk)      = work_qc_rad(kk)    + out_qc_rad(ii,jj,kk)
+                work_qi_rad(kk)      = work_qi_rad(kk)    + out_qi_crm(ii,jj,kk)
+                work_cld_rad(kk)     = work_cld_rad(kk)   + out_cld_rad(ii,jj,kk)
+                work_cld3d_crm(kk)   = work_cld3d_crm(kk) + out_cld3d_crm(ii,jj,kk)
+                diff_crm_u(kk)       = diff_crm_u(kk) + abs(out_crm_u(ii,jj,kk)-crm_u(icheck_column,ii+it,jj+jt,kk))
+                maxdiff_crm_u(kk)    = max(temp_diff_crm_u,abs(out_crm_u(ii,jj,kk)-crm_u(icheck_column,ii+it,jj+jt,kk)))
+                temp_diff_crm_u      = maxdiff_crm_u(kk)
+                diff_crm_v(kk)       = diff_crm_v(kk) + abs(out_crm_v(ii,jj,kk)-crm_v(icheck_column,ii+it,jj+jt,kk))
+                maxdiff_crm_v(kk)    = max(temp_diff_crm_v,abs(out_crm_v(ii,jj,kk)-crm_v(icheck_column,ii+it,jj+jt,kk)))
+                temp_diff_crm_v      = maxdiff_crm_v(kk)
+                diff_crm_w(kk)       = diff_crm_w(kk) + abs(out_crm_w(ii,jj,kk)-crm_w(icheck_column,ii+it,jj+jt,kk))
+                maxdiff_crm_w(kk)    = max(temp_diff_crm_w,abs(out_crm_w(ii,jj,kk)-crm_w(icheck_column,ii+it,jj+jt,kk)))
+                temp_diff_crm_w      = maxdiff_crm_w(kk)
+                diff_crm_t(kk)       = diff_crm_t(kk) + abs(out_crm_t(ii,jj,kk)-crm_t(icheck_column,ii+it,jj+jt,kk))
+                maxdiff_crm_t(kk)    = max(temp_diff_crm_t,abs(out_crm_t(ii,jj,kk)-crm_t(icheck_column,ii+it,jj+jt,kk)))
+                temp_diff_crm_t      = maxdiff_crm_t(kk)
+                diff_crm_micro1(kk)       = diff_crm_micro1(kk) + abs(out_crm_micro(ii,jj,kk,1)-crm_micro(icheck_column,ii+it,jj+jt,kk,1))
+                maxdiff_crm_micro1(kk)    = max(temp_diff_crm_micro1,abs(out_crm_micro(ii,jj,kk,1)-crm_micro(icheck_column,ii+it,jj+jt,kk,1)))
+                temp_diff_crm_micro1      = maxdiff_crm_micro1(kk)
+                diff_crm_micro2(kk)       = diff_crm_micro2(kk) + abs(out_crm_micro(ii,jj,kk,2)-crm_micro(icheck_column,ii+it,jj+jt,kk,2))
+                maxdiff_crm_micro2(kk)    = max(temp_diff_crm_micro2,abs(out_crm_micro(ii,jj,kk,2)-crm_micro(icheck_column,ii+it,jj+jt,kk,2)))
+                temp_diff_crm_micro2      = maxdiff_crm_micro2(kk)
+                diff_crm_micro3(kk)       = diff_crm_micro3(kk) + abs(out_crm_micro(ii,jj,kk,3)-crm_micro(icheck_column,ii+it,jj+jt,kk,3))
+                maxdiff_crm_micro3(kk)    = max(temp_diff_crm_micro3,abs(out_crm_micro(ii,jj,kk,3)-crm_micro(icheck_column,ii+it,jj+jt,kk,3)))
+                temp_diff_crm_micro3      = maxdiff_crm_micro3(kk)
+                diff_crm_qrad(kk)       = diff_crm_qrad(kk) + abs(out_crm_qrad(ii,jj,kk)-crm_qrad(icheck_column,ii+it,jj+jt,kk))
+                maxdiff_crm_qrad(kk)    = max(temp_diff_crm_qrad,abs(out_crm_qrad(ii,jj,kk)-crm_qrad(icheck_column,ii+it,jj+jt,kk)))
+                temp_diff_crm_qrad      = maxdiff_crm_qrad(kk)
+                diff_qc_crm(kk)       = diff_qc_crm(kk) + abs(out_qc_crm(ii,jj,kk)-qc_crm(icheck_column,ii+it,jj+jt,kk))
+                maxdiff_qc_crm(kk)    = max(temp_diff_qc_crm,abs(out_qc_crm(ii,jj,kk)-qc_crm(icheck_column,ii+it,jj+jt,kk)))
+                temp_diff_qc_crm      = maxdiff_qc_crm(kk)
+                diff_qi_crm(kk)       = diff_qi_crm(kk) + abs(out_qi_crm(ii,jj,kk)-qi_crm(icheck_column,ii+it,jj+jt,kk))
+                maxdiff_qi_crm(kk)    = max(temp_diff_qi_crm,abs(out_qi_crm(ii,jj,kk)-qi_crm(icheck_column,ii+it,jj+jt,kk)))
+                temp_diff_qi_crm      = maxdiff_qi_crm(kk)   
+                diff_qpc_crm(kk)       = diff_qpc_crm(kk) + abs(out_qpc_crm(ii,jj,kk)-qpc_crm(icheck_column,ii+it,jj+jt,kk))
+                maxdiff_qpc_crm(kk)    = max(temp_diff_qpc_crm,abs(out_qpc_crm(ii,jj,kk)-qpc_crm(icheck_column,ii+it,jj+jt,kk)))
+                temp_diff_qpc_crm      = maxdiff_qpc_crm(kk)
+                diff_qpi_crm(kk)       = diff_qpi_crm(kk) + abs(out_qpi_crm(ii,jj,kk)-qpi_crm(icheck_column,ii+it,jj+jt,kk))
+                maxdiff_qpi_crm(kk)    = max(temp_diff_qpi_crm,abs(out_qpi_crm(ii,jj,kk)-qpi_crm(icheck_column,ii+it,jj+jt,kk)))
+                temp_diff_qpi_crm      = maxdiff_qpi_crm(kk)
+                diff_t_rad(kk)       = diff_t_rad(kk) + abs(out_t_rad(ii,jj,kk)-t_rad(icheck_column,ii+it,jj+jt,kk))
+                maxdiff_t_rad(kk)    = max(temp_diff_t_rad,abs(out_t_rad(ii,jj,kk)-t_rad(icheck_column,ii+it,jj+jt,kk)))
+                temp_diff_t_rad      = maxdiff_t_rad(kk)
+                diff_qv_rad(kk)       = diff_qv_rad(kk) + abs(out_qv_rad(ii,jj,kk)-qv_rad(icheck_column,ii+it,jj+jt,kk))
+                maxdiff_qv_rad(kk)    = max(temp_diff_qv_rad,abs(out_qv_rad(ii,jj,kk)-qv_rad(icheck_column,ii+it,jj+jt,kk)))
+                temp_diff_qv_rad      = maxdiff_qv_rad(kk)
+                diff_qi_rad(kk)       = diff_qi_rad(kk) + abs(out_qi_rad(ii,jj,kk)-qi_rad(icheck_column,ii+it,jj+jt,kk))
+                maxdiff_qi_rad(kk)    = max(temp_diff_qi_rad,abs(out_qi_rad(ii,jj,kk)-qi_rad(icheck_column,ii+it,jj+jt,kk)))
+                temp_diff_qi_rad      = maxdiff_qi_rad(kk)
+                diff_cld_rad(kk)       = diff_cld_rad(kk) + abs(out_cld_rad(ii,jj,kk)-cld_rad(icheck_column,ii+it,jj+jt,kk))
+                maxdiff_cld_rad(kk)    = max(temp_diff_cld_rad,abs(out_cld_rad(ii,jj,kk)-cld_rad(icheck_column,ii+it,jj+jt,kk)))
+                temp_diff_cld_rad      = maxdiff_cld_rad(kk)
+                diff_cld3d_crm(kk)       = diff_cld3d_crm(kk) + abs(out_cld3d_crm(ii,jj,kk)-cld3d_crm(icheck_column,ii+it,jj+jt,kk))
+                maxdiff_cld3d_crm(kk)    = max(temp_diff_cld3d_crm,abs(out_cld3d_crm(ii,jj,kk)-cld3d_crm(icheck_column,ii+it,jj+jt,kk)))
+                temp_diff_cld3d_crm      = maxdiff_cld3d_crm(kk)
               end do
             end do
+            work_crm_u(kk)       = work_crm_u(kk) / (orc_nx*orc_ny)
+            work_crm_v(kk)       = work_crm_v(kk) / (orc_nx*orc_ny)
+            work_crm_w(kk)       = work_crm_w(kk) / (orc_nx*orc_ny)
+            work_crm_t(kk)       = work_crm_t(kk) / (orc_nx*orc_ny)
+            work_crm_micro1(kk)  = work_crm_micro1(kk) / (orc_nx*orc_ny)
+            work_crm_micro2(kk)  = work_crm_micro2(kk) / (orc_nx*orc_ny)
+            work_crm_micro3(kk)  = work_crm_micro3(kk) / (orc_nx*orc_ny)
+            work_crm_qrad(kk)    = work_crm_qrad(kk) / (orc_nx*orc_ny)
+            work_qc_crm(kk)      = work_qc_crm(kk) / (orc_nx*orc_ny)
+            work_qi_crm(kk)      = work_qi_crm(kk) / (orc_nx*orc_ny)
+            work_qpc_crm(kk)     = work_qpc_crm(kk) / (orc_nx*orc_ny)
+            work_qpi_crm(kk)     = work_qpi_crm(kk) / (orc_nx*orc_ny)
+            work_t_rad(kk)       = work_t_rad(kk) / (orc_nx*orc_ny)
+            work_qv_rad(kk)      = work_qv_rad(kk) / (orc_nx*orc_ny)
+            work_qc_rad(kk)      = work_qc_rad(kk) / (orc_nx*orc_ny)
+            work_qi_rad(kk)      = work_qi_rad(kk) / (orc_nx*orc_ny)
+            work_cld_rad(kk)     = work_cld_rad(kk)  / (orc_nx*orc_ny)
+            work_cld3d_crm(kk)   = work_cld3d_crm(kk)  / (orc_nx*orc_ny)
+            work_org_crm_u(kk)       = work_org_crm_u(kk) / (orc_nx*orc_ny)
+            work_org_crm_v(kk)       = work_org_crm_v(kk) / (orc_nx*orc_ny)
+            work_org_crm_w(kk)       = work_org_crm_w(kk) / (orc_nx*orc_ny)
+            work_org_crm_t(kk)       = work_org_crm_t(kk) / (orc_nx*orc_ny)
+            work_org_crm_micro1(kk)  = work_org_crm_micro1(kk) / (orc_nx*orc_ny)
+            work_org_crm_micro2(kk)  = work_org_crm_micro2(kk) / (orc_nx*orc_ny)
+            work_org_crm_micro3(kk)  = work_org_crm_micro3(kk) / (orc_nx*orc_ny)
+            work_org_crm_qrad(kk)    = work_org_crm_qrad(kk) / (orc_nx*orc_ny)
+            work_org_qc_crm(kk)      = work_org_qc_crm(kk) / (orc_nx*orc_ny)
+            work_org_qi_crm(kk)      = work_org_qi_crm(kk) / (orc_nx*orc_ny)
+            work_org_qpc_crm(kk)     = work_org_qpc_crm(kk) / (orc_nx*orc_ny)
+            work_org_qpi_crm(kk)     = work_org_qpi_crm(kk) / (orc_nx*orc_ny)
+            work_org_t_rad(kk)       = work_org_t_rad(kk) / (orc_nx*orc_ny)
+            work_org_qv_rad(kk)      = work_org_qv_rad(kk) / (orc_nx*orc_ny)
+            work_org_qc_rad(kk)      = work_org_qc_rad(kk) / (orc_nx*orc_ny)
+            work_org_qi_rad(kk)      = work_org_qi_rad(kk) / (orc_nx*orc_ny)
+            work_org_cld_rad(kk)     = work_org_cld_rad(kk)  / (orc_nx*orc_ny)
+            work_org_cld3d_crm(kk)   = work_org_cld3d_crm(kk)  / (orc_nx*orc_ny)
+            diff_crm_u(kk)           = diff_crm_u(kk)  / (orc_nx*orc_ny)
+            sqrt_crm_u(kk)           = sqrt(diff_crm_u(kk)) 
+            diff_crm_v(kk)           = diff_crm_v(kk)  / (orc_nx*orc_ny)
+            sqrt_crm_v(kk)           = sqrt(diff_crm_v(kk))
+            diff_crm_w(kk)           = diff_crm_w(kk)  / (orc_nx*orc_ny)
+            sqrt_crm_w(kk)           = sqrt(diff_crm_w(kk))
+            diff_crm_t(kk)           = diff_crm_t(kk)  / (orc_nx*orc_ny)
+            sqrt_crm_t(kk)           = sqrt(diff_crm_t(kk))
+            diff_crm_micro1(kk)           = diff_crm_micro1(kk)  / (orc_nx*orc_ny)
+            sqrt_crm_micro1(kk)           = sqrt(diff_crm_micro1(kk))
+            diff_crm_micro2(kk)           = diff_crm_micro2(kk)  / (orc_nx*orc_ny)
+            sqrt_crm_micro2(kk)           = sqrt(diff_crm_micro2(kk))
+            diff_crm_micro3(kk)           = diff_crm_micro3(kk)  / (orc_nx*orc_ny)
+            sqrt_crm_micro3(kk)           = sqrt(diff_crm_micro3(kk))
+            diff_crm_qrad(kk)           = diff_crm_qrad(kk)  / (orc_nx*orc_ny)
+            sqrt_crm_qrad(kk)           = sqrt(diff_crm_qrad(kk))
+            diff_qc_crm(kk)           = diff_qc_crm(kk)  / (orc_nx*orc_ny)
+            sqrt_qc_crm(kk)           = sqrt(diff_qc_crm(kk))
+            diff_qi_crm(kk)           = diff_qi_crm(kk)  / (orc_nx*orc_ny)
+            sqrt_qi_crm(kk)           = sqrt(diff_qi_crm(kk))
+            diff_qpc_crm(kk)           = diff_qpc_crm(kk)  / (orc_nx*orc_ny)
+            sqrt_qpc_crm(kk)           = sqrt(diff_qpc_crm(kk))
+            diff_qpi_crm(kk)           = diff_qpi_crm(kk)  / (orc_nx*orc_ny)
+            sqrt_qpi_crm(kk)           = sqrt(diff_qpi_crm(kk))
+            diff_t_rad(kk)           = diff_t_rad(kk)  / (orc_nx*orc_ny)
+            sqrt_t_rad(kk)           = sqrt(diff_t_rad(kk))
+            diff_qv_rad(kk)           = diff_qv_rad(kk)  / (orc_nx*orc_ny)
+            sqrt_qv_rad(kk)           = sqrt(diff_qv_rad(kk))
+            diff_qc_rad(kk)           = diff_qc_rad(kk)  / (orc_nx*orc_ny)
+            sqrt_qc_rad(kk)           = sqrt(diff_qc_rad(kk))
+            diff_qi_rad(kk)           = diff_qi_rad(kk)  / (orc_nx*orc_ny)
+            sqrt_qi_rad(kk)           = sqrt(diff_qi_rad(kk))
+            diff_cld_rad(kk)           = diff_cld_rad(kk)  / (orc_nx*orc_ny)
+            sqrt_cld_rad(kk)           = sqrt(diff_cld_rad(kk))
+            diff_cld3d_crm(kk)           = diff_cld3d_crm(kk)  / (orc_nx*orc_ny)
+            sqrt_cld3d_crm(kk)           = sqrt(diff_cld3d_crm(kk))
+            write(iulog,1011),int(out_global_rank),int(icheck_column),kk,work_crm_u(kk),work_org_crm_u(kk),diff_crm_u(kk),sqrt_crm_u(kk),maxdiff_crm_u(kk)
+            write(iulog,1012),int(out_global_rank),int(icheck_column),kk,work_crm_v(kk),work_org_crm_v(kk),diff_crm_v(kk),sqrt_crm_v(kk),maxdiff_crm_v(kk)
+            write(iulog,1013),int(out_global_rank),int(icheck_column),kk,work_crm_w(kk),work_org_crm_w(kk),diff_crm_w(kk),sqrt_crm_w(kk),maxdiff_crm_w(kk)
+            write(iulog,1014),int(out_global_rank),int(icheck_column),kk,work_crm_t(kk),work_org_crm_t(kk),diff_crm_t(kk),sqrt_crm_t(kk),maxdiff_crm_t(kk)
+            write(iulog,1015),int(out_global_rank),int(icheck_column),kk,work_crm_micro1(kk),work_org_crm_micro1(kk),diff_crm_micro1(kk),sqrt_crm_micro1(kk),maxdiff_crm_micro1(kk)
+            write(iulog,1016),int(out_global_rank),int(icheck_column),kk,work_crm_micro2(kk),work_org_crm_micro2(kk),diff_crm_micro2(kk),sqrt_crm_micro2(kk),maxdiff_crm_micro2(kk)
+            write(iulog,1017),int(out_global_rank),int(icheck_column),kk,work_crm_micro3(kk),work_org_crm_micro3(kk),diff_crm_micro3(kk),sqrt_crm_micro3(kk),maxdiff_crm_micro3(kk)
+            write(iulog,1018),int(out_global_rank),int(icheck_column),kk,work_crm_qrad(kk),work_org_crm_qrad(kk),diff_crm_qrad(kk),sqrt_crm_qrad(kk),maxdiff_crm_qrad(kk)
+            write(iulog,1019),int(out_global_rank),int(icheck_column),kk,work_qc_crm(kk),work_org_qc_crm(kk),diff_qc_crm(kk),sqrt_qc_crm(kk),maxdiff_qc_crm(kk)
+            write(iulog,1020),int(out_global_rank),int(icheck_column),kk,work_qi_crm(kk),work_org_qi_crm(kk),diff_qi_crm(kk),sqrt_qi_crm(kk),maxdiff_qi_crm(kk)
+            write(iulog,1021),int(out_global_rank),int(icheck_column),kk,work_qpc_crm(kk),work_org_qpc_crm(kk),diff_qpc_crm(kk),sqrt_qpc_crm(kk),maxdiff_qpc_crm(kk)
+            write(iulog,1022),int(out_global_rank),int(icheck_column),kk,work_qpi_crm(kk),work_org_qpi_crm(kk),diff_qpi_crm(kk),sqrt_qpi_crm(kk),maxdiff_qpi_crm(kk)
+            write(iulog,1023),int(out_global_rank),int(icheck_column),kk,work_t_rad(kk),work_org_t_rad(kk),diff_t_rad(kk),sqrt_t_rad(kk),maxdiff_t_rad(kk)
+            write(iulog,1024),int(out_global_rank),int(icheck_column),kk,work_qv_rad(kk),work_org_qv_rad(kk),diff_qv_rad(kk),sqrt_qv_rad(kk),maxdiff_qv_rad(kk)
+            write(iulog,1025),int(out_global_rank),int(icheck_column),kk,work_qc_rad(kk),work_org_qc_rad(kk),diff_qc_rad(kk),sqrt_qc_rad(kk),maxdiff_qc_rad(kk)
+            write(iulog,1026),int(out_global_rank),int(icheck_column),kk,work_qi_rad(kk),work_org_qi_rad(kk),diff_qi_rad(kk),sqrt_qi_rad(kk),maxdiff_qi_rad(kk)
+            write(iulog,1027),int(out_global_rank),int(icheck_column),kk,work_cld_rad(kk),work_org_cld_rad(kk),diff_cld_rad(kk),sqrt_cld_rad(kk),maxdiff_cld_rad(kk) 
+            write(iulog,1028),int(out_global_rank),int(icheck_column),kk,work_cld3d_crm(kk),work_org_cld3d_crm(kk),diff_cld3d_crm(kk),sqrt_cld3d_crm(kk),maxdiff_cld3d_crm(kk)
           end do
+1011  format ('=>crm_u',3I4,5E15.6)
+1012  format ('=>crm_v',3I4,5E15.6)
+1013  format ('=>crm_w',3I4,5E15.6)
+1014  format ('=>crm_t',3I4,5E15.6)
+1015  format ('=>crm_micro1',3I4,5E15.6)
+1016  format ('=>crm_micro2',3I4,5E15.6)
+1017  format ('=>crm_micro3',3I4,5E15.6)
+1018  format ('=>crm_qrad',3I4,5E15.6)
+1019  format ('=>qc_crm',3I4,5E15.6)
+1020  format ('=>qi_crm',3I4,5E15.6)
+1021  format ('=>qpc_crm',3I4,5E15.6)
+1022  format ('=>qpi_crm',3I4,5E15.6)
+1023  format ('=>t_rad',3I4,5E15.6)
+1024  format ('=>qv_rad',3I4,5E15.6)
+1025  format ('=>qc_rad',3I4,5E15.6)
+1026  format ('=>qi_rad',3I4,5E15.6)
+1027  format ('=>cld_rad',3I4,5E15.6)
+1028  format ('=>cld3d_crm',3I4,5E15.6)
             do jj=1,orc_ny
               do ii=1,orc_nx
                 orc_prec_crm(i,ii+it,jj+jt)  = out_prec_crm(ii,jj)
               end do
             end do
           !write (iulog,*),'Check print 17',int(out_global_rank),it,jt,icheck_column,icheck_iorc,out_crm_u
+          
           do kk=1,crm_nz
             do jj=1,orc_ny
               do ii=1,orc_nx
