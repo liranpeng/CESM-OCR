@@ -315,6 +315,8 @@ program TwoExecutableDriver
   !write(13,*) 'check orc receive crm_qpi:',outin10_qpi_crm(1:10,1,1)
   !write(13,*) 'check orc receive crm_trad:',outin12_t_rad(1:10,1,1)
   !write(13,*) 'check orc receive crm_qvrad:', outin13_qv_rad(1:10,1,1)
+        write(13,*) 'Before crm orc 1:',inp02_i,inp01_lchnk,outin05_crm_micro(1:10,:,1:5,1)
+        write(13,*) 'Before crm orc 3:',inp02_i,inp01_lchnk,outin05_crm_micro(1:10,:,1:5,3)
   call crm_orc(it,jt,lon,lat,gcolindex,inp01_lchnk, inp02_i,                            &
             inp03_tl(:),inp04_ql(:),inp05_qccl(:),inp06_qiil(:), &
             inp07_ul(:),inp08_vl(:),inp09_ps,inp10_pmid(:),inp11_pdel(:), &

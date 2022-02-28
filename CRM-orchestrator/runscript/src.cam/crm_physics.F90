@@ -1826,7 +1826,9 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
               end do
             end do
           end do
-
+        !write(iulog,*) 'check na:',na,nb,nc
+        write(iulog,*) 'Send 1:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,1)
+        write(iulog,*) 'Send 3:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,3)
           !write (iulog,*),'Finish send: ', crm_micro(i_save,:,:,:,3) 
           fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields_total
           do jj=1,crm_ny
@@ -1861,6 +1863,12 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
       end do !do i = 1,ncol
 #endif
 
+        if (state%isorchestrated(i))then
+        !write(iulog,*) 'check na:',na,nb,nc
+        write(iulog,*) 'After send 1:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,1)
+        write(iulog,*) 'After send 3:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,3)
+        end if
+
       do i = 1,ncol
         !if (state%isorchestrated(i))then
          i_save  = i
@@ -1872,7 +1880,8 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
          !endif
         if (state%isorchestrated(i))then
         !write(iulog,*) 'check na:',na,nb,nc
-        !write(iulog,*) 'Before default crm:',i_save,crm_micro(i_save,:,:,:,3)
+        write(iulog,*) 'Before default crm 1:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,1)
+        write(iulog,*) 'Before default crm 3:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,3)
         end if
  
         if (state%isofflinecrm(i))then

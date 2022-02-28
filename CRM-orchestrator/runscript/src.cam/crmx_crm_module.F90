@@ -595,6 +595,8 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 #ifdef sam1mom
         qn(1:nx,1:ny,1:nzm) =  micro_fields_crm(1:nx,1:ny,1:nzm,3)
 #endif
+!        write(0,*) 'In crm org d0 1:',lchnk,icol,micro_fields_crm(1:10,:,1:5,1)
+!        write(0,*) 'In crm org d0 3:',lchnk,icol,micro_fields_crm(1:10,:,1:5,3)
 !if(myrank_global.eq.0) then
 !write(0, *) 'Liran CRM_org00 qn',icol,qn
 !end if
@@ -659,9 +661,9 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !end if
 
         call micro_init
-if(myrank_global.eq.0) then
-write(0, *) 'Liran CRM_org01 na',icol,na
-end if
+!if(myrank_global.eq.0) then
+!write(0, *) 'Liran CRM_org01 na',icol,na
+!end if
 !if(myrank_global.eq.0) then
 !        do k=1,nzm
 !          qv0(k)=0.
@@ -1133,9 +1135,9 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 	     
 !call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 if(myrank_global.eq.0) then
-if (icol .lt. 7) then
-printflag = 2
-end if
+!if (icol .lt. 7) then
+!printflag = 2
+!end if
 !write(0, *) 'Liran CRM_org 3 u',myrank_global,u
 !write(0, *) 'Liran CRM_org 3 du',myrank_global,dudt
 !write(0, *) 'Liran CRM_org 3 dw',icol,dwdt
@@ -1163,6 +1165,7 @@ end if
 !write(0, *) 'Liran org dwdt',icol,na,dwdt
 !write(0, *) 'Liran org qcl',icol,qcl
 end if
+
      call buoyancy(printflag)
 !if(printflag.eq.2) then
 !write(0, *) 'Liran CRM_org dwdt',icol,na,nstep,icyc,dwdt
@@ -1191,7 +1194,8 @@ end if
         end do
       end do
      end do
-
+!        write(0,*) 'In crm org d1 1:',lchnk,icol,micro_field(1:10,:,1:5,1)
+!        write(0,*) 'In crm org d1 3:',lchnk,icol,micro_field(1:10,:,1:5,3)
 !----------------------------------------------------------
 !   	suppress turbulence near the upper boundary (spange):
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
@@ -1201,7 +1205,8 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !write(0, *) 'Liran CRM_org 5 dw',myrank_global,dwdt
 !end if
      if(dodamping) call damping()
-
+!        write(0,*) 'In crm org d2 1:',lchnk,icol,micro_field(1:10,:,1:5,1)
+!        write(0,*) 'In crm org d2 3:',lchnk,icol,micro_field(1:10,:,1:5,3)
 !---------------------------------------------------------
 !   Ice fall-out
 
@@ -1219,6 +1224,8 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !write(0, *) 'Liran CRM_org 6 u',myrank_global,u
 !write(0, *) 'Liran CRM_org 6 t',myrank_global,t
 !end if
+!        write(0,*) 'In crm org d3 1:',lchnk,icol,micro_field(1:10,:,1:5,1)
+!        write(0,*) 'In crm org d3 3:',lchnk,icol,micro_field(1:10,:,1:5,3)
 !----------------------------------------------------------
 !     Update scalar boundaries after large-scale processes:
 
@@ -1847,6 +1854,8 @@ endif
        crm_tk(1:nx,1:ny,1:nzm) = tk(1:nx, 1:ny, 1:nzm)
        crm_tkh(1:nx,1:ny,1:nzm) = tkh(1:nx, 1:ny, 1:nzm)
        cld3d_crm(1:nx, 1:ny, 1:nzm) = CF3D(1:nx, 1:ny, 1:nzm)
+        write(0,*) 'In crm d1 1:',lchnk, icol,micro_fields_crm(1:10,:,1:5,1)
+        write(0,*) 'In crm d1 3:',lchnk, icol,micro_fields_crm(1:10,:,1:5,3)
 #ifdef SPCAM_CLUBB_SGS
        clubb_buffer(1:nx, 1:ny, 1:nz, 1) = up2(1:nx, 1:ny, 1:nz)
        clubb_buffer(1:nx, 1:ny, 1:nz, 2) = vp2(1:nx, 1:ny, 1:nz)

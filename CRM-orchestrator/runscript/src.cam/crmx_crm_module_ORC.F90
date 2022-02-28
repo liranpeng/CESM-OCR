@@ -553,12 +553,14 @@ crm_count = 0
 !call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !write(0, *) 'Liran CRM_ORC0 q',icol,q
 !write(0, *) 'Liran CRM_ORC0 qn',icol,qn
-        micro_field = micro_fields_crm
-        !micro_field(1:nx,1:ny,1:nzm,1:nmicro_fields) = micro_fields_crm(1:nx,1:ny,1:nzm,1:nmicro_fields)
+        !micro_field = micro_fields_crm
+        micro_field(1:nx,1:ny,1:nzm,1:nmicro_fields) = micro_fields_crm(1:nx,1:ny,1:nzm,1:nmicro_fields)
 #ifdef sam1mom
         qn(1:nx,1:ny,1:nzm) =  micro_fields_crm(1:nx,1:ny,1:nzm,3)
 #endif
 !write(0, *) 'Liran CRM ORC',icol,qn
+        !write(0,*) 'In crm orc d0 1:',lchnk, icol,micro_fields_crm(1:10,:,1:5,1)
+        !write(0,*) 'In crm orc d0 3:',lchnk, icol,micro_fields_crm(1:10,:,1:5,3)
 #ifdef m2005
         cloudliq(1:nx,1:ny,1:nzm) = micro_fields_crm(1:nx,1:ny,1:nzm,11)
 #endif
@@ -1093,7 +1095,7 @@ do while(nstep.lt.nstop)
 !write(0, *) 'Liran qpi',icol,qpi
 !write(0, *) 'Liran ORC dwdt',icol,na,dwdt
 !write(0, *) 'Liran qcl',icol,qcl
-     call buoyancy(1)
+     call buoyancy(0)
 !+++mhwangtest
 ! test water conservtion problem
         ntotal_step = ntotal_step + 1.
@@ -1108,7 +1110,7 @@ do while(nstep.lt.nstop)
 !------------------------------------------------------------
 !       Large-scale and surface forcing:
 
-     call forcing(1)
+     call forcing(0)
      do k=1,nzm
       do j=1,ny
         do i=1,nx
@@ -1118,11 +1120,15 @@ do while(nstep.lt.nstop)
       end do
      end do
 !write(0, *) 'Liran CRM_ORC22 w',icol,w
+        !write(0,*) 'In crm orc d01 1:',lchnk, icol,micro_field(1:10,:,1:5,1)
+        !write(0,*) 'In crm orc d01 3:',lchnk, icol,micro_field(1:10,:,1:5,3)
 !----------------------------------------------------------
 !   	suppress turbulence near the upper boundary (spange):
 !call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !write(0, *) 'Liran CRM_ORC3 dudt',myrank_global,dudt
      if(dodamping) call damping()
+        !write(0,*) 'In crm orc d02 1:',lchnk, icol,micro_field(1:10,:,1:5,1)
+        !write(0,*) 'In crm orc d02 3:',lchnk, icol,micro_field(1:10,:,1:5,3)
 !---------------------------------------------------------
 !   Ice fall-out
 
@@ -1135,6 +1141,8 @@ do while(nstep.lt.nstop)
           call ice_fall()
       end if
 #endif  /*CLUBB_SGS*/ 
+        !write(0,*) 'In crm orc d03 1:',lchnk, icol,micro_field(1:10,:,1:5,1)
+        !write(0,*) 'In crm orc d03 3:',lchnk, icol,micro_field(1:10,:,1:5,3)
 !----------------------------------------------------------
 !     Update scalar boundaries after large-scale processes:
 !call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
@@ -1172,6 +1180,8 @@ do while(nstep.lt.nstop)
 !write(0, *) 'Liran CRM_ORC7 u',myrank_global,u
 !write(0, *) 'Liran CRM_ORC7 w',myrank_global,w
      if (dosgs) call sgs_proc()
+        !write(0,*) 'In crm orc d04 1:',lchnk, icol,micro_field(1:10,:,1:5,1)
+        !write(0,*) 'In crm orc d04 3:',lchnk, icol,micro_field(1:10,:,1:5,3)
 #ifdef CLUBB_CRM_OLD   
 !----------------------------------------------------------
 !     Do a timestep with CLUBB if enabled:
@@ -1799,6 +1809,8 @@ end if
        crm_tk(1:nx,1:ny,1:nzm) = tk(1:nx, 1:ny, 1:nzm)
        crm_tkh(1:nx,1:ny,1:nzm) = tkh(1:nx, 1:ny, 1:nzm)
        cld3d_crm(1:nx, 1:ny, 1:nzm) = CF3D(1:nx, 1:ny, 1:nzm)
+       ! write(0,*) 'In crm orc d1 1:',lchnk, icol,micro_fields_crm(1:10,:,1:5,1)
+       ! write(0,*) 'In crm orc d1 3:',lchnk, icol,micro_fields_crm(1:10,:,1:5,3)
 #ifdef SPCAM_CLUBB_SGS
        clubb_buffer(1:nx, 1:ny, 1:nz, 1) = up2(1:nx, 1:ny, 1:nz)
        clubb_buffer(1:nx, 1:ny, 1:nz, 2) = vp2(1:nx, 1:ny, 1:nz)
