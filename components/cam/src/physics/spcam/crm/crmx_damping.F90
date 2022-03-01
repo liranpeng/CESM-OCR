@@ -2,11 +2,12 @@
 subroutine damping
 
 !  "Spange"-layer damping at the domain top region
-
+use crmx_grid, only: dompi
+use crmx_task_util_mpi, only: task_sum_real_ORC
 use crmx_vars
 use crmx_microphysics, only: micro_field, index_water_vapor
 implicit none
-
+real buffer1(nzm,3),buffer2(nzm,3)
 real tau_min	! minimum damping time-scale (at the top)
 real tau_max    ! maxim damping time-scale (base of damping layer)
 real damp_depth ! damping depth as a fraction of the domain height
@@ -45,6 +46,17 @@ do k=1, nzm
   end do
  end do
 end do
+
+if(dompi) then
+  buffer1(:,1) = u0
+  buffer1(:,2) = v0
+  buffer1(:,3) = t0
+  call task_sum_real_ORC(buffer1,buffer2,3*nzm)
+  u0(:) = buffer2(:, 1)/float(nsubdomains)
+  v0(:) = buffer2(:, 2)/float(nsubdomains)
+  t0(:) = buffer2(:, 3)/float(nsubdomains)
+end if
+
 !---mhwang
 
 do k = nzm, nzm-n_damp, -1

@@ -41,7 +41,6 @@ program TwoExecutableDriver
         outin13_qv_rad,outin14_qc_rad,outin15_qi_rad,outin16_cld_rad,outin17_cld3d_crm,crm_tk,crm_tkh,out_cld_rad
   real(r8), dimension(orc_nx,orc_ny) :: outin11_prec_crm
   real(r8), dimension(crm_nz) :: outin_u0,outin_v0,outin_t0,outin_t00,outin_tabs0,outin_q0,outin_qv0,outin_qn0,outin_qp0,outin_tke0
-  real(r8), allocatable :: flattened_crm_inout(:),out_Var_Flat(:)
   real(r8),dimension(orc_nx, orc_ny, crm_nz,nmicro_fields_total) :: outin05_crm_micro
   real (r8) :: precc,precl,precsc,precsl,cltot,clhgh,clmed,cllow,lon,lat
   real (r8), dimension(pver) :: cld,cldtop,gicewp,gliqwp,mctot,mcup,mcdn,mcuup,mcudn
@@ -52,17 +51,19 @@ program TwoExecutableDriver
   real(r8), dimension(20) :: qtotcrm
   real(r8) :: prectend,precstend,ocnfrac,wnd,tau00,bflx,fluxu0,fluxv0,fluxt0,fluxq0
   real(r8) :: taux_crm,tauy_crm,z0m,timing_factor,jt_crm,mx_crm
-  integer :: chnksz,nflat,fcount,ii,jj,kk,ll,it,jt
+  integer :: fcount,ii,jj,kk,ll,it,jt
   integer,parameter :: structlen  = 49
   integer,parameter :: singlelen  = 30
   integer,parameter :: flen       = structlen*pver+singlelen+1+20+pcols
   integer,parameter :: flen2      = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny
   integer,parameter :: structleno = 37
   integer,parameter :: singleleno = 25
-  integer,parameter :: rank_offset=2
   integer,parameter :: fleno      = structleno*pver+singleleno+1+20
+  integer,parameter :: chnksz     = orc_nx*orc_ny*crm_nz
+  integer,parameter :: flen3      = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields_total +orc_nx*orc_ny
   real(r8),dimension(flen ) :: inp_Var_Flat
   real(r8),dimension(flen2) :: inp_Var_Flat2
+  real(r8),dimension(flen3) :: out_Var_Flat
 
   include 'mpif.h'
 
@@ -117,7 +118,6 @@ program TwoExecutableDriver
   EndFlag  = 0
   !do i = 1,numproc_crm-1
   i = myrank_crm
-  !if (MOD(myrank_crm,rank_offset) .eq. 0) then  
      write(13,924) numproc_global, myrank_global,numproc_crm,myrank_crm,crm_comm_color
 924      format('MPI_COMM_WORLD: size/myrank = ',2i5,', crm_comm: size/myrank= ',3i5)
 !    open(unit=13,file='crm.log.'//TRIM(crm_number),form='formatted')    
@@ -131,7 +131,6 @@ program TwoExecutableDriver
        write (13,*) 'MPI_Recv from spcam_driver handshake failed for CRM rank ',myrank_crm,',ierr=',ierr
      end if
      !EndFlag  = 0
-     allocate(out_Var_Flat(fleno+nflat))
   !end if
   !end do
   call mpi_comm_size(crm_comm_in, numproc_crm_in, ierr)
@@ -142,8 +141,6 @@ program TwoExecutableDriver
   do while (EndFlag.eq.0)
   write(13,*) 'Enter Loop!!'
   ! ----------- Receive from cesm.exe/crm_physics inputs to CRM right before call to crm() ----------------
-  chnksz = orc_nx*orc_ny*crm_nz
-  nflat =  17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields_total +orc_nx*orc_ny
 ! =====================================================================================
 ! Receive from GCM, in order, the input ingredients expected by crm subroutine:
 ! =====================================================================================
@@ -365,7 +362,9 @@ program TwoExecutableDriver
   !write(13,*) 'check orc after crm_qpi:',outin10_qpi_crm(1:10,1,1)
   !write(13,*) 'check orc after crm_trad:',outin12_t_rad(1:10,1,1)
   !write(13,*) 'check orc after crm_qvrad:', outin13_qv_rad(1:10,1,1)
-
+write(13,*) 'check orc after crm_micro1:',inp02_i,inp01_lchnk,outin05_crm_micro(1:10,:,1:5,1)
+write(13,*) 'check orc after crm_micro2:',inp02_i,inp01_lchnk,outin05_crm_micro(1:10,:,1:5,2)
+write(13,*) 'check orc after crm_micro3:',inp02_i,inp01_lchnk,outin05_crm_micro(1:10,:,1:5,3)
 write(13,*) 'CRM_ORC run finish',myrank_global
   call MPI_barrier(crm_comm_in, ierr)
 write(13,*) 'Liran start send data back',myrank_crm,it,jt
@@ -438,7 +437,7 @@ write(13,*) 'Liran start send data back',myrank_crm,it,jt
   out_Var_Flat(36*pver+1+singleleno:37*pver+singleleno) = t_ls(:)
   out_Var_Flat(37*pver+1+singleleno:37*pver+20+singleleno) = qtotcrm(1:20)
 
-  fcount = structleno*pver+20+singleleno
+  fcount = structleno*pver+20+singleleno+1
   do kk=1,crm_nz
     do jj=1,orc_ny
       do ii=1,orc_nx
@@ -463,7 +462,7 @@ write(13,*) 'Liran start send data back',myrank_crm,it,jt
       end do
     end do
   end do
-  fcount = structleno*pver+20+singleleno + 16* chnksz
+  fcount = structleno*pver+20+singleleno +1 + 17* chnksz
   do ll=1,nmicro_fields_total
     do kk=1,crm_nz
       do jj=1,orc_ny
@@ -475,7 +474,7 @@ write(13,*) 'Liran start send data back',myrank_crm,it,jt
     end do
   end do
   !write(13,*) 'CRM send',myrank_crm,  outin01_crm_u
-  fcount = structleno*pver+20+singleleno + 16* chnksz +  orc_nx*orc_ny*crm_nz*nmicro_fields_total
+  fcount = structleno*pver+20+singleleno +1 + 17* chnksz +  orc_nx*orc_ny*crm_nz*nmicro_fields_total
   do jj=1,orc_ny
     do ii=1,orc_nx
       fcount = fcount + 1
@@ -483,7 +482,7 @@ write(13,*) 'Liran start send data back',myrank_crm,it,jt
     end do
   end do
   write(13,*) 'CRM chunk,i',myrank_crm, destGCM0,inp01_lchnk,inp02_i
-  call MPI_Send(out_Var_Flat,fleno+nflat,MPI_REAL8,destGCM0,8006,MPI_COMM_WORLD,ierr)
+  call MPI_Send(out_Var_Flat,flen3,MPI_REAL8,destGCM0,8006,MPI_COMM_WORLD,ierr)
 write(13,*) 'Finish send data back'
  end do
   call MPI_comm_free(crm_comm, ierr)

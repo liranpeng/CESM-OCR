@@ -8,8 +8,8 @@ subroutine forcing(printflag)
         use crmx_task_util_mpi, only: task_sum_real_ORC
         implicit none
 
-        real coef,qneg(nzm),qpoz(nzm), factor,buffer1(nzm,2),buffer2(nzm,2)
-        integer i,j,k,nneg(nzm),printflag
+        real coef,qneg(nzm),qpoz(nzm),nneg(nzm), factor,buffer1(nzm,3),buffer2(nzm,3)
+        integer i,j,k,printflag
 
         coef = 1./3600.
 
@@ -45,12 +45,14 @@ end if
         if(dompi) then
           buffer1(:,1) = qneg
           buffer1(:,2) = qpoz
-          call task_sum_real_ORC(buffer1,buffer2,2*nzm)
+          buffer1(:,3) = nneg
+          call task_sum_real_ORC(buffer1,buffer2,3*nzm)
           qneg(:)    = buffer2(:, 1)
           qpoz(:)    = buffer2(:, 2)
+          nneg(:)    = buffer2(:, 3)
         end if
         do k=1,nzm    
-            if(nneg(k).gt.0.and.qpoz(k)+qneg(k).gt.0.) then
+            if(int(nneg(k)).gt.0.and.qpoz(k)+qneg(k).gt.0.) then
              factor = 1. + qneg(k)/qpoz(k)
              do j=1,ny
               do i=1,nx

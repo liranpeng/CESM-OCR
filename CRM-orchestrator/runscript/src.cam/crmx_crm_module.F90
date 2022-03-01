@@ -1206,9 +1206,9 @@ end if
         end do
       end do
      end do
-        write(0,*) 'In crm org d2 1:',lchnk,icol,micro_field(1:10,:,1:5,1)
-        write(0,*) 'In crm org d2 2:',lchnk,icol,micro_field(1:10,:,1:5,2)
-        write(0,*) 'In crm org d2 3:',lchnk,icol,micro_field(1:10,:,1:5,3)
+!        write(0,*) 'In crm org d2 1:',lchnk,icol,micro_field(1:10,:,1:5,1)
+!        write(0,*) 'In crm org d2 2:',lchnk,icol,micro_field(1:10,:,1:5,2)
+!        write(0,*) 'In crm org d2 3:',lchnk,icol,micro_field(1:10,:,1:5,3)
 !----------------------------------------------------------
 !   	suppress turbulence near the upper boundary (spange):
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
@@ -1220,6 +1220,9 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
      if(dodamping) call damping()
 !        write(0,*) 'In crm org d2 1:',lchnk,icol,micro_field(1:10,:,1:5,1)
 !        write(0,*) 'In crm org d2 3:',lchnk,icol,micro_field(1:10,:,1:5,3)
+        write(0,*) 'In crm org d3 1:',lchnk, icol,micro_field(1:5,:,1:5,1)
+        write(0,*) 'In crm org d3 2:',lchnk, icol,micro_field(1:5,:,1:5,2)
+        write(0,*) 'In crm org d3 3:',lchnk, icol,micro_field(1:5,:,1:5,3)
 !---------------------------------------------------------
 !   Ice fall-out
 
@@ -1232,6 +1235,9 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           call ice_fall()
       end if
 #endif  /*CLUBB_SGS*/ 
+        write(0,*) 'In crm org d4 1:',lchnk, icol,micro_field(1:5,:,1:5,1)
+        write(0,*) 'In crm org d4 2:',lchnk, icol,micro_field(1:5,:,1:5,2)
+        write(0,*) 'In crm org d4 3:',lchnk, icol,micro_field(1:5,:,1:5,3)
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !if(printflag.eq.2) then
 !write(0, *) 'Liran CRM_org 6 u',myrank_global,u
@@ -1269,7 +1275,9 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !write(0, *) 'Liran CRM_org 7 dw',myrank_global,dwdt
 !end if   
     if (dosgs) call sgs_proc()
-
+        write(0,*) 'In crm org d5 1:',lchnk, icol,micro_field(1:5,:,1:5,1)
+        write(0,*) 'In crm org d5 2:',lchnk, icol,micro_field(1:5,:,1:5,2)
+        write(0,*) 'In crm org d5 3:',lchnk, icol,micro_field(1:5,:,1:5,3)
 #ifdef CRM_DEBUG
          do k=1,nzm
           do j=1,ny
@@ -1399,7 +1407,9 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !               ( dudt, dvdt ) ! in/out
      endif
 #endif /*CLUBB_CRM_OLD*/
-
+        write(0,*) 'In crm org d6 1:',lchnk, icol,micro_field(1:5,:,1:5,1)
+        write(0,*) 'In crm org d6 2:',lchnk, icol,micro_field(1:5,:,1:5,2)
+        write(0,*) 'In crm org d6 3:',lchnk, icol,micro_field(1:5,:,1:5,3)
 #ifdef CRM_DEBUG
          do k=1,nzm
           do j=1,ny
@@ -1608,7 +1618,9 @@ endif
 !    Compute diagnostics fields:
 
       call diagnose()
-
+        write(0,*) 'In crm org d7 1:',lchnk, icol,micro_field(1:5,:,1:5,1)
+        write(0,*) 'In crm org d7 2:',lchnk, icol,micro_field(1:5,:,1:5,2)
+        write(0,*) 'In crm org d7 3:',lchnk, icol,micro_field(1:5,:,1:5,3)
 !----------------------------------------------------------
 ! Rotate the dynamic tendency arrays for Adams-bashforth scheme:
 
@@ -1868,6 +1880,7 @@ endif
        crm_tkh(1:nx,1:ny,1:nzm) = tkh(1:nx, 1:ny, 1:nzm)
        cld3d_crm(1:nx, 1:ny, 1:nzm) = CF3D(1:nx, 1:ny, 1:nzm)
         write(0,*) 'In crm d1 1:',lchnk, icol,micro_fields_crm(1:10,:,1:5,1)
+        write(0,*) 'In crm d1 2:',lchnk, icol,micro_fields_crm(1:10,:,1:5,2)
         write(0,*) 'In crm d1 3:',lchnk, icol,micro_fields_crm(1:10,:,1:5,3)
 #ifdef SPCAM_CLUBB_SGS
        clubb_buffer(1:nx, 1:ny, 1:nz, 1) = up2(1:nx, 1:ny, 1:nz)

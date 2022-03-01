@@ -1137,7 +1137,6 @@ end subroutine crm_init_cnst
    real(r8), allocatable :: flattened_crm_inout(:)
    real(r8),dimension(flen) :: Var_Flat
    real(r8),dimension(flen2) :: Var_Flat2
-   integer,parameter :: rank_offset=1
    integer,parameter :: structleno = 37
    integer,parameter :: singleleno = 25
    integer,parameter :: fleno      = structleno*pver+singleleno+1+20
@@ -1691,7 +1690,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           ! =================================================
           ! Start to flatten the arry and send it to CRM. 
           ! =================================================
-          !dest = npes+state%crmrank0(i)*rank_offset
           dest = state%crmrank(i,iorc)
           !i_save  = i+state%crmrank1(i)
           i_save  = i
@@ -2071,7 +2069,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           out_t_ls(:)             = CRM_Var_Flat(36*pver+1+singleleno:37*pver+singleleno)
           out_qtotcrm(1:20)       = CRM_Var_Flat(37*pver+1+singleleno:37*pver+20+singleleno)
 
-          fcount = structleno*pver+20+singleleno
+          fcount = structleno*pver+20+singleleno+1
           do kk=1,crm_nz
             do jj=1,orc_ny
               do ii=1,orc_nx
@@ -2097,7 +2095,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
             end do
           end do
 
-          fcount = structleno*pver+20+singleleno + 17*chnksz
+          fcount = structleno*pver+20+singleleno + 1 + 17*chnksz
           do ll=1,nmicro_fields_total
             do kk=1,crm_nz
               do jj=1,orc_ny
@@ -2109,7 +2107,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
             end do
           end do
 
-          fcount = structleno*pver+20+singleleno + 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields_total
+          fcount = structleno*pver+20+singleleno + 17*chnksz + 1 + orc_nx*orc_ny*crm_nz*nmicro_fields_total
           do jj=1,orc_ny
             do ii=1,orc_nx
               fcount = fcount + 1
@@ -2410,12 +2408,18 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
                 write(iulog,1111),int(out_global_rank),int(icheck_column),ii,kk,int(ztodt),crm_u(icheck_column,ii+it,jj+jt,kk),orc_crm_u(icheck_column,ii+it,jj+jt,kk)
                 write(iulog,1112),int(out_global_rank),int(icheck_column),ii,kk,int(ztodt),crm_w(icheck_column,ii+it,jj+jt,kk),orc_crm_w(icheck_column,ii+it,jj+jt,kk)
                 write(iulog,1113),int(out_global_rank),int(icheck_column),ii,kk,int(ztodt),crm_t(icheck_column,ii+it,jj+jt,kk),orc_crm_t(icheck_column,ii+it,jj+jt,kk)
+                write(iulog,1114),int(out_global_rank),int(icheck_column),ii,kk,int(ztodt),crm_micro(icheck_column,ii+it,jj+jt,kk,1),orc_crm_micro(icheck_column,ii+it,jj+jt,kk,1)
+                write(iulog,1115),int(out_global_rank),int(icheck_column),ii,kk,int(ztodt),crm_micro(icheck_column,ii+it,jj+jt,kk,2),orc_crm_micro(icheck_column,ii+it,jj+jt,kk,2)
+                write(iulog,1116),int(out_global_rank),int(icheck_column),ii,kk,int(ztodt),crm_micro(icheck_column,ii+it,jj+jt,kk,3),orc_crm_micro(icheck_column,ii+it,jj+jt,kk,3)
               end do
             end do
           end do
 1111  format ('C_u',5I4,2E15.6)
 1112  format ('C_w',5I4,2E15.6)
 1113  format ('C_t',5I4,2E15.6)
+1114  format ('C_m1',5I4,2E15.6)
+1115  format ('C_m2',5I4,2E15.6)
+1116  format ('C_m3',5I4,2E15.6)
         else
           cltot  (icheck_column)                           = out_cltot 
           clhgh  (icheck_column)                           = out_clhgh
