@@ -595,8 +595,9 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 #ifdef sam1mom
         qn(1:nx,1:ny,1:nzm) =  micro_fields_crm(1:nx,1:ny,1:nzm,3)
 #endif
-!        write(0,*) 'In crm org d0 1:',lchnk,icol,micro_fields_crm(1:10,:,1:5,1)
-!        write(0,*) 'In crm org d0 3:',lchnk,icol,micro_fields_crm(1:10,:,1:5,3)
+        write(0,*) 'In crm org d0 1:',lchnk,icol,micro_fields_crm(1:5,:,1:5,1)
+        write(0,*) 'In crm org d0 2:',lchnk,icol,micro_fields_crm(1:5,:,1:5,2)
+        write(0,*) 'In crm org d0 3:',lchnk,icol,micro_fields_crm(1:5,:,1:5,3)
 !if(myrank_global.eq.0) then
 !write(0, *) 'Liran CRM_org00 qn',icol,qn
 !end if
@@ -676,6 +677,15 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 !        end do
 !write(0, *) 'Liran ORG qv0 check3',icol,qv0
 !end if
+        write(0,*) 'In crm org d1 1:',lchnk,icol,micro_field(1:5,:,1:5,1)
+        write(0,*) 'In crm org d1 2:',lchnk,icol,micro_field(1:5,:,1:5,2)
+        write(0,*) 'In crm org d1 3:',lchnk,icol,qn(1:5,:,1:5)
+        write(0,*) 'In crm org d1 4:',lchnk,icol,q(1:5,:,1:5)
+        write(0,*) 'In crm org d1 5:',lchnk,icol,qv(1:5,:,1:5)
+        write(0,*) 'In crm org d1 6:',lchnk,icol,qcl(1:5,:,1:5)
+        write(0,*) 'In crm org d1 7:',lchnk,icol,qci(1:5,:,1:5)
+        write(0,*) 'In crm org d1 8:',lchnk,icol,qpl(1:5,:,1:5)
+        write(0,*) 'In crm org d1 9:',lchnk,icol,qpi(1:5,:,1:5)
 
 #ifdef CRM_DEBUG
          do k=1,nzm
@@ -1187,6 +1197,8 @@ end if
 !end if
      call forcing(printflag)
 
+
+
      do k=1,nzm
       do j=1,ny
         do i=1,nx
@@ -1194,8 +1206,9 @@ end if
         end do
       end do
      end do
-!        write(0,*) 'In crm org d1 1:',lchnk,icol,micro_field(1:10,:,1:5,1)
-!        write(0,*) 'In crm org d1 3:',lchnk,icol,micro_field(1:10,:,1:5,3)
+        write(0,*) 'In crm org d2 1:',lchnk,icol,micro_field(1:10,:,1:5,1)
+        write(0,*) 'In crm org d2 2:',lchnk,icol,micro_field(1:10,:,1:5,2)
+        write(0,*) 'In crm org d2 3:',lchnk,icol,micro_field(1:10,:,1:5,3)
 !----------------------------------------------------------
 !   	suppress turbulence near the upper boundary (spange):
 call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)

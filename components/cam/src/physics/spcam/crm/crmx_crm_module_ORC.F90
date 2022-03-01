@@ -559,8 +559,9 @@ crm_count = 0
         qn(1:nx,1:ny,1:nzm) =  micro_fields_crm(1:nx,1:ny,1:nzm,3)
 #endif
 !write(0, *) 'Liran CRM ORC',icol,qn
-        !write(0,*) 'In crm orc d0 1:',lchnk, icol,micro_fields_crm(1:10,:,1:5,1)
-        !write(0,*) 'In crm orc d0 3:',lchnk, icol,micro_fields_crm(1:10,:,1:5,3)
+        write(0,*) 'In crm orc d0 1:',lchnk, icol,micro_fields_crm(1:5,:,1:5,1)
+        write(0,*) 'In crm orc d0 2:',lchnk, icol,micro_fields_crm(1:5,:,1:5,2)
+        write(0,*) 'In crm orc d0 3:',lchnk, icol,micro_fields_crm(1:5,:,1:5,3)
 #ifdef m2005
         cloudliq(1:nx,1:ny,1:nzm) = micro_fields_crm(1:nx,1:ny,1:nzm,11)
 #endif
@@ -621,6 +622,15 @@ crm_count = 0
         CF3D = 1.
 
         call micro_init
+        write(0,*) 'In crm orc d1 1:',lchnk, icol,micro_field(1:5,:,1:5,1)
+        write(0,*) 'In crm orc d1 2:',lchnk, icol,micro_field(1:5,:,1:5,2)
+        write(0,*) 'In crm orc d1 3:',lchnk, icol,qn(1:5,:,1:5)
+        write(0,*) 'In crm orc d1 4:',lchnk,icol,q(1:5,:,1:5)
+        write(0,*) 'In crm orc d1 5:',lchnk,icol,qv(1:5,:,1:5)
+        write(0,*) 'In crm orc d1 6:',lchnk,icol,qcl(1:5,:,1:5)
+        write(0,*) 'In crm orc d1 7:',lchnk,icol,qci(1:5,:,1:5)
+        write(0,*) 'In crm orc d1 8:',lchnk,icol,qpl(1:5,:,1:5)
+        write(0,*) 'In crm orc d1 9:',lchnk,icol,qpi(1:5,:,1:5)
 ! initialize sgs fields
         call sgs_init
 
@@ -1120,8 +1130,9 @@ do while(nstep.lt.nstop)
       end do
      end do
 !write(0, *) 'Liran CRM_ORC22 w',icol,w
-        !write(0,*) 'In crm orc d01 1:',lchnk, icol,micro_field(1:10,:,1:5,1)
-        !write(0,*) 'In crm orc d01 3:',lchnk, icol,micro_field(1:10,:,1:5,3)
+        write(0,*) 'In crm orc d2 1:',lchnk, icol,micro_field(1:5,:,1:5,1)
+        write(0,*) 'In crm orc d2 2:',lchnk, icol,micro_field(1:5,:,1:5,2)
+        write(0,*) 'In crm orc d2 3:',lchnk, icol,micro_field(1:5,:,1:5,3)
 !----------------------------------------------------------
 !   	suppress turbulence near the upper boundary (spange):
 !call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
