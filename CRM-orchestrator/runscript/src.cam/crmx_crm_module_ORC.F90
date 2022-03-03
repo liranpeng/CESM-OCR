@@ -559,9 +559,9 @@ crm_count = 0
         qn(1:nx,1:ny,1:nzm) =  micro_fields_crm(1:nx,1:ny,1:nzm,3)
 #endif
 !write(0, *) 'Liran CRM ORC',icol,qn
-        write(0,*) 'In crm orc d0 1:',lchnk, icol,micro_fields_crm(1:5,:,1:5,1)
-        write(0,*) 'In crm orc d0 2:',lchnk, icol,micro_fields_crm(1:5,:,1:5,2)
-        write(0,*) 'In crm orc d0 3:',lchnk, icol,micro_fields_crm(1:5,:,1:5,3)
+        write(0,*) 'In crm orc d0 1:',lchnk, icol,micro_fields_crm(1:5,:,10:15,1)
+        write(0,*) 'In crm orc d0 2:',lchnk, icol,micro_fields_crm(1:5,:,10:15,2)
+        write(0,*) 'In crm orc d0 3:',lchnk, icol,micro_fields_crm(1:5,:,10:15,3)
 #ifdef m2005
         cloudliq(1:nx,1:ny,1:nzm) = micro_fields_crm(1:nx,1:ny,1:nzm,11)
 #endif
@@ -622,15 +622,15 @@ crm_count = 0
         CF3D = 1.
 
         call micro_init
-        write(0,*) 'In crm orc d1 1:',lchnk, icol,micro_field(1:5,:,1:5,1)
-        write(0,*) 'In crm orc d1 2:',lchnk, icol,micro_field(1:5,:,1:5,2)
-        write(0,*) 'In crm orc d1 3:',lchnk, icol,qn(1:5,:,1:5)
-        write(0,*) 'In crm orc d1 4:',lchnk,icol,q(1:5,:,1:5)
-        write(0,*) 'In crm orc d1 5:',lchnk,icol,qv(1:5,:,1:5)
-        write(0,*) 'In crm orc d1 6:',lchnk,icol,qcl(1:5,:,1:5)
-        write(0,*) 'In crm orc d1 7:',lchnk,icol,qci(1:5,:,1:5)
-        write(0,*) 'In crm orc d1 8:',lchnk,icol,qpl(1:5,:,1:5)
-        write(0,*) 'In crm orc d1 9:',lchnk,icol,qpi(1:5,:,1:5)
+        write(0,*) 'In crm orc d1 1:',lchnk, icol,micro_field(1:5,:,10:15,1)
+        write(0,*) 'In crm orc d1 2:',lchnk, icol,micro_field(1:5,:,10:15,2)
+!        write(0,*) 'In crm orc d1 3:',lchnk, icol,qn(1:5,:,1:5)
+!        write(0,*) 'In crm orc d1 4:',lchnk,icol,q(1:5,:,1:5)
+!        write(0,*) 'In crm orc d1 5:',lchnk,icol,qv(1:5,:,1:5)
+!        write(0,*) 'In crm orc d1 6:',lchnk,icol,qcl(1:5,:,1:5)
+!        write(0,*) 'In crm orc d1 7:',lchnk,icol,qci(1:5,:,1:5)
+!        write(0,*) 'In crm orc d1 8:',lchnk,icol,qpl(1:5,:,1:5)
+!        write(0,*) 'In crm orc d1 9:',lchnk,icol,qpi(1:5,:,1:5)
 ! initialize sgs fields
         call sgs_init
 
@@ -713,15 +713,15 @@ crm_count = 0
 tke0 = 0
 tke  = 0
 !write(0, *) 'Liran ORC na nb nc',icol,na,nb,nc
-write(0, *) 'Liran ORC u0',icol,u0
-write(0, *) 'Liran ORC t0',icol,t0
-write(0, *) 'Liran ORC t00',icol,t00
-write(0, *) 'Liran ORC tabs0',icol,tabs0
-write(0, *) 'Liran ORC q0',icol,q0
-write(0, *) 'Liran ORC qv0',icol,qv0
-write(0, *) 'Liran ORC qn0',icol,qn0
-write(0, *) 'Liran ORC qp0',icol,qp0
-write(0, *) 'Liran ORC tke0',icol,tke0
+!write(0, *) 'Liran ORC u0',icol,u0
+!write(0, *) 'Liran ORC t0',icol,t0
+!write(0, *) 'Liran ORC t00',icol,t00
+!write(0, *) 'Liran ORC tabs0',icol,tabs0
+!write(0, *) 'Liran ORC q0',icol,q0
+!write(0, *) 'Liran ORC qv0',icol,qv0
+!write(0, *) 'Liran ORC qn0',icol,qn0
+!write(0, *) 'Liran ORC qp0',icol,qp0
+!write(0, *) 'Liran ORC tke0',icol,tke0
         do k=1,nzm
 #ifdef SPCAM_CLUBB_SGS
  ! Update thetav for CLUBB.  This is needed when we have a higher model top 
@@ -1130,9 +1130,9 @@ do while(nstep.lt.nstop)
       end do
      end do
 !write(0, *) 'Liran CRM_ORC22 w',icol,w
-        !write(0,*) 'In crm orc d2 1:',lchnk, icol,micro_field(1:5,:,1:5,1)
-        !write(0,*) 'In crm orc d2 2:',lchnk, icol,micro_field(1:5,:,1:5,2)
-        !write(0,*) 'In crm orc d2 3:',lchnk, icol,micro_field(1:5,:,1:5,3)
+        write(0,*) 'In crm orc d2 1:',lchnk, icol,micro_field(1:5,:,10:15,1)
+        write(0,*) 'In crm orc d2 2:',lchnk, icol,micro_field(1:5,:,10:15,2)
+        write(0,*) 'In crm orc d2 3:',lchnk, icol,micro_field(1:5,:,10:15,3)
 !----------------------------------------------------------
 !   	suppress turbulence near the upper boundary (spange):
 !call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
@@ -1140,9 +1140,9 @@ do while(nstep.lt.nstop)
      if(dodamping) call damping()
         !write(0,*) 'In crm orc d02 1:',lchnk, icol,micro_field(1:10,:,1:5,1)
         !write(0,*) 'In crm orc d02 3:',lchnk, icol,micro_field(1:10,:,1:5,3)
-        write(0,*) 'In crm orc d3 1:',lchnk, icol,micro_field(1:5,:,1:5,1)
-        write(0,*) 'In crm orc d3 2:',lchnk, icol,micro_field(1:5,:,1:5,2)
-        write(0,*) 'In crm orc d3 3:',lchnk, icol,micro_field(1:5,:,1:5,3)
+        write(0,*) 'In crm orc d3 1:',lchnk, icol,micro_field(1:5,:,10:15,1)
+        write(0,*) 'In crm orc d3 2:',lchnk, icol,micro_field(1:5,:,10:15,2)
+        write(0,*) 'In crm orc d3 3:',lchnk, icol,micro_field(1:5,:,10:15,3)
 !---------------------------------------------------------
 !   Ice fall-out
 
@@ -1155,9 +1155,9 @@ do while(nstep.lt.nstop)
           call ice_fall()
       end if
 #endif  /*CLUBB_SGS*/ 
-        write(0,*) 'In crm orc d4 1:',lchnk, icol,micro_field(1:5,:,1:5,1)
-        write(0,*) 'In crm orc d4 2:',lchnk, icol,micro_field(1:5,:,1:5,2)
-        write(0,*) 'In crm orc d4 3:',lchnk, icol,micro_field(1:5,:,1:5,3)
+        write(0,*) 'In crm orc d4 1:',lchnk, icol,micro_field(1:5,:,10:15,1)
+        write(0,*) 'In crm orc d4 2:',lchnk, icol,micro_field(1:5,:,10:15,2)
+        write(0,*) 'In crm orc d4 3:',lchnk, icol,micro_field(1:5,:,10:15,3)
         !write(0,*) 'In crm orc d03 1:',lchnk, icol,micro_field(1:10,:,1:5,1)
         !write(0,*) 'In crm orc d03 3:',lchnk, icol,micro_field(1:10,:,1:5,3)
 !----------------------------------------------------------
@@ -1199,9 +1199,9 @@ do while(nstep.lt.nstop)
      if (dosgs) call sgs_proc()
         !write(0,*) 'In crm orc d04 1:',lchnk, icol,micro_field(1:10,:,1:5,1)
         !write(0,*) 'In crm orc d04 3:',lchnk, icol,micro_field(1:10,:,1:5,3)
-        write(0,*) 'In crm orc d5 1:',lchnk, icol,micro_field(1:5,:,1:5,1)
-        write(0,*) 'In crm orc d5 2:',lchnk, icol,micro_field(1:5,:,1:5,2)
-        write(0,*) 'In crm orc d5 3:',lchnk, icol,micro_field(1:5,:,1:5,3)
+   !     write(0,*) 'In crm orc d5 1:',lchnk, icol,micro_field(1:5,:,1:5,1)
+   !     write(0,*) 'In crm orc d5 2:',lchnk, icol,micro_field(1:5,:,1:5,2)
+   !     write(0,*) 'In crm orc d5 3:',lchnk, icol,micro_field(1:5,:,1:5,3)
 #ifdef CLUBB_CRM_OLD   
 !----------------------------------------------------------
 !     Do a timestep with CLUBB if enabled:
@@ -1322,9 +1322,9 @@ end if
 !               ( dudt, dvdt ) ! in/out
      endif
 #endif /*CLUBB_CRM_OLD*/
-        write(0,*) 'In crm orc d6 1:',lchnk, icol,micro_field(1:5,:,1:5,1)
-        write(0,*) 'In crm orc d6 2:',lchnk, icol,micro_field(1:5,:,1:5,2)
-        write(0,*) 'In crm orc d6 3:',lchnk, icol,micro_field(1:5,:,1:5,3)
+        write(0,*) 'In crm orc d6 1:',lchnk, icol,micro_field(1:5,:,10:15,1)
+        write(0,*) 'In crm orc d6 2:',lchnk, icol,micro_field(1:5,:,10:15,2)
+        write(0,*) 'In crm orc d6 3:',lchnk, icol,micro_field(1:5,:,10:15,3)
 !-----------------------------------------------------------
 !       Coriolis force:
 	     
@@ -1429,6 +1429,20 @@ dudtmax = -9999.
       end do
 if (dudtmax.gt.100) then
 write(0, *) 'Wrong here 4',icol,dudtmax
+end if
+dudtmax = -9999.
+        do k=1,nzm
+          do j=1,ny
+           do i=1,nx
+             if (dudt(i,j,k,l).gt.dudtmax)then
+               dudtmax = u(i,j,k)
+             end if
+           end do
+          end do
+        end do
+
+if (dudtmax.gt.100) then
+write(0, *) 'Wrong here 42',icol,dudtmax
 end if
 
      call adams()
@@ -1541,9 +1555,9 @@ end if
 !-----------------------------------------------------------
 !    Compute diagnostics fields:
       call diagnose()
-        write(0,*) 'In crm orc d7 1:',lchnk, icol,micro_field(1:5,:,1:5,1)
-        write(0,*) 'In crm orc d7 2:',lchnk, icol,micro_field(1:5,:,1:5,2)
-        write(0,*) 'In crm orc d7 3:',lchnk, icol,micro_field(1:5,:,1:5,3)
+        write(0,*) 'In crm orc d7 1:',lchnk, icol,micro_field(1:5,:,10:15,1)
+        write(0,*) 'In crm orc d7 2:',lchnk, icol,micro_field(1:5,:,10:15,2)
+        write(0,*) 'In crm orc d7 3:',lchnk, icol,micro_field(1:5,:,10:15,3)
 !write(0, *) 'Liran CRM_ORC14 u',myrank_global,u
 !write(0, *) 'Liran CRM_ORC14 dudt',myrank_global,dudt
 !----------------------------------------------------------
@@ -1835,9 +1849,9 @@ end if
        crm_tk(1:nx,1:ny,1:nzm) = tk(1:nx, 1:ny, 1:nzm)
        crm_tkh(1:nx,1:ny,1:nzm) = tkh(1:nx, 1:ny, 1:nzm)
        cld3d_crm(1:nx, 1:ny, 1:nzm) = CF3D(1:nx, 1:ny, 1:nzm)
-        write(0,*) 'In crm orc d1 1:',lchnk, icol,micro_fields_crm(1:10,:,1:5,1)
-        write(0,*) 'In crm orc d1 2:',lchnk, icol,micro_fields_crm(1:10,:,1:5,2)
-        write(0,*) 'In crm orc d1 3:',lchnk, icol,micro_fields_crm(1:10,:,1:5,3)
+        write(0,*) 'In crm orc d8 1:',lchnk, icol,micro_fields_crm(1:10,:,10:15,1)
+        write(0,*) 'In crm orc d8 2:',lchnk, icol,micro_fields_crm(1:10,:,10:15,2)
+        write(0,*) 'In crm orc d8 3:',lchnk, icol,micro_fields_crm(1:10,:,10:15,3)
 #ifdef SPCAM_CLUBB_SGS
        clubb_buffer(1:nx, 1:ny, 1:nz, 1) = up2(1:nx, 1:ny, 1:nz)
        clubb_buffer(1:nx, 1:ny, 1:nz, 2) = vp2(1:nx, 1:ny, 1:nz)

@@ -1137,8 +1137,8 @@ end subroutine crm_init_cnst
    real(r8), allocatable :: flattened_crm_inout(:)
    real(r8),dimension(flen) :: Var_Flat
    real(r8),dimension(flen2) :: Var_Flat2
-   integer,parameter :: structleno = 37
-   integer,parameter :: singleleno = 25
+   integer,parameter :: structleno = 39
+   integer,parameter :: singleleno = 27
    integer,parameter :: fleno      = structleno*pver+singleleno+1+20
    integer,parameter :: nflat =  17*(orc_nx*orc_ny*crm_nz) + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny
    real(r8),dimension(fleno+nflat) :: CRM_Var_Flat
@@ -1825,8 +1825,8 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
             end do
           end do
         !write(iulog,*) 'check na:',na,nb,nc
-        write(iulog,*) 'Send 1:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,1)
-        write(iulog,*) 'Send 3:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,3)
+        !write(iulog,*) 'Send 1:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,1)
+        !write(iulog,*) 'Send 3:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,3)
           !write (iulog,*),'Finish send: ', crm_micro(i_save,:,:,:,3) 
           fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields_total
           do jj=1,crm_ny
@@ -1861,11 +1861,11 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
       end do !do i = 1,ncol
 #endif
 
-        if (state%isorchestrated(i))then
+        !if (state%isorchestrated(i))then
         !write(iulog,*) 'check na:',na,nb,nc
-        write(iulog,*) 'After send 1:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,1)
-        write(iulog,*) 'After send 3:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,3)
-        end if
+        !write(iulog,*) 'After send 1:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,1)
+        !write(iulog,*) 'After send 3:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,3)
+        !end if
 
       do i = 1,ncol
         !if (state%isorchestrated(i))then
@@ -1876,11 +1876,11 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
          !if (state%isorchestrated(i))then
          !write (iulog,*),'check micro',i_save,crm_micro(i_save,:,:,:,:)
          !endif
-        if (state%isorchestrated(i))then
+        !if (state%isorchestrated(i))then
         !write(iulog,*) 'check na:',na,nb,nc
-        write(iulog,*) 'Before default crm 1:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,1)
-        write(iulog,*) 'Before default crm 3:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,3)
-        end if
+        !write(iulog,*) 'Before default crm 1:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,1)
+        !write(iulog,*) 'Before default crm 3:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,3)
+        !end if
  
         if (state%isofflinecrm(i))then
          call crm (lchnk,      i_save,                                                                                            &
@@ -1937,10 +1937,13 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
              fluxu0,             fluxv0,               fluxt0,                fluxq0,                                        & 
              taux_crm(i_save),        tauy_crm(i_save),          z0m(i_save),                timing_factor(i_save),        qtotcrm(i_save, :)         )   
 
+        write (iulog,*),'Finish call default 1 crm',lchnk,i_save,crm_micro(i_save,1:10,:,10:15,1)
+        write (iulog,*),'Finish call default 2 crm',lchnk,i_save,crm_micro(i_save,1:10,:,10:15,2)
+        write (iulog,*),'Finish call default 3 crm',lchnk,i_save,crm_micro(i_save,1:10,:,10:15,3)
         end if !if (state%isofflinecrm(i))then
-        if (state%isorchestrated(i))then
+        !if (state%isorchestrated(i))then
         !write(iulog,*) 'After default crm:',i_save,crm_micro(i_save,:,:,:,3)
-        end if
+        !end if
         ! end if   ! if (state%isorchestrated(i))then
        end do  !do i = 1,ncol
        write (iulog,*),'Finish call crm module at rank: ',myrank_global
@@ -2000,6 +2003,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           write (iulog,*),'MPI Recv start!',myrank_global,state%crmrank(i,iorc),state%isorchestrated(i)
           call MPI_Recv(CRM_Var_Flat,fleno+nflat,MPI_REAL8,MPI_ANY_SOURCE,8006,MPI_COMM_WORLD,status,ierr)
+          write (iulog,*),'Check CRM_Var_Flat 1',myrank_global,state%crmrank(i,iorc),fleno+nflat,CRM_Var_Flat(7696),CRM_Var_Flat(7697)
           out_precc               = CRM_Var_Flat(1 ) 
           out_precl               = CRM_Var_Flat(2 )
           out_precsc              = CRM_Var_Flat(3 )
@@ -2025,8 +2029,8 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           out_global_rank         = CRM_Var_Flat(23)
           out_it                  = CRM_Var_Flat(24)
           out_jt                  = CRM_Var_Flat(25)
-          !out_jt_crm              = CRM_Var_Flat(26)
-          !out_mx_crm              = CRM_Var_Flat(27)
+          out_jt_crm              = CRM_Var_Flat(26)
+          out_mx_crm              = CRM_Var_Flat(27)
 !print*,'test_new add',out_jt_crm,out_mx_crm
           out_qltend              = CRM_Var_Flat(        1+singleleno:  pver+singleleno)
           out_qcltend             = CRM_Var_Flat( 1*pver+1+singleleno:2*pver+singleleno) 
@@ -2055,21 +2059,27 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           out_tkesgsz(:)          = CRM_Var_Flat(24*pver+1+singleleno:25*pver+singleleno)
           out_tk_crm(:)           = CRM_Var_Flat(25*pver+1+singleleno:26*pver+singleleno)
           out_flux_u(:)           = CRM_Var_Flat(26*pver+1+singleleno:27*pver+singleleno)
-          !out_flux_v(:)           = CRM_Var_Flat(27*pver+1+singleleno:28*pver+singleleno)
-          out_flux_qt(:)          = CRM_Var_Flat(27*pver+1+singleleno:28*pver+singleleno) 
-          out_fluxsgs_qt(:)       = CRM_Var_Flat(28*pver+1+singleleno:29*pver+singleleno) 
-          out_flux_qp(:)          = CRM_Var_Flat(29*pver+1+singleleno:30*pver+singleleno) 
-          !out_precflux(:)         = CRM_Var_Flat(31*pver+1+singleleno:32*pver+singleleno)
-          out_qt_ls(:)            = CRM_Var_Flat(30*pver+1+singleleno:31*pver+singleleno) 
-          out_qt_trans(:)         = CRM_Var_Flat(31*pver+1+singleleno:32*pver+singleleno) 
-          out_qp_trans(:)         = CRM_Var_Flat(32*pver+1+singleleno:33*pver+singleleno)
-          out_qp_fall(:)          = CRM_Var_Flat(33*pver+1+singleleno:34*pver+singleleno)
-          out_qp_evp(:)           = CRM_Var_Flat(34*pver+1+singleleno:35*pver+singleleno)
-          out_qp_src(:)           = CRM_Var_Flat(35*pver+1+singleleno:36*pver+singleleno)
-          out_t_ls(:)             = CRM_Var_Flat(36*pver+1+singleleno:37*pver+singleleno)
-          out_qtotcrm(1:20)       = CRM_Var_Flat(37*pver+1+singleleno:37*pver+20+singleleno)
+          out_flux_v(:)           = CRM_Var_Flat(27*pver+1+singleleno:28*pver+singleleno)
+          out_flux_qt(:)          = CRM_Var_Flat(28*pver+1+singleleno:29*pver+singleleno) 
+          out_fluxsgs_qt(:)       = CRM_Var_Flat(29*pver+1+singleleno:30*pver+singleleno) 
+          out_flux_qp(:)          = CRM_Var_Flat(30*pver+1+singleleno:31*pver+singleleno) 
+          out_precflux(:)         = CRM_Var_Flat(31*pver+1+singleleno:32*pver+singleleno)
+          out_qt_ls(:)            = CRM_Var_Flat(32*pver+1+singleleno:33*pver+singleleno) 
+          out_qt_trans(:)         = CRM_Var_Flat(33*pver+1+singleleno:34*pver+singleleno) 
+          out_qp_trans(:)         = CRM_Var_Flat(34*pver+1+singleleno:35*pver+singleleno)
+          out_qp_fall(:)          = CRM_Var_Flat(35*pver+1+singleleno:36*pver+singleleno)
+          out_qp_evp(:)           = CRM_Var_Flat(36*pver+1+singleleno:37*pver+singleleno)
+          out_qp_src(:)           = CRM_Var_Flat(37*pver+1+singleleno:38*pver+singleleno)
+          out_t_ls(:)             = CRM_Var_Flat(38*pver+1+singleleno:39*pver+singleleno)
+          out_qtotcrm(1:20)       = CRM_Var_Flat(39*pver+1+singleleno:39*pver+20+singleleno)
 
+          it = int(out_it)
+          jt = int(out_jt)
+          icheck_iorc = mod(int(out_global_rank-npes),orc_nsubdomains)
+          icheck_column = (int(out_global_rank)-npes-icheck_iorc+1)/orc_nsubdomains+1   
           fcount = structleno*pver+20+singleleno+1
+          write (iulog,*),'Check CRM_Var_Flat 2',myrank_global,state%crmrank(i,iorc),fleno+nflat,CRM_Var_Flat(7696),CRM_Var_Flat(7697)
+           write(iulog,*),'check fcount',singleleno,pver,singleleno,fcount,crm_nz,orc_nx
           do kk=1,crm_nz
             do jj=1,orc_ny
               do ii=1,orc_nx
@@ -2096,18 +2106,23 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           end do
 
           fcount = structleno*pver+20+singleleno + 1 + 17*chnksz
+           write(iulog,*),'check fcount2',singleleno,pver,singleleno,fcount,chnksz
+write (iulog,*),'Check CRM_Var_Flat3',myrank_global,state%crmrank(i,iorc),fleno+nflat,CRM_Var_Flat(7696),CRM_Var_Flat(7697)
           do ll=1,nmicro_fields_total
             do kk=1,crm_nz
               do jj=1,orc_ny
                 do ii=1,orc_nx
                   fcount=fcount+1
                   out_crm_micro(ii,jj,kk,ll) = CRM_Var_Flat(fcount)
+                  write(iulog,*),'out_crm_micro',icheck_column,ii+it,kk,ll,fcount,CRM_Var_Flat(fcount) 
                 end do
               end do
             end do
           end do
 
           fcount = structleno*pver+20+singleleno + 17*chnksz + 1 + orc_nx*orc_ny*crm_nz*nmicro_fields_total
+           write(iulog,*),'check fcount3',singleleno,pver,singleleno,fcount
+write (iulog,*),'Check CRM_Var_Flat 4',myrank_global,state%crmrank(i,iorc),fleno+nflat,CRM_Var_Flat(7696),CRM_Var_Flat(7697)
           do jj=1,orc_ny
             do ii=1,orc_nx
               fcount = fcount + 1
@@ -2119,10 +2134,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
          lchnk = lchnk_save
         !end do
         !write (iulog,*),'Check print0',state%crmrank(i,iorc),i,int(out_global_rank)i
-         it = int(out_it)
-         jt = int(out_jt)
-         icheck_iorc = mod(int(out_global_rank-npes),orc_nsubdomains)
-         icheck_column = (int(out_global_rank)-npes-icheck_iorc+1)/orc_nsubdomains+1
          if (state%isofflinecrm(i)) then
           write (iulog,*),'Receive data from->',int(out_global_rank),it,jt,icheck_column,icheck_iorc 
           do kk=1,crm_nz
