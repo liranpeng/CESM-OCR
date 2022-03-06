@@ -29,7 +29,7 @@ setenv PROJECT     ATM20009
 setenv JOB_QUEUE   $queue
 setenv SCRIPTDIR   $HOME/repositories/$CCSMTAG/CRM-orchestrator/runscript
 ### GRID OPTIONS <Liran>
-set crm_nx         = 32         # <<< change this one!
+set crm_nx         = 128         # <<< change this one!
 set crm_ny         = 1
 set crm_dx         = 4000
 set crm_dt         = 1

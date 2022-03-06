@@ -34,12 +34,12 @@ set crm_ny         = 1
 set crm_dx         = 4000
 set crm_dt         = 1
 set crm_nz         = 24
-set spcam_subx     = 4
+set spcam_subx     = 12
 set spcam_suby     = 1
 set spcam_orctotal = 12
 @ CRM_pcount       = $spcam_orctotal * $spcam_subx
 @ NPNN = $pcount +  $CRM_pcount
-set NNODE = 2
+set NNODE = 3
 setenv CASE        SPdev_liran2_1mom_crmnx${crm_nx}_crmny${crm_ny}_subx${spcam_subx}_suby${spcam_suby}_${spcam_orctotal}orc
 ## ====================================================================
 #   define directories <Please make sure the directories are correct>
