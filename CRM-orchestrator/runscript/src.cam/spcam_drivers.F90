@@ -512,7 +512,7 @@ subroutine tphysbc_spcam (ztodt, state,   &
          do i=1,orc_total 
            state%isorchestrated(i) = .true.
            ! ====> Turn on online CRM Here
-            !state%isofflinecrm    = .false.
+            state%isofflinecrm    = .false.
          end do
          do i=1,orc_rank_total
            ! each of which is to be linked (for now) to a single-core CRM in the external
@@ -531,16 +531,13 @@ subroutine tphysbc_spcam (ztodt, state,   &
         if (state%isorchestrated(i)) then
           do ii=1,orc_nsubdomains
             state%crmrank(i,ii) = npes+(i-1)*orc_nsubdomains+ii-1
-          write (iulog,*) 'MDEBUG Liran =',i,ii,state%crmrank(i,ii),orc_total,state%isorchestrated(i)
           end do
         end if
 
         if (state%crmrank0(i) .ne. -2) then
-          write (iulog,*) 'MDEBUG npes=',npes !--> note this is GCM npes, e.g.
           !validated at 50.
           dest = npes+state%crmrank0(i)*rank_offset
           gcmrank(1) = iam
-          write (iulog,*) 'MDEBUG trying to send to CRM on global rank=',dest
           call MPI_Send(gcmrank,1,MPI_INTEGER,dest,54321,MPI_COMM_WORLD,ierr)
         end if
       end do 

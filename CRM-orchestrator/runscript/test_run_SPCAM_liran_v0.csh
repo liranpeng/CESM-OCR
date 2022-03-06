@@ -7,14 +7,14 @@ set queue          = development
 set account        = ATM20009
 set run_start_date = "0001-01-01"
 set pcount         = 50
-set CRM_pcount     = 12          
-@ NPNN = $pcount +  $CRM_pcount
-set NNODE = 2
+#set CRM_pcount     = 48          
+#@ NPNN = $pcount +  $CRM_pcount
+#set NNODE = 2
 ## ====================================================================
 #   define case
 ## ====================================================================
 setenv CCSMTAG     CESM-OCR
-setenv CASE        SPdev_liran_1mom_v864
+#setenv CASE        SPdev_liran_1mom_crmnx128_subx4_12orc
 #bloss(2021-01-22): Revert to basic case for testing
 #setenv CASESET     HIST_CAM%SPCAMS_CLM50%SP_CICE%PRES_DOCN%DOM_RTM_SGLC_SWAV
 #setenv CASERES     f19_f19_mg17
@@ -34,6 +34,13 @@ set crm_ny         = 1
 set crm_dx         = 4000
 set crm_dt         = 1
 set crm_nz         = 24
+set spcam_subx     = 2
+set spcam_suby     = 1
+set spcam_orctotal = 12
+@ CRM_pcount       = $spcam_orctotal * $spcam_subx
+@ NPNN = $pcount +  $CRM_pcount
+set NNODE = 2
+setenv CASE        SPdev_liran2_1mom_crmnx${crm_nx}_crmny${crm_ny}_subx${spcam_subx}_suby${spcam_suby}_${spcam_orctotal}orc
 ## ====================================================================
 #   define directories <Please make sure the directories are correct>
 ## ====================================================================
@@ -77,7 +84,7 @@ cd $CCSMROOT/cime/scripts
 cd  $CASEROOT
 sed -e "s/NPN/$NPNN/g; s/NNODE/$NNODE/g; s/CASE_FOLDER/$CASE/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.sample > $CASEROOT/.case.run
 sed -e "s/GCM_pcount/$pcount/g; s/CRM_pcount/$CRM_pcount/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/env_mach_specific.sample  > $CASEROOT/env_mach_specific.xml
-sed -e "s/NXX/$crm_nx/g; s/NYY/$crm_ny/g; s/DXX/$crm_dx/g; s/DTT/$crm_dt/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/config_component.sample > $HOME/repositories/CESM-OCR/components/cam/cime_config/config_component.xml
+sed -e "s/ORCTOTAL/$spcam_orctotal/g; s/SUBX/$spcam_subx/g; s/SUBY/$spcam_suby/g; s/NXX/$crm_nx/g; s/NYY/$crm_ny/g; s/DXX/$crm_dx/g; s/DTT/$crm_dt/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/config_component.sample > $HOME/repositories/CESM-OCR/components/cam/cime_config/config_component.xml
 cat <<EOF >> user_nl_drv
 atm_cpl_dt = 10
 EOF

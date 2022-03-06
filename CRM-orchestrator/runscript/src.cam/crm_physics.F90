@@ -1142,6 +1142,7 @@ end subroutine crm_init_cnst
    integer,parameter :: fleno      = structleno*pver+singleleno+1+20
    integer,parameter :: nflat =  17*(orc_nx*orc_ny*crm_nz) + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny
    real(r8),dimension(fleno+nflat) :: CRM_Var_Flat
+   double precision :: wall(6), sys(6), usr(6)
 #endif
    zero = 0.0_r8
 
@@ -1150,7 +1151,7 @@ end subroutine crm_init_cnst
 !  CRM (Superparameterization).
 ! Author: Marat Khairoutdinov (mkhairoutdin@ms.cc.sunysb.edu)
 !========================================================
-
+   call t_stampf(wall(1), usr(1), sys(1))
    call t_startf ('crm')
 
    allocate(crm_micro(pcols,crm_nx,crm_ny,crm_nz,nmicro_fields_total))
@@ -1328,6 +1329,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
    !------------------------- 
    !------------------------- 
    if(is_first_step()) then
+       !call t_stampf(wall(1), usr(1), sys(1))
        do k=1,crm_nz
           m = pver-k+1
           do i=1,ncol
@@ -1345,7 +1347,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
                 crm_v(i,:,:,k) = state_loc%v(i,m)
              endif
              crm_w(i,:,:,k) = 0._r8
-             !write (13,*),'MPI init w',myrank_global,i,k,crm_w(i,:,:,k)
              crm_t(i,:,:,k) = state_loc%t(i,m)
 
              if (is_spcam_sam1mom)  then
@@ -1399,9 +1400,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
              cld_rad(i,:,:,k)      = 0._r8
          end do
        end do
-       !do i=1,ncol
-       !  write(iulog,*) 'Check Init u: ',i,crm_u(i,:,:,:)
-       !end do
        ! use radiation from grid-cell mean radctl on first time step
        prec_crm (:,:,:)          = 0._r8
        ptend_loc%q(:,:,1)        = 0._r8
@@ -1509,12 +1507,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 
        call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 
-       !do i=1,ncol
-       !  write(iulog,*) 'Check step2 u: ',myrank_global,i,crm_u(i,:,:,:)
-       !end do
-
-
-       !write (iulog,*),'MPI init w1',myrank_global,crm_w(1,:,:,:)
        ptend_loc%q(:,:,1)        = 0._r8
        ptend_loc%q(:,:,ixcldliq) = 0._r8
        ptend_loc%q(:,:,ixcldice) = 0._r8
@@ -1700,7 +1692,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           end if 
           crm_start_ind = (iorc-1)*crm_step+1
           crm_end_ind   = (iorc)*crm_step-1+1
-          write(iulog,*) 'Check new method:',myrank_global,i,lchnk,dest,crm_start_ind,crm_end_ind
           call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           chnksz = orc_nx*orc_ny*crm_nz
           call get_gcol_all_p(lchnk, pcols, gcolindex)
@@ -1824,10 +1815,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
               end do
             end do
           end do
-        !write(iulog,*) 'check na:',na,nb,nc
-        !write(iulog,*) 'Send 1:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,1)
-        !write(iulog,*) 'Send 3:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,3)
-          !write (iulog,*),'Finish send: ', crm_micro(i_save,:,:,:,3) 
           fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields_total
           do jj=1,crm_ny
             do ii=crm_start_ind,crm_end_ind
@@ -1850,10 +1837,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
             Var_Flat2(fcount + 8 * crm_nz) = work_qp0(kk)
             Var_Flat2(fcount + 9 * crm_nz) = work_tke0(kk)
           end do
-          !write (iulog,*),'Send Check',i,iorc,dest,crm_start_ind,crm_end_ind
-          !write (iulog,*),'Send Check qv0',i,iorc,work_qv0
-          !write (iulog,*),'Send Check q',i,iorc,work_q
-          !write (iulog,*),'Send Check qn',i,iorc,work_qn
           call MPI_Send(Var_Flat(:)         ,flen,MPI_REAL8 ,dest,9018,MPI_COMM_WORLD,ierr)
           call MPI_Send(Var_Flat2(:)         ,flen2,MPI_REAL8,dest,9019,MPI_COMM_WORLD,ierr)
           end do !do iorc=1,orc_nsubdomains
@@ -1861,26 +1844,10 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
       end do !do i = 1,ncol
 #endif
 
-        !if (state%isorchestrated(i))then
-        !write(iulog,*) 'check na:',na,nb,nc
-        !write(iulog,*) 'After send 1:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,1)
-        !write(iulog,*) 'After send 3:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,3)
-        !end if
-
       do i = 1,ncol
-        !if (state%isorchestrated(i))then
          i_save  = i
          nsubdomains_x  = 1
          call crm_define_grid()
-         !write (iulog,*),'call default crf',myrank_global,lchnk,i_save
-         !if (state%isorchestrated(i))then
-         !write (iulog,*),'check micro',i_save,crm_micro(i_save,:,:,:,:)
-         !endif
-        !if (state%isorchestrated(i))then
-        !write(iulog,*) 'check na:',na,nb,nc
-        !write(iulog,*) 'Before default crm 1:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,1)
-        !write(iulog,*) 'Before default crm 3:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,3)
-        !end if
  
         if (state%isofflinecrm(i))then
          call crm (lchnk,      i_save,                                                                                            &
@@ -1937,16 +1904,8 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
              fluxu0,             fluxv0,               fluxt0,                fluxq0,                                        & 
              taux_crm(i_save),        tauy_crm(i_save),          z0m(i_save),                timing_factor(i_save),        qtotcrm(i_save, :)         )   
 
-        write (iulog,*),'Finish call default 1 crm',lchnk,i_save,crm_micro(i_save,1:10,:,10:15,1)
-        write (iulog,*),'Finish call default 2 crm',lchnk,i_save,crm_micro(i_save,1:10,:,10:15,2)
-        write (iulog,*),'Finish call default 3 crm',lchnk,i_save,crm_micro(i_save,1:10,:,10:15,3)
         end if !if (state%isofflinecrm(i))then
-        !if (state%isorchestrated(i))then
-        !write(iulog,*) 'After default crm:',i_save,crm_micro(i_save,:,:,:,3)
-        !end if
-        ! end if   ! if (state%isorchestrated(i))then
        end do  !do i = 1,ncol
-       write (iulog,*),'Finish call crm module at rank: ',myrank_global
        do i = 1,ncol
         ! re: next args in call to crm () are ptend* which despite being declared inout are actually output.
 
@@ -1992,8 +1951,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
          ! against standard inline solution below to build credibility / as a
          ! unit test.
 
-! Liran Start Here   ======================================================
-         ! write (iulog,*) 'Liran Check Start Receving data from CRM'
           ! ---------- flattened multi-dim CRM inputs, prepackaged in
           ! crm_physics -------
 #ifdef ORCHESTRATOR
@@ -2001,9 +1958,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
          do iorc=1,orc_nsubdomains
          !if (state%crmrank0(i) .ne. -2) then ! is this column coupled to an external CRM?
           call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-          write (iulog,*),'MPI Recv start!',myrank_global,state%crmrank(i,iorc),state%isorchestrated(i)
           call MPI_Recv(CRM_Var_Flat,fleno+nflat,MPI_REAL8,MPI_ANY_SOURCE,8006,MPI_COMM_WORLD,status,ierr)
-          write (iulog,*),'Check CRM_Var_Flat 1',myrank_global,state%crmrank(i,iorc),fleno+nflat,CRM_Var_Flat(7696),CRM_Var_Flat(7697)
           out_precc               = CRM_Var_Flat(1 ) 
           out_precl               = CRM_Var_Flat(2 )
           out_precsc              = CRM_Var_Flat(3 )
@@ -2031,7 +1986,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           out_jt                  = CRM_Var_Flat(25)
           out_jt_crm              = CRM_Var_Flat(26)
           out_mx_crm              = CRM_Var_Flat(27)
-!print*,'test_new add',out_jt_crm,out_mx_crm
           out_qltend              = CRM_Var_Flat(        1+singleleno:  pver+singleleno)
           out_qcltend             = CRM_Var_Flat( 1*pver+1+singleleno:2*pver+singleleno) 
           out_qiltend             = CRM_Var_Flat( 2*pver+1+singleleno:3*pver+singleleno) 
@@ -2078,8 +2032,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           icheck_iorc = mod(int(out_global_rank-npes),orc_nsubdomains)
           icheck_column = (int(out_global_rank)-npes-icheck_iorc+1)/orc_nsubdomains+1   
           fcount = structleno*pver+20+singleleno+1
-          write (iulog,*),'Check CRM_Var_Flat 2',myrank_global,state%crmrank(i,iorc),fleno+nflat,CRM_Var_Flat(7696),CRM_Var_Flat(7697)
-           write(iulog,*),'check fcount',singleleno,pver,singleleno,fcount,crm_nz,orc_nx
           do kk=1,crm_nz
             do jj=1,orc_ny
               do ii=1,orc_nx
@@ -2106,23 +2058,18 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           end do
 
           fcount = structleno*pver+20+singleleno + 1 + 17*chnksz
-           write(iulog,*),'check fcount2',singleleno,pver,singleleno,fcount,chnksz
-write (iulog,*),'Check CRM_Var_Flat3',myrank_global,state%crmrank(i,iorc),fleno+nflat,CRM_Var_Flat(7696),CRM_Var_Flat(7697)
           do ll=1,nmicro_fields_total
             do kk=1,crm_nz
               do jj=1,orc_ny
                 do ii=1,orc_nx
                   fcount=fcount+1
                   out_crm_micro(ii,jj,kk,ll) = CRM_Var_Flat(fcount)
-                  write(iulog,*),'out_crm_micro',icheck_column,ii+it,kk,ll,fcount,CRM_Var_Flat(fcount) 
                 end do
               end do
             end do
           end do
 
           fcount = structleno*pver+20+singleleno + 17*chnksz + 1 + orc_nx*orc_ny*crm_nz*nmicro_fields_total
-           write(iulog,*),'check fcount3',singleleno,pver,singleleno,fcount
-write (iulog,*),'Check CRM_Var_Flat 4',myrank_global,state%crmrank(i,iorc),fleno+nflat,CRM_Var_Flat(7696),CRM_Var_Flat(7697)
           do jj=1,orc_ny
             do ii=1,orc_nx
               fcount = fcount + 1
@@ -2130,12 +2077,8 @@ write (iulog,*),'Check CRM_Var_Flat 4',myrank_global,state%crmrank(i,iorc),fleno
             end do
           end do
          call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-         !write (iulog,*),'MPI Recv finish!',myrank_global,state%crmrank0(i),i,lchnk,lchnk_save
          lchnk = lchnk_save
-        !end do
-        !write (iulog,*),'Check print0',state%crmrank(i,iorc),i,int(out_global_rank)i
          if (state%isofflinecrm(i)) then
-          write (iulog,*),'Receive data from->',int(out_global_rank),it,jt,icheck_column,icheck_iorc 
           do kk=1,crm_nz
             work_crm_u(kk)      = 0.0
             work_crm_v(kk)      = 0.0
@@ -2411,7 +2354,6 @@ write (iulog,*),'Check CRM_Var_Flat 4',myrank_global,state%crmrank(i,iorc),fleno
                 orc_prec_crm(i,ii+it,jj+jt)  = out_prec_crm(ii,jj)
               end do
             end do
-          !write (iulog,*),'Check print 17',int(out_global_rank),it,jt,icheck_column,icheck_iorc,out_crm_u
           
           do kk=1,crm_nz
             do jj=1,orc_ny
@@ -2532,9 +2474,11 @@ write (iulog,*),'Check CRM_Var_Flat 4',myrank_global,state%crmrank(i,iorc),fleno
           t_ls(icheck_column,kk)                           = out_t_ls(kk)
           prectend(icheck_column)                          = out_prectend
           precstend(icheck_column)                         = out_precstend
-          !cam_in%ocnfrac(icheck_column)                    = out_ocnfrac
        end do
-
+       call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+       !call t_stampf(wall(2), usr(2), sys(2))
+       !wall(1) = wall(2)-wall(1)
+       !write(iulog,*),'Rank,time: ',myrank_global,wall(1)
         do kk=1,20
           qtotcrm(icheck_column,kk)                        = out_qtotcrm(kk) 
         end do
@@ -2570,7 +2514,10 @@ write (iulog,*),'Check CRM_Var_Flat 4',myrank_global,state%crmrank(i,iorc),fleno
        endif
        end do ! i (loop over ncol)
        call t_stopf('crm_call')
-
+       call t_stampf(wall(2), usr(2), sys(2))
+       wall(1) = wall(2)-wall(1)
+       call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+       write(iulog,*),'Rank,time: ',myrank_global,wall(1)
        ! There is no separate convective and stratiform precip for CRM:
        precc(:ncol)  = precc(:ncol) + precl(:ncol)
        precl(:ncol)  = 0._r8

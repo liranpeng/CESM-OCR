@@ -120,6 +120,7 @@ subroutine crm_physics_register()
       print*,'_________________________________________'
       print*,'_ Super-parameterization run ____________'
       print*,'crm_nx=',crm_nx,'   crm_ny=',crm_ny,'   crm_nz=',crm_nz
+      print*,'subdomain_x=',SPCAM_ORC_NSUBDOMAINS_X,'subdomain_y=',SPCAM_ORC_NSUBDOMAINS_Y
       print*,'crm_dx=',crm_dx,'   crm_dy=',crm_dy,'   crm_dt=',crm_dt
       if (is_spcam_sam1mom) print*,'Microphysics: SAM1MOM'
       if (is_spcam_m2005)   print*,'Microphysics: M2005'

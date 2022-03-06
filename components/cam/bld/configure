@@ -105,8 +105,11 @@ OPTIONS
      -rad <name>        Specify the radiation package [rrtmg | camrt]
      -silhs             Switch on SILHS.
      -spcam_clubb_sgs   Turn on the SPCAM version of CLUBB
+     -spcam_orctotal <n>Total number of orc columns       
      -spcam_nx <n>      SPCAM x-grid. - defaults to 4 (note the CRM requires spcam_nx to be greater than or equal to 4)
      -spcam_ny <n>      SPCAM y-grid. - defaults to 1
+     -spcam_subx <n>      SPCAM sub domain in x
+     -spcam_suby <n>      SPCAM sub domain in y
      -spcam_dx <n>      SPCAM horizontal grid spacing.
      -spcam_dt <n>      SPCAM timestep.
      -unicon            Switch to turn on the UNICON scheme. Default: off.
@@ -300,8 +303,11 @@ GetOptions(
     "silhs"                     => \$opts{'silhs'},
     "s|silent"                  => \$opts{'silent'},
     "smp!"                      => \$opts{'smp'},
+    "spcam_orctotal=s"          => \$opts{'spcam_orctotal'},
     "spcam_nx=s"                => \$opts{'spcam_nx'},
     "spcam_ny=s"                => \$opts{'spcam_ny'},
+    "spcam_subx=s"              => \$opts{'spcam_subx'},
+    "spcam_suby=s"              => \$opts{'spcam_suby'},
     "spcam_dx=s"                => \$opts{'spcam_dx'},
     "spcam_dt=s"                => \$opts{'spcam_dt'},
     "spmd!"                     => \$opts{'spmd'},
@@ -769,9 +775,22 @@ if ($phys_pkg eq 'spcam_sam1mom' or $phys_pkg eq 'spcam_m2005') {
     if ($smp eq 'ON') {
         die "ERROR: SPCAM may not be used with threading $eol";
     }
-
    if ($print>=2) {print "Configure CAM for SPCAM (superparameterization) mode: $phys_pkg.$eol"; }
-
+   if (defined $opts{'spcam_orctotal'}) {
+       $cfg_ref->set('spcam_orctotal', $opts{'spcam_orctotal'});
+       my $spcam_total = $cfg_ref->get('spcam_orctotal');
+       if ($print>=2) {print "spcam_orctotal= $spcam_orctotal $eol"; }
+   }
+   if (defined $opts{'spcam_subx'}) {
+       $cfg_ref->set('spcam_subx', $opts{'spcam_subx'});
+       my $spcam_subx = $cfg_ref->get('spcam_subx');
+       if ($print>=2) {print "spcam_subx= $spcam_subx $eol"; }
+   }
+   if (defined $opts{'spcam_suby'}) {
+       $cfg_ref->set('spcam_suby', $opts{'spcam_suby'});
+       my $spcam_suby = $cfg_ref->get('spcam_suby');
+       if ($print>=2) {print "spcam_suby= $spcam_suby $eol"; }
+   }
    if (defined $opts{'spcam_nx'}) {
        $cfg_ref->set('spcam_nx', $opts{'spcam_nx'});
        my $spcam_nx = $cfg_ref->get('spcam_nx');
@@ -788,7 +807,7 @@ if ($phys_pkg eq 'spcam_sam1mom' or $phys_pkg eq 'spcam_m2005') {
    if (defined $opts{'spcam_dx'}) {
        $cfg_ref->set('spcam_dx', $opts{'spcam_dx'});
        my $spcam_dx = $cfg_ref->get('spcam_dx');
-       if ($print>=2) {print "spcam_nx= $spcam_dx $eol"; }
+       if ($print>=2) {print "spcam_dx= $spcam_dx $eol"; }
    }
    if (defined $opts{'spcam_dt'}) {
        $cfg_ref->set('spcam_dt', $opts{'spcam_dt'});
@@ -1779,6 +1798,9 @@ if ($pergro eq "ON") { $cfg_cppdefs .= " -DPERGRO"; }
 
 # Building for superparameterization
 my $spcam_clubb_sgs = $cfg_ref->get('spcam_clubb_sgs');
+my $spcam_orctotal  = $cfg_ref->get('spcam_orctotal');
+my $spcam_subx      = $cfg_ref->get('spcam_subx');
+my $spcam_suby      = $cfg_ref->get('spcam_suby');
 my $spcam_nx        = $cfg_ref->get('spcam_nx');
 my $spcam_ny        = $cfg_ref->get('spcam_ny');
 my $spcam_nz        = $cfg_ref->get('spcam_nz');
@@ -1789,7 +1811,7 @@ my $yes3Dval        = 1;  # default to 3D for spcam
 if ($spcam_ny eq 1) {$yes3Dval = 0;}  #Turn off if not using 3D
 
 if ($phys_pkg eq 'spcam_m2005' or $phys_pkg eq 'spcam_sam1mom') {
-    $cfg_cppdefs .= " -DSPCAM_NX=$spcam_nx -DSPCAM_NY=$spcam_ny -DSPCAM_NZ=$spcam_nz -DSPCAM_DX=$spcam_dx -DSPCAM_DT=$spcam_dt -DYES3DVAL=$yes3Dval -DCRM ";
+    $cfg_cppdefs .= "-DSPCAM_ORCTOTAL=$spcam_orctotal -DSPCAM_SUBX=$spcam_subx -DSPCAM_SUBY=$spcam_suby -DSPCAM_NX=$spcam_nx -DSPCAM_NY=$spcam_ny -DSPCAM_NZ=$spcam_nz -DSPCAM_DX=$spcam_dx -DSPCAM_DT=$spcam_dt -DYES3DVAL=$yes3Dval -DCRM ";
     if ( $spcam_clubb_sgs == 1 )    {
         $cfg_cppdefs .= "-DSPCAM_CLUBB_SGS -DCLUBB_CRM -DCLUBB_REAL_TYPE=dp -DCLUBB_SAM";  ## -DNO_LAPACK_ISNAN";
     }
