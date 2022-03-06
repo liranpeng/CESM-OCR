@@ -1688,7 +1688,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           if (mod(crm_nx,orc_nsubdomains).eq.0) then
             crm_step = int(crm_nx/orc_nsubdomains)
           else
-            write(iulog,*) 'WARNING!! crm_nx is not dividable by orc_nsubdomains'
+            write(iulog,*) 'WARNING!! crm_nx is not dividable by orc_nsubdomains',crm_nx,orc_nsubdomains
           end if 
           crm_start_ind = (iorc-1)*crm_step+1
           crm_end_ind   = (iorc)*crm_step-1+1
