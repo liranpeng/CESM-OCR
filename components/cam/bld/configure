@@ -779,17 +779,14 @@ if ($phys_pkg eq 'spcam_sam1mom' or $phys_pkg eq 'spcam_m2005') {
    if (defined $opts{'spcam_orctotal'}) {
        $cfg_ref->set('spcam_orctotal', $opts{'spcam_orctotal'});
        my $spcam_orctotal = $cfg_ref->get('spcam_orctotal');
-       if ($print>=2) {print "spcam_orctotal= $spcam_orctotal $eol"; }
    }
    if (defined $opts{'spcam_subx'}) {
        $cfg_ref->set('spcam_subx', $opts{'spcam_subx'});
        my $spcam_subx = $cfg_ref->get('spcam_subx');
-       if ($print>=2) {print "spcam_subx= $spcam_subx $eol"; }
    }
    if (defined $opts{'spcam_suby'}) {
        $cfg_ref->set('spcam_suby', $opts{'spcam_suby'});
        my $spcam_suby = $cfg_ref->get('spcam_suby');
-       if ($print>=2) {print "spcam_suby= $spcam_suby $eol"; }
    }
    if (defined $opts{'spcam_nx'}) {
        $cfg_ref->set('spcam_nx', $opts{'spcam_nx'});
@@ -802,17 +799,14 @@ if ($phys_pkg eq 'spcam_sam1mom' or $phys_pkg eq 'spcam_m2005') {
    if (defined $opts{'spcam_ny'}) {
        $cfg_ref->set('spcam_ny', $opts{'spcam_ny'});
        my $spcam_ny = $cfg_ref->get('spcam_ny');
-       if ($print>=2) {print "spcam_ny= $spcam_ny $eol"; }
    }
    if (defined $opts{'spcam_dx'}) {
        $cfg_ref->set('spcam_dx', $opts{'spcam_dx'});
        my $spcam_dx = $cfg_ref->get('spcam_dx');
-       if ($print>=2) {print "spcam_dx= $spcam_dx $eol"; }
    }
    if (defined $opts{'spcam_dt'}) {
        $cfg_ref->set('spcam_dt', $opts{'spcam_dt'});
        my $spcam_dt = $cfg_ref->get('spcam_dt');
-       if ($print>=2) {print "spcam_nt= $spcam_dt $eol"; }
    }
 
 }

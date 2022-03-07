@@ -1,7 +1,7 @@
 #!/bin/csh
 # This script automatically download cesm2 
 # Once the job is finished, it helps to submit the job
-set run_time       = 01:00:00
+set run_time       = 00:30:00
 #set queue          = skx-normal
 set queue          = normal
 set account        = ATM20009
@@ -30,15 +30,15 @@ setenv JOB_QUEUE   $queue
 setenv SCRIPTDIR   $HOME/repositories/$CCSMTAG/CRM-orchestrator/runscript
 ### GRID OPTIONS <Liran>
 set crm_nx         = NNNX         # <<< change this one!
-set crm_ny         = 1
+set crm_ny         = 32
 set crm_dx         = 4000
 set crm_dt         = 1
 set crm_nz         = 24
 set spcam_subx     = SBX
-set spcam_suby     = 1
+set spcam_suby     = SBX
 set spcam_orctotal = 12
 @ CRM_pcount       = $spcam_orctotal * $spcam_subx
-@ NPNN = $pcount +  $CRM_pcount
+@ NPNN = $pcount +  $CRM_pcount + 1
 @ NNODE0 = $NPNN / 50 + 1
 @ NNODE  = 3
 if (${NNODE0} > 3) then
@@ -124,7 +124,7 @@ cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothre
 mpif90  -o /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/crm.exe task_exchange.o crmx_pressure_ORC.o crmx_press_rhs_ORC.o crmx_kurant_ORC.o task_dispatch.o task_assign_bnd.o crmx_mpi.o crmx_task_util_ORC.o crmx_task_init_ORC.o crmdims.o ppgrid.o crmx_crm_module_ORC.o  shr_kind_mod.o phys_grid.o TwoExecutableDriver.o -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -latm -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lice  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/mct/noesmf/lib/ -lclm  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -locn  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lrof  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lglc  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lwav  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lesp  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -liac -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/mct/noesmf/c1a1l1i1o1r1g1w1i1e1/lib -lcsm_share -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/lib -lpiof -lpioc -lgptl -lmct -lmpeu  -lpthread   -mkl=cluster   -L/opt/apps/intel19/impi19_0/parallel-netcdf/4.7.4/x86_64 -lnetcdff -Wl,--as-needed,-L/opt/apps/intel19/impi19_0/parallel-netcdf/4.7.4/x86_64/lib -lnetcdff -lnetcdf  -L/opt/apps/intel19/impi19_0/pnetcdf/1.11.2/lib -lpnetcdf
 cd  $CASEROOT
 ./case.submit
-sbatch --time 02:00:00 -p ${queue} --nodes=${NNODE} --account ATM20009 .case.run --resubmit
+sbatch --time ${run_time} -p ${queue} --nodes=${NNODE} --account ATM20009 .case.run --resubmit
 cd ..
 #./case.submit
 

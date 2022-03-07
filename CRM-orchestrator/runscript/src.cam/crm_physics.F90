@@ -97,7 +97,7 @@ subroutine crm_physics_register()
   use physconst,       only: mwdry, cpair
   use physics_buffer,  only: dyn_time_lvls, pbuf_add_field, dtype_r8
   use phys_control,    only: phys_getopts, cam_physpkg_is
-  use crmdims,         only: crm_nx, crm_ny, crm_nz, crm_dx, crm_dy, crm_dt, nclubbvars
+  use crmdims,         only: crm_nx, crm_ny, crm_nz, crm_dx, crm_dy, crm_dt, nclubbvars,orc_nsubdomains_x,orc_nsubdomains_y,orc_nsubdomains,orc_total
   use cam_history_support,only: add_hist_coord
   use crmx_setparm_mod,     only: setparm
   use rad_constituents, only: rad_cnst_get_info
@@ -131,6 +131,8 @@ subroutine crm_physics_register()
       print*,'_ Super-parameterization run ____________'
       print*,'crm_nx=',crm_nx,'   crm_ny=',crm_ny,'   crm_nz=',crm_nz
       print*,'crm_dx=',crm_dx,'   crm_dy=',crm_dy,'   crm_dt=',crm_dt
+      print*,'crm_subx=',orc_nsubdomains_x,'   crm_suby=',orc_nsubdomains_y
+      print*,'orc subdomains=',orc_nsubdomains,'    orc_total=',orc_total 
       if (is_spcam_sam1mom) print*,'Microphysics: SAM1MOM'
       if (is_spcam_m2005)   print*,'Microphysics: M2005'
       print*,'_________________________________________'

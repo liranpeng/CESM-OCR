@@ -7,6 +7,7 @@ program TwoExecutableDriver
   use crmx_crm_module_orc,     only: crm_orc
   use crmx_mpi
   use crmx_grid
+  use perf_mod, only : t_startf, t_stopf, t_stampf
 !  use ppgrid,          only: pcols
 !  use spmd_utils, only: npes
   implicit none
@@ -64,7 +65,7 @@ program TwoExecutableDriver
   real(r8),dimension(flen ) :: inp_Var_Flat
   real(r8),dimension(flen2) :: inp_Var_Flat2
   real(r8),dimension(flen3) :: out_Var_Flat
-
+  double precision :: wall(6), sys(6), usr(6)
   include 'mpif.h'
 
   ! initialize MPI alongside CESM call in cime_comp_mod.F90
@@ -140,6 +141,7 @@ program TwoExecutableDriver
   write(13,*) 'CRM Init Check',EndFlag,myrank_crm_in,myrank_crm,myrank_global
   do while (EndFlag.eq.0)
   write(13,*) 'Enter Loop!!'
+  call t_stampf(wall(1), usr(1), sys(1))
   ! ----------- Receive from cesm.exe/crm_physics inputs to CRM right before call to crm() ----------------
 ! =====================================================================================
 ! Receive from GCM, in order, the input ingredients expected by crm subroutine:
@@ -438,7 +440,9 @@ write(13,*) 'Liran start send data back',myrank_crm,it,jt
     end do
   end do
   call MPI_Send(out_Var_Flat,flen3,MPI_REAL8,destGCM0,8006,MPI_COMM_WORLD,ierr)
-write(13,*) 'Finish send data back'
+  call t_stampf(wall(2), usr(2), sys(2))
+  wall(1) = wall(2)-wall(1)
+  write(13,*) 'Finish Time',wall(1)
  end do
   call MPI_comm_free(crm_comm, ierr)
   call MPI_comm_free(crm_comm_in, ierr)
