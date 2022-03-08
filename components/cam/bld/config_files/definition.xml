@@ -302,15 +302,6 @@ bluegene systems $OSNAME has the value "linux".
 <entry id="spcam_clubb_sgs" valid_values="0,1" value="0">
 Switch to turn on SPCAM version of CLUBB_SGS package: 0 => no, 1 => yes
 </entry>
-<entry id="spcam_orctotal" value="12">
-SPCAM number of orc columns
-</entry>
-<entry id="spcam_subx" value="1">
-SPCAM number of grid points in x
-</entry>
-<entry id="spcam_suby" value="1">
-SPCAM number of grid points in y
-</entry>
 <entry id="spcam_nx" value="4">
 SPCAM number of grid points in x
 </entry>
