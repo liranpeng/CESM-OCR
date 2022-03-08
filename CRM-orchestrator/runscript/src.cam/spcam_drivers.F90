@@ -499,6 +499,8 @@ subroutine tphysbc_spcam (ztodt, state,   &
     call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
     !if(nstep.eq.1) then
     ! pritch -- default, columns are not orchestrated:
+    state%crmrank0(:ncol) = -2
+    state%crmrank1(:ncol) = -2
     state%crmrank         = -2
     state%isorchestrated  = .false.
     state%isofflinecrm    = .true.
@@ -510,8 +512,16 @@ subroutine tphysbc_spcam (ztodt, state,   &
          do i=1,orc_total 
            state%isorchestrated(i) = .true.
            ! ====> Turn on online CRM Here
-           state%isofflinecrm    = .false.
-           write (iulog,*) 'ORC true on',i,orc_total 
+            state%isofflinecrm    = .false.
+         end do
+         do i=1,orc_rank_total
+           ! each of which is to be linked (for now) to a single-core CRM in the external
+           ! executable.
+           state%crmrank0(i) = i-1
+         end do
+         do i=0,orc_total-1
+           state%crmrank1(2*i+1) = -i
+           state%crmrank1(2*i+2) = -i-1
          end do
        end if
 
@@ -521,10 +531,14 @@ subroutine tphysbc_spcam (ztodt, state,   &
         if (state%isorchestrated(i)) then
           do ii=1,orc_nsubdomains
             state%crmrank(i,ii) = npes+(i-1)*orc_nsubdomains+ii-1
-            gcmrank(1) = iam
-            write (iulog,*) 'ORC check here',i,ii,orc_nsubdomains,state%crmrank(i,ii),gcmrank(1)
-            call MPI_Send(gcmrank,1,MPI_INTEGER,state%crmrank(i,ii),54321,MPI_COMM_WORLD,ierr)
           end do
+        end if
+
+        if (state%crmrank0(i) .ne. -2) then
+          !validated at 50.
+          dest = npes+state%crmrank0(i)*rank_offset
+          gcmrank(1) = iam
+          call MPI_Send(gcmrank,1,MPI_INTEGER,dest,54321,MPI_COMM_WORLD,ierr)
         end if
       end do 
     end if
