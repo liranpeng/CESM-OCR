@@ -3,10 +3,11 @@ program TwoExecutableDriver
   use shr_kind_mod,      only: i8 => SHR_KIND_I8
 !  use ppgrid,           only: pver
 !  use crmx_saturation, only:sat_mixrat_liq
-  use crmdims,         only: crm_nx, crm_ny,crm_nz,orc_nx,orc_ny,orc_nsubdomains
+  use crmdims,         only: crm_nx,crm_ny,crm_nz,orc_nx,orc_ny,orc_nsubdomains,orc_nsubdomains_x,orc_nsubdomains_y,orc_nsubdomains
   use crmx_crm_module_orc,     only: crm_orc
   use crmx_mpi
   use crmx_grid
+  use perf_mod, only : t_startf, t_stopf, t_stampf
 !  use ppgrid,          only: pcols
 !  use spmd_utils, only: npes
   implicit none
@@ -64,7 +65,7 @@ program TwoExecutableDriver
   real(r8),dimension(flen ) :: inp_Var_Flat
   real(r8),dimension(flen2) :: inp_Var_Flat2
   real(r8),dimension(flen3) :: out_Var_Flat
-
+  double precision :: wall(6), sys(6), usr(6)
   include 'mpif.h'
 
   ! initialize MPI alongside CESM call in cime_comp_mod.F90
@@ -140,13 +141,16 @@ program TwoExecutableDriver
   write(13,*) 'CRM Init Check',EndFlag,myrank_crm_in,myrank_crm,myrank_global
   do while (EndFlag.eq.0)
   write(13,*) 'Enter Loop!!'
+  call t_stampf(wall(1), usr(1), sys(1))
   ! ----------- Receive from cesm.exe/crm_physics inputs to CRM right before call to crm() ----------------
 ! =====================================================================================
 ! Receive from GCM, in order, the input ingredients expected by crm subroutine:
 ! =====================================================================================
   call MPI_Recv(inp_Var_Flat(:) ,flen   ,MPI_REAL8,MPI_ANY_SOURCE,9018,MPI_COMM_WORLD,status,ierr)
   call MPI_Recv(inp_Var_Flat2(:) ,flen2,MPI_REAL8,MPI_ANY_SOURCE,9019,MPI_COMM_WORLD,status,ierr)
-  write(13,*) 'Finish receiving',myrank_crm_in
+  call t_stampf(wall(2), usr(2), sys(2))
+  wall(3) = wall(2)-wall(1)
+  write(13,*) 'Finish receiving',myrank_crm_in,wall(3)
   call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
   inp01_lchnk         = int(inp_Var_Flat(1))
   inp02_i             = int(inp_Var_Flat(2))
@@ -251,8 +255,6 @@ program TwoExecutableDriver
         outin16_cld_rad(ii,jj,kk)  = inp_Var_Flat2(fcount + 14* chnksz)
         crm_tk(ii,jj,kk)           = inp_Var_Flat2(fcount + 15* chnksz)
         crm_tkh(ii,jj,kk)          = inp_Var_Flat2(fcount + 16* chnksz)
-!write (13,*),'Receive t',ii,kk,outin04_crm_t(ii,jj,kk)
-!write (13,*),'CALL CRM_ORC ww!',myrank_global,ii,jj,kk,outin03_crm_w(ii,jj,kk)
       end do
     end do
   end do
@@ -268,7 +270,6 @@ program TwoExecutableDriver
       end do
     end do
   end do
-!write(13,*) 'CRM receive',myrank_crm,  outin05_crm_micro(:,:,:,3)
   fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields_total
   do jj=1,orc_ny
     do ii=1,orc_nx
@@ -288,39 +289,13 @@ program TwoExecutableDriver
   crm_step = crm_nx/numproc_crm_in
   crm_start_ind = (myrank_crm_in)*crm_step+1
   crm_end_ind   = (myrank_crm_in+1)*crm_step-1+1 
-  !write(13,*) 'Liran Check again:', crm_comm_in,myrank_crm, myrank_global, numproc_crm_in,myrank_crm_in 
-  !write(13,*) 'Liran crm check->', crm_step,crm_start_ind,crm_end_ind
-  nsubdomains_x  = 2
+  nsubdomains_x  = orc_nsubdomains_x
+  nsubdomains_y  = orc_nsubdomains_y
+
   call crm_define_grid()
-  !write(13,*) 'Liran crm check2->',nx,crm_nx,nsubdomains_x 
   call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-  !write (13,*),'CALL CRM_ORC u all!',myrank_global,outin01_crm_u
-  !write (13,*),'CALL CRM_ORC u!',myrank_global,inp01_lchnk,outin01_crm_u(:,:,:)
-  !write (13,*),'CALL CRM_ORC w!',myrank_global,inp01_lchnk,outin03_crm_w(:,:,:)
-  !write (13,*),'CALL CRM_ORC m1!',myrank_global,outin05_crm_micro(:,:,:,1)
   it = 0
   jt = 0
-  !call MPI_barrier(crm_comm_in, ierr)
-  !write(13,*) 'check orc receive crm_u:',outin01_crm_u(1:10,1,1)
-  !write(13,*) 'check orc receive crm_w:',outin03_crm_w(1:10,1,1)
-  !write(13,*) 'check orc receive crm_t:',outin04_crm_t(1:10,1,1)
-  !write(13,*) 'check orc receive crm_micro:',outin05_crm_micro(1:10,1,1,3)
-  !write(13,*) 'check orc receive crm_qrad:',outin06_crm_qrad(1:10,1,1)
-  !write(13,*) 'check orc receive crm_qc:',outin07_qc_crm(1:10,1,1)
-  !write(13,*) 'check orc receive crm_qi:',outin08_qi_crm(1:10,1,1)
-  !write(13,*) 'check orc receive crm_qpc:',outin09_qpc_crm(1:10,1,1)
-  !write(13,*) 'check orc receive crm_qpi:',outin10_qpi_crm(1:10,1,1)
-  !write(13,*) 'check orc receive crm_trad:',outin12_t_rad(1:10,1,1)
-  !write(13,*) 'check orc receive crm_qvrad:', outin13_qv_rad(1:10,1,1)
-        !write(13,*) 'Before crm orc 1:',inp02_i,inp01_lchnk,outin05_crm_micro(1:10,:,1:5,1)
-        !write(13,*) 'Before crm orc 3:',inp02_i,inp01_lchnk,outin05_crm_micro(1:10,:,1:5,3)
-write(13,*) 'Check ORC input',inp01_lchnk,inp02_i,inp03_tl(1:5),inp04_ql(1:5),inp05_qccl(1:5),inp06_qiil(1:5),inp07_ul(1:5),inp08_vl(1:5)
-write(13,*) 'Check 2',inp09_ps,inp10_pmid(1:5),inp11_pdel(1:5),inp12_phis,inp13_zm(1:5),inp14_zi(1:5),inp15_ztodt,out01_qltend(1:5),out02_qcltend(1:5)
-write(13,*) 'Check 3',out04_sltend(1:5),out01_qltend(1:5),out02_qcltend(1:5),out03_qiltend(1:5),out04_sltend(1:5),outin01_crm_u(:,:,1:3),outin02_crm_v(:,:,1:3)
-write(13,*) 'Check 4',outin03_crm_w(:,:,1:3),outin04_crm_t(:,:,1:3),outin05_crm_micro(:,:,1:3,1),outin06_crm_qrad(:,:,1:3),outin07_qc_crm(:,:,1:3),outin08_qi_crm(:,:,1:3)
-write(13,*) 'Check 5',outin09_qpc_crm(:,:,1:3),outin07_qc_crm(:,:,1:3),outin08_qi_crm(:,:,1:3),outin09_qpc_crm(:,:,1:3),outin10_qpi_crm(:,:,1:3),outin11_prec_crm(:,:)
-write(13,*) 'Check 6',outin12_t_rad(:,:,1:3),outin13_qv_rad(:,:,1:3),outin14_qc_rad(:,:,1:3),outin15_qi_rad(:,:,1:3),outin16_cld_rad(:,:,1:3),outin17_cld3d_crm(:,:,1:3)
-
   call crm_orc(it,jt,lon,lat,gcolindex,inp01_lchnk, inp02_i,                            &
             inp03_tl(:),inp04_ql(:),inp05_qccl(:),inp06_qiil(:), &
             inp07_ul(:),inp08_vl(:),inp09_ps,inp10_pmid(:),inp11_pdel(:), &
@@ -358,23 +333,10 @@ write(13,*) 'Check 6',outin12_t_rad(:,:,1:3),outin13_qv_rad(:,:,1:3),outin14_qc_
              taux_crm,        tauy_crm,          z0m, timing_factor,        qtotcrm( :)         &
             )
 ! ====================== DONE CALLING CRM -- TIME TO SEND OUTPUTS TO GCM
-  !write(13,*) 'check orc after crm_u:',outin01_crm_u(1:10,1,1)
-  !write(13,*) 'check orc after crm_w:',outin03_crm_w(1:10,1,1)
-  !write(13,*) 'check orc after crm_t:',outin04_crm_t(1:10,1,1)
-  !write(13,*) 'check orc after crm_micro:',outin05_crm_micro(1:10,1,1,3)
-  !write(13,*) 'check orc after crm_qrad:',outin06_crm_qrad(1:10,1,1)
-  !write(13,*) 'check orc after crm_qc:',outin07_qc_crm(1:10,1,1)
-  !write(13,*) 'check orc after crm_qi:',outin08_qi_crm(1:10,1,1)
-  !write(13,*) 'check orc after crm_qpc:',outin09_qpc_crm(1:10,1,1)
-  !write(13,*) 'check orc after crm_qpi:',outin10_qpi_crm(1:10,1,1)
-  !write(13,*) 'check orc after crm_trad:',outin12_t_rad(1:10,1,1)
-  !write(13,*) 'check orc after crm_qvrad:', outin13_qv_rad(1:10,1,1)
-write(13,*) 'check orc after crm_micro1:',inp02_i,inp01_lchnk,outin05_crm_micro(1:10,:,10:15,1)
-write(13,*) 'check orc after crm_micro2:',inp02_i,inp01_lchnk,outin05_crm_micro(1:10,:,10:15,2)
-write(13,*) 'check orc after crm_micro3:',inp02_i,inp01_lchnk,outin05_crm_micro(1:10,:,10:15,3)
-write(13,*) 'CRM_ORC run finish',myrank_global
   call MPI_barrier(crm_comm_in, ierr)
-write(13,*) 'Liran start send data back',myrank_crm,it,jt
+  call t_stampf(wall(2), usr(2), sys(2))
+  wall(4) = wall(2)-wall(1)
+write(13,*) 'Liran start send data back',myrank_crm,it,jt,wall(4)
   out_Var_Flat(        1)                               = precc
   out_Var_Flat(        2)                               = precl
   out_Var_Flat(        3)                               = precsc
@@ -445,7 +407,6 @@ write(13,*) 'Liran start send data back',myrank_crm,it,jt
   out_Var_Flat(39*pver+1+singleleno:39*pver+20+singleleno) = qtotcrm(1:20)
 
   fcount = structleno*pver+20+singleleno+1
-  write(13,*) 'check fcount orc',singleleno,pver,singleleno,fcount,crm_nz,orc_nx
   do kk=1,crm_nz
     do jj=1,orc_ny
       do ii=1,orc_nx
@@ -471,30 +432,27 @@ write(13,*) 'Liran start send data back',myrank_crm,it,jt
     end do
   end do
   fcount = structleno*pver+20+singleleno +1 + 17* chnksz
-  write(13,*) 'check fcount orc2',singleleno,pver,singleleno,fcount,chnksz
   do ll=1,nmicro_fields_total
     do kk=1,crm_nz
       do jj=1,orc_ny
         do ii=1,orc_nx
           fcount=fcount+1
           out_Var_Flat(fcount) = outin05_crm_micro(ii,jj,kk,ll) 
-          write(13,*) 'outin05_crm_micro',inp01_lchnk,inp02_i,ii,kk,ll,fcount,out_Var_Flat(fcount)
         end do
       end do
     end do
   end do
   !write(13,*) 'CRM send',myrank_crm,  outin01_crm_u
   fcount = structleno*pver+20+singleleno +1 + 17* chnksz +  orc_nx*orc_ny*crm_nz*nmicro_fields_total
-  write(13,*) 'check fcount orc3',singleleno,pver,singleleno,fcount,out_Var_Flat(7696),out_Var_Flat(7697)
   do jj=1,orc_ny
     do ii=1,orc_nx
       fcount = fcount + 1
       out_Var_Flat(fcount) = outin11_prec_crm(ii,jj)
     end do
   end do
-  write(13,*) 'CRM chunk,i',myrank_crm,destGCM0,inp01_lchnk,inp02_i,flen3,out_Var_Flat(7696),out_Var_Flat(7697)
   call MPI_Send(out_Var_Flat,flen3,MPI_REAL8,destGCM0,8006,MPI_COMM_WORLD,ierr)
-write(13,*) 'Finish send data back'
+  wall(5) = wall(2)-wall(1)
+  write(13,*) 'Finish Time',wall(5)
  end do
   call MPI_comm_free(crm_comm, ierr)
   call MPI_comm_free(crm_comm_in, ierr)
