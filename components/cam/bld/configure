@@ -105,7 +105,7 @@ OPTIONS
      -rad <name>        Specify the radiation package [rrtmg | camrt]
      -silhs             Switch on SILHS.
      -spcam_clubb_sgs   Turn on the SPCAM version of CLUBB
-     -spcam_orctotal <n> Total number of orc columns       
+     -spcam_orctotal <n>Total number of orc columns       
      -spcam_nx <n>      SPCAM x-grid. - defaults to 4 (note the CRM requires spcam_nx to be greater than or equal to 4)
      -spcam_ny <n>      SPCAM y-grid. - defaults to 1
      -spcam_subx <n>      SPCAM sub domain in x
@@ -778,7 +778,7 @@ if ($phys_pkg eq 'spcam_sam1mom' or $phys_pkg eq 'spcam_m2005') {
    if ($print>=2) {print "Configure CAM for SPCAM (superparameterization) mode: $phys_pkg.$eol"; }
    if (defined $opts{'spcam_orctotal'}) {
        $cfg_ref->set('spcam_orctotal', $opts{'spcam_orctotal'});
-       my $spcam_orctotal = $cfg_ref->get('spcam_orctotal');
+       my $spcam_total = $cfg_ref->get('spcam_orctotal');
        if ($print>=2) {print "spcam_orctotal= $spcam_orctotal $eol"; }
    }
    if (defined $opts{'spcam_subx'}) {
