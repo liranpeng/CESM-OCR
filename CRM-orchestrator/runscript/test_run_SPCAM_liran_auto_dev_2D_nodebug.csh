@@ -11,7 +11,7 @@ set CRM_pcount     = 12
 ## ====================================================================
 #   define case
 ## ====================================================================
-setenv CCSMTAG     CESM-OCR
+setenv CCSMTAG      CESM-OCR
 #setenv CASE        SPdev_liran_1mom_v864
 #bloss(2021-01-22): Revert to basic case for testing
 #setenv CASESET     HIST_CAM%SPCAMS_CLM50%SP_CICE%PRES_DOCN%DOM_RTM_SGLC_SWAV
@@ -36,8 +36,10 @@ set spcam_subx_in     = SUBXX
 set spcam_suby_in     = 1
 set spcam_orctotal_in = 50
 @ CRM_pcount       = $spcam_orctotal_in * $spcam_subx_in * $spcam_suby_in
+
 @ NPNN = $pcount +  $CRM_pcount
-@ NNODE = $NPNN / 50 + 1
+@ NPNNX = 50
+@ NNODE = $NPNN / $NPNNX + 1
 setenv CASE       scalling2_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
 ## ====================================================================
 #   define directories <Please make sure the directories are correct>
@@ -69,9 +71,9 @@ setenv DATADIR   /scratch1/07088/tg863871/inputdata # pritch, link to bloss' dow
 ## ====================================================================
 rm -rf $CASEROOT
 rm -rf $PTMP/$CASE
-cp $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/TwoExecutableDriver.F90 $HOME/repositories/CESM-OCR/components/cam/src/physics/spcam/crm/
-cp $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/src.cam/crmx_crm_module_ORC.F90 $HOME/repositories/CESM-OCR/components/cam/src/physics/spcam/crm/
-cp $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/src.cam/crmx_crm_module.F90 $HOME/repositories/CESM-OCR/components/cam/src/physics/spcam/crm/
+cp $HOME/repositories/$CCSMTAG/CRM-orchestrator/runscript/CRM/TwoExecutableDriver.F90 $HOME/repositories/$CCSMTAG/components/cam/src/physics/spcam/crm/
+cp $HOME/repositories/$CCSMTAG/CRM-orchestrator/runscript/src.cam/crmx_crm_module_ORC.F90 $HOME/repositories/$CCSMTAG/components/cam/src/physics/spcam/crm/
+cp $HOME/repositories/$CCSMTAG/CRM-orchestrator/runscript/src.cam/crmx_crm_module.F90 $HOME/repositories/$CCSMTAG/components/cam/src/physics/spcam/crm/
 #------------------
 ## create new case
 #------------------
@@ -80,10 +82,10 @@ cd $CCSMROOT/cime/scripts
 #./create_newcase --case $CASEROOT --pecount $pcount --pesfile ./pelayout_frontera01.xml --res $CASERES --machine $MACH --compset $CASESET --input-dir $DATADIR --output-root $CASEROOT --run-unsupported
 ./create_newcase --case $CASEROOT  --pecount $pcount --res $CASERES --machine $MACH --compset $CASESET --input-dir $DATADIR --output-root $CASEROOT  --run-unsupported
 cd  $CASEROOT
-sed -e "s/SUBXdim/$spcam_subx_in/g; s/SUBYdim/$spcam_suby_in/g; s/ORCT/$spcam_orctotal_in/g;" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/crmdims.sample > $HOME/repositories/CESM-OCR/components/cam/src/physics/spcam/crmdims.F90 
-sed -e "s/NPN/$NPNN/g; s/NNODE/$NNODE/g; s/CASE_FOLDER/$CASE/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.sample > $CASEROOT/.case.run
-sed -e "s/GCM_pcount/$pcount/g; s/CRM_pcount/$CRM_pcount/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/env_mach_specific.sample  > $CASEROOT/env_mach_specific.xml
-sed -e "s/NXX/$crm_nx_in/g; s/NYY/$crm_ny_in/g; s/DXX/$crm_dx_in/g; s/DTT/$crm_dt_in/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/config_component.sample > $HOME/repositories/CESM-OCR/components/cam/cime_config/config_component.xml
+sed -e "s/SUBXdim/$spcam_subx_in/g; s/SUBYdim/$spcam_suby_in/g; s/ORCT/$spcam_orctotal_in/g;" $HOME/repositories/$CCSMTAG/CRM-orchestrator/runscript/CRM/crmdims.sample > $HOME/repositories/$CCSMTAG/components/cam/src/physics/spcam/crmdims.F90 
+sed -e "s/NPN/$NPNNX/g; s/NNODE/$NNODE/g; s/CASE_FOLDER/$CASE/g" $HOME/repositories/$CCSMTAG/CRM-orchestrator/runscript/CRM/case.run.sample > $CASEROOT/.case.run
+sed -e "s/GCM_pcount/$pcount/g; s/CRM_pcount/$CRM_pcount/g" $HOME/repositories/$CCSMTAG/CRM-orchestrator/runscript/CRM/env_mach_specific.sample  > $CASEROOT/env_mach_specific.xml
+sed -e "s/NXX/$crm_nx_in/g; s/NYY/$crm_ny_in/g; s/DXX/$crm_dx_in/g; s/DTT/$crm_dt_in/g" $HOME/repositories/$CCSMTAG/CRM-orchestrator/runscript/CRM/config_component.sample > $HOME/repositories/$CCSMTAG/components/cam/cime_config/config_component.xml
 #cat <<EOF >> user_nl_drv
 #atm_cpl_dt = 10
 #EOF
