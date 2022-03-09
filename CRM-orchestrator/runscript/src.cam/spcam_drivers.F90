@@ -505,8 +505,8 @@ subroutine tphysbc_spcam (ztodt, state,   &
     do i=1,ncol
         do ii=1,orc_nsubdomains      
           gcmrank(1) = iam
-          state%crmrank(i,ii) = npes+gcmrank(1)*orc_nsubdomains+ii-1
-          write (iulog,*) 'MDEBUG=',myrank_global,begchunk,ncol,i,state%crmrank(i,ii)
+          state%crmrank(i,ii) = npes+gcmrank(1)*pcols*orc_nsubdomains+(i-1)*orc_nsubdomains+ii-1
+          write (iulog,*) 'MDEBUG=',myrank_global,begchunk,ncol,i,state%crmrank(i,ii),pcols
           call MPI_Send(gcmrank,1,MPI_INTEGER,state%crmrank(i,ii),54321,MPI_COMM_WORLD,ierr) 
         end do
     end do

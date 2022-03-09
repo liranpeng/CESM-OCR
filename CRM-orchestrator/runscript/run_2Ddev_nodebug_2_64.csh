@@ -6,8 +6,7 @@ set run_time       = 02:00:00
 set queue          = development
 set account        = ATM20009
 set run_start_date = "0001-01-01"
-set pcount         = 50
-set CRM_pcount     = 12          
+set pcount         = 48
 ## ====================================================================
 #   define case
 ## ====================================================================
