@@ -3,7 +3,7 @@
 # Once the job is finished, it helps to submit the job
 set run_time       = 02:00:00
 #set queue          = skx-normal
-set queue          = development
+set queue          = normal
 set account        = ATM20009
 set run_start_date = "0001-01-01"
 set pcount         = 50
@@ -34,10 +34,10 @@ set crm_dt_in         = 0.5
 set crm_nz_in         = 24
 set spcam_subx_in     = 2
 set spcam_suby_in     = 1
-set spcam_orctotal_in = 50
+set spcam_orctotal_in = 384
 @ CRM_pcount       = $spcam_orctotal_in * $spcam_subx_in * $spcam_suby_in
 @ NPNN = $pcount +  $CRM_pcount
-@ NNODE = $NPNN / 40 + 1
+@ NNODE = $NPNN / 50 + 1
 setenv CASE       scalling2_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
 ## ====================================================================
 #   define directories <Please make sure the directories are correct>
@@ -93,7 +93,6 @@ xmlchange --file env_workflow.xml --id JOB_WALLCLOCK_TIME --val $run_time
 xmlchange --file env_run.xml --id STOP_OPTION --val nhour
 xmlchange --file env_run.xml --id STOP_N --val 2
 xmlchange --file env_run.xml --id ATM_NCPL --val 432
-xmlchange --file env_build.xml --id DEBUG --val TRUE
 ./case.setup
 #xmlchange --file env_run.xml --id run_data_archive --val "FALSE"
 #xmlchange --file env_run.xml --id RESUBMIT --val 4
@@ -116,13 +115,8 @@ cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_task_util_OR
 cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_kurant_ORC.o .
 cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_pressure_ORC.o .
 cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_press_rhs_ORC.o .
-
-cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/debug/nothreads/mct/mct/noesmf/c1a1l1i1o1r1g1w1i1e1/csm_share/shr_kind_mod.o .
-cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/debug/nothreads/mct/gptl/perf_mod.o .
-
-#cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/mct/noesmf/c1a1l1i1o1r1g1w1i1e1/csm_share/shr_kind_mod.o .
-#cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/gptl/perf_mod.o .
-
+cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/mct/noesmf/c1a1l1i1o1r1g1w1i1e1/csm_share/shr_kind_mod.o .
+cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/gptl/perf_mod.o .
 mpif90  -o /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/crm.exe perf_mod.o task_exchange.o crmx_pressure_ORC.o crmx_press_rhs_ORC.o crmx_kurant_ORC.o task_dispatch.o task_assign_bnd.o crmx_mpi.o crmx_task_util_ORC.o crmx_task_init_ORC.o crmdims.o ppgrid.o crmx_crm_module_ORC.o  shr_kind_mod.o phys_grid.o TwoExecutableDriver.o -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -latm -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lice  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/mct/noesmf/lib/ -lclm  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -locn  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lrof  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lglc  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lwav  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lesp  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -liac -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/mct/noesmf/c1a1l1i1o1r1g1w1i1e1/lib -lcsm_share -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/lib -lpiof -lpioc -lgptl -lmct -lmpeu  -lpthread   -mkl=cluster   -L/opt/apps/intel19/impi19_0/parallel-netcdf/4.7.4/x86_64 -lnetcdff -Wl,--as-needed,-L/opt/apps/intel19/impi19_0/parallel-netcdf/4.7.4/x86_64/lib -lnetcdff -lnetcdf  -L/opt/apps/intel19/impi19_0/pnetcdf/1.11.2/lib -lpnetcdf
 cd  $CASEROOT
 ./case.submit

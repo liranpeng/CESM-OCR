@@ -500,32 +500,40 @@ subroutine tphysbc_spcam (ztodt, state,   &
     !if(nstep.eq.1) then
     ! pritch -- default, columns are not orchestrated:
     state%crmrank         = -2
-    state%isorchestrated  = .false.
-    state%isofflinecrm    = .true.
-     if (myrank_global .eq. 0) then
-       if (lchnk .eq. begchunk .and. masterproc) then
-         write (iulog,*) 'MDEBUG YO on masterproc lchnk=',begchunk,endchunk,',ncols',ncol
+    state%isorchestrated  = .true.
+    state%isofflinecrm    = .false.
+    do i=1,ncol
+        do ii=1,orc_nsubdomains      
+          gcmrank(1) = iam
+          state%crmrank(i,ii) = npes+gcmrank(1)*orc_nsubdomains+ii-1
+          write (iulog,*) 'MDEBUG=',myrank_global,begchunk,ncol,i,state%crmrank(i,ii)
+          call MPI_Send(gcmrank,1,MPI_INTEGER,state%crmrank(i,ii),54321,MPI_COMM_WORLD,ierr) 
+        end do
+    end do
+     !if (myrank_global .eq. 0) then
+     !  if (lchnk .eq. begchunk .and. masterproc) then
+     !    write (iulog,*) 'MDEBUG check =',myrank_global,begchunk,endchunk,',ncols',ncol
          ! except (for now) the first six columns on masterproc...
          ! We might want to specify which column we want to use orc later  
-         do i=1,orc_total 
-           state%isorchestrated(i) = .true.
+     !    do i=1,orc_total 
+     !      state%isorchestrated(i) = .true.
            ! ====> Turn on online CRM Here
-           state%isofflinecrm    = .false.
-         end do
-       end if
+     !      state%isofflinecrm    = .false.
+     !    end do
+     !  end if
 
     ! pritch handshake -- attempt to surgically send lat,lon coords of GCM host
     ! to dedicated CRM rank:
-      do i=1,ncol
-        if (state%isorchestrated(i)) then
-          do ii=1,orc_nsubdomains
-            state%crmrank(i,ii) = npes+(i-1)*orc_nsubdomains+ii-1
-            gcmrank(1) = iam
-            call MPI_Send(gcmrank,1,MPI_INTEGER,state%crmrank(i,ii),54321,MPI_COMM_WORLD,ierr)
-          end do
-        end if
-      end do 
-    end if
+     ! do i=1,ncol
+     !   if (state%isorchestrated(i)) then
+     !     do ii=1,orc_nsubdomains
+     !       state%crmrank(i,ii) = npes+(i-1)*orc_nsubdomains+ii-1
+     !       gcmrank(1) = iam
+     !       call MPI_Send(gcmrank,1,MPI_INTEGER,state%crmrank(i,ii),54321,MPI_COMM_WORLD,ierr)
+     !     end do
+     !   end if
+     ! end do 
+    !end if
 #endif
 
     call crm_physics_tend(ztodt, state, tend, ptend, pbuf, cam_in)
