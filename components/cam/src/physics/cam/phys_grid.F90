@@ -155,7 +155,7 @@ module phys_grid
      integer  :: lcid                  ! local chunk index
    end type chunk
 
-   integer :: nchunks                  ! global chunk count
+   integer, public :: nchunks                  ! global chunk count
    type (chunk), dimension(:), allocatable, public :: chunks
                                        ! global computational grid
 

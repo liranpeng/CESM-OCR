@@ -14,7 +14,7 @@ module crm_physics
    use crmx_grid
    use crmx_mpi
    use shr_kind_mod,    only: r8 => shr_kind_r8
-   use ppgrid,          only: pcols, pver, pverp
+   use ppgrid,          only: pcols, pver, pverp,begchunk
 #ifdef CRM
    use cam_abortutils,  only: endrun
    use physics_types,   only: physics_state, physics_tend
@@ -758,7 +758,7 @@ end subroutine crm_init_cnst
    use crmx_microphysics,   only: nmicro_fields
    use physconst,           only: latvap
    use check_energy,        only: check_energy_chng
-   use phys_grid,           only: get_rlat_all_p, get_rlon_all_p, get_lon_all_p, get_lat_all_p
+   use phys_grid,           only: get_rlat_all_p, get_rlon_all_p, get_lon_all_p, get_lat_all_p,nchunks,chunks
    use modal_aero_calcsize, only: modal_aero_calcsize_sub
    use micro_mg_utils,      only: size_dist_param_liq, mg_liq_props, mincld, qsmall
    use phys_grid, only: get_rlon_p, get_rlat_p, get_gcol_all_p
@@ -1120,13 +1120,13 @@ end subroutine crm_init_cnst
    real(r8) :: t, mu, acn, dumc, dunc, pgam, lamc
    real(r8) :: dunc_arr(pcols,pver)
    integer gcolindex(pcols)  ! array of global latitude indices
-   integer ii, jj,status
+   integer ii, jj,status,totalcol_sel
    integer iii,FlagEnd,it,jt
    integer i, k, m,lchnk_save,i_save
    integer ifld
    logical :: ls, lu, lv, lq(pcnst)
    integer,parameter :: structlen = 49
-   integer,parameter :: singlelen = 30
+   integer,parameter :: singlelen = 31
    integer,parameter :: flen      = structlen*pver+singlelen+1+20+pcols
    integer,parameter :: flen2     = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny
    integer,dimension(structlen) :: blocklengths
@@ -1135,12 +1135,12 @@ end subroutine crm_init_cnst
    integer :: myrank_global, numproc_global
    integer :: myrank_crm, numproc_crm
 #ifdef ORCHESTRATOR
-   integer ::dest,ierr,ierr1,ierr2,ierr3,fcount,chnksz,kk,ll,iorc,crm_step,crm_start_ind,crm_end_ind,icheck_column,icheck_iorc
+   integer ::dest,ierr,ierr1,ierr2,ierr3,fcount,chnksz,kk,ll,iorc,crm_step,crm_start_ind,crm_end_ind,icheck_column,icheck_iorc,out_totalcol,totalcol(nchunks),cid
    real(r8), allocatable :: flattened_crm_inout(:)
    real(r8),dimension(flen) :: Var_Flat
    real(r8),dimension(flen2) :: Var_Flat2
    integer,parameter :: structleno = 39
-   integer,parameter :: singleleno = 27
+   integer,parameter :: singleleno = 28
    integer,parameter :: fleno      = structleno*pver+singleleno+1+20
    integer,parameter :: nflat =  17*(orc_nx*orc_ny*crm_nz) + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny
    real(r8),dimension(fleno+nflat) :: CRM_Var_Flat
@@ -1701,6 +1701,24 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           else
             write(iulog,*) 'WARNING!! crm_nx is not dividable by orc_nsubdomains'
           end if 
+
+          lchnk = state%lchnk
+          totalcol = 0
+          do cid=1,nchunks
+            if (cid.gt.1)then
+              totalcol(cid) = totalcol(cid-1)
+            endif
+            do ii = 1,chunks(cid)%ncols
+              totalcol(cid) = totalcol(cid) + 1
+            enddo
+          enddo
+
+          if (lchnk.gt.begchunk)then
+            totalcol_sel = totalcol(lchnk-begchunk+1)
+          else
+            totalcol_sel = 0
+          endif
+
           crm_start_ind = (iorc-1)*crm_step+1
           crm_end_ind   = (iorc)*crm_step-1+1
           call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
@@ -1738,6 +1756,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           Var_Flat(       28)                             = latitude0
           Var_Flat(       29)                             = longitude0
           Var_Flat(       30)                             = FlagEnd
+          Var_Flat(       31)                             = totalcol_sel
           Var_Flat(        1+singlelen:   pver+singlelen) = state_loc%t(i_save,:)
           Var_Flat( 1*pver+1+singlelen: 2*pver+singlelen) = state_loc%q(i_save,:,1)
           Var_Flat( 2*pver+1+singlelen: 3*pver+singlelen) = state_loc%q(i_save,:,ixcldliq)
@@ -1852,6 +1871,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
             Var_Flat2(fcount + 8 * crm_nz) = work_qp0(kk)
             Var_Flat2(fcount + 9 * crm_nz) = work_tke0(kk)
           end do
+write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
           call MPI_Send(Var_Flat(:)         ,flen,MPI_REAL8 ,dest,9018,MPI_COMM_WORLD,ierr)
           call MPI_Send(Var_Flat2(:)         ,flen2,MPI_REAL8,dest,9019,MPI_COMM_WORLD,ierr)
           end do !do iorc=1,orc_nsubdomains
@@ -2009,6 +2029,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           out_jt                  = CRM_Var_Flat(25)
           out_jt_crm              = CRM_Var_Flat(26)
           out_mx_crm              = CRM_Var_Flat(27)
+          out_totalcol            = CRM_Var_Flat(28)
 !print*,'test_new add',out_jt_crm,out_mx_crm
           out_qltend              = CRM_Var_Flat(        1+singleleno:  pver+singleleno)
           out_qcltend             = CRM_Var_Flat( 1*pver+1+singleleno:2*pver+singleleno) 
@@ -2054,7 +2075,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           it = int(out_it)
           jt = int(out_jt)
           icheck_iorc = mod(int(out_global_rank-npes),orc_nsubdomains)
-          icheck_column = (int(out_global_rank)-npes-icheck_iorc+1)/orc_nsubdomains+1   
+          icheck_column = (int(out_global_rank)+1-icheck_iorc-npes-out_totalcol)/orc_nsubdomains+1   
           fcount = structleno*pver+20+singleleno+1
           do kk=1,crm_nz
             do jj=1,orc_ny

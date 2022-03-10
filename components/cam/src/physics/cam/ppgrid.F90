@@ -21,7 +21,7 @@ module ppgrid
   public psubcols
   public pver
   public pverp
-
+  public orccount
 
 ! Grid point resolution parameters
 
@@ -40,5 +40,5 @@ module ppgrid
 !
    integer :: begchunk = 0            ! 
    integer :: endchunk = -1           ! 
-
+   integer :: orccount = 0
 end module ppgrid

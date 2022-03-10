@@ -6,7 +6,7 @@ module spcam_drivers
 use spmd_utils, only: npes,masterproc,iam ! pritch
 use cam_logfile,      only: iulog ! pritch
 use camsrfexch,       only: cam_out_t, cam_in_t
-use ppgrid,           only: pcols, pver,begchunk,endchunk
+use ppgrid,           only: pcols, pver,begchunk,endchunk, orccount
 use camsrfexch ,      only: cam_export
 use shr_kind_mod,     only: r8 => shr_kind_r8
 #ifdef CRM
@@ -16,7 +16,7 @@ use radiation,        only: rad_out_t
 use physics_buffer,   only: physics_buffer_desc, pbuf_get_field, pbuf_get_index
 use physics_types,    only: physics_state, physics_state_copy, physics_ptend
 use pkg_cldoptics,    only: cldems, cldovrlap, cldefr
-use phys_grid,        only: get_rlat_all_p, get_rlon_all_p
+use phys_grid,        only: get_rlat_all_p, get_rlon_all_p,nchunks,chunks
 use cam_history,      only: outfld
 use cam_history_support, only : fillvalue
 
@@ -376,6 +376,7 @@ subroutine tphysbc_spcam (ztodt, state,   &
     ! energy checking variables
     real(r8) :: zero(pcols)                    ! array of zeros
     real(r8) :: flx_heat(pcols)
+    integer :: totalcol(nchunks)
     type(check_tracers_data):: tracerint             ! energy integrals and cummulative boundary fluxes
 
     logical           :: state_debug_checks  ! Debug physics_state.
@@ -386,13 +387,14 @@ subroutine tphysbc_spcam (ztodt, state,   &
     type(rad_out_t)                  :: rd
     integer,parameter :: rank_offset = 1
     integer :: teout_idx, qini_idx, cldliqini_idx, cldiceini_idx
-    integer :: ii, jj
+    integer :: ii, jj, chunkmax, colmax
     integer :: ierr !bloss MPI Vars
     integer :: gcmrank(1), dest ! pritch
-    integer :: myrank_global 
+    integer :: myrank_global,cid,begchunk0 
     !-----------------------------------------------------------------------
     call t_startf('bc_init')
     zero = 0._r8
+    begchunk0 = 51
 
     lchnk = state%lchnk
     ncol  = state%ncol
@@ -502,30 +504,55 @@ subroutine tphysbc_spcam (ztodt, state,   &
     state%crmrank         = -2
     state%isorchestrated  = .false.
     state%isofflinecrm    = .true.
-     if (myrank_global .eq. 0) then
-       if (lchnk .eq. begchunk .and. masterproc) then
-         write (iulog,*) 'MDEBUG YO on masterproc lchnk=',begchunk,endchunk,',ncols',ncol
-         ! except (for now) the first six columns on masterproc...
-         ! We might want to specify which column we want to use orc later  
-         do i=1,orc_total 
-           state%isorchestrated(i) = .true.
-           ! ====> Turn on online CRM Here
-           state%isofflinecrm    = .false.
-         end do
-       end if
-
-    ! pritch handshake -- attempt to surgically send lat,lon coords of GCM host
     ! to dedicated CRM rank:
-      do i=1,ncol
-        if (state%isorchestrated(i)) then
+      lchnk = state%lchnk
+      totalcol = 0
+      chunkmax = 0
+      colmax   = 0
+      gcmrank(1) = iam
+      do cid=1,nchunks
+        if (cid.gt.1)then
+          totalcol(cid) = totalcol(cid-1)
+        endif 
+        do ii = 1,chunks(cid)%ncols
+          totalcol(cid) = totalcol(cid) + 1
+          if (totalcol(cid).le.orc_total) then
+            chunkmax = cid
+            colmax   = ii 
+          endif
+        enddo
+      enddo
+      if ((lchnk-begchunk0+1).lt.chunkmax) then
+        do i=1,ncol
           do ii=1,orc_nsubdomains
-            state%crmrank(i,ii) = npes+(i-1)*orc_nsubdomains+ii-1
-            gcmrank(1) = iam
+            if ((lchnk-begchunk0+1).gt.1)then 
+              state%crmrank(i,ii) = npes+totalcol(lchnk-1)*orc_nsubdomains+(i-1)*orc_nsubdomains+ii-1
+            else
+              state%crmrank(i,ii) = npes+(i-1)*orc_nsubdomains+ii-1
+            endif 
+            state%isorchestrated(i) = .true.
+            state%isofflinecrm(i)    = .false.
+            write (iulog,*) 'MDEBUG Liran',lchnk-begchunk,iam,ncol,i,state%crmrank(i,ii)
             call MPI_Send(gcmrank,1,MPI_INTEGER,state%crmrank(i,ii),54321,MPI_COMM_WORLD,ierr)
-          end do
-        end if
-      end do 
-    end if
+          enddo
+        enddo
+      endif
+      if ((lchnk-begchunk0+1).eq.chunkmax) then
+        do i=1,colmax
+          do ii=1,orc_nsubdomains
+            if ((lchnk-begchunk0+1).gt.1)then
+              state%crmrank(i,ii) = npes+totalcol(lchnk-1)*orc_nsubdomains+(i-1)*orc_nsubdomains+ii-1
+            else
+              state%crmrank(i,ii) = npes+(i-1)*orc_nsubdomains+ii-1
+            endif
+            state%isorchestrated(i) = .true.
+            state%isofflinecrm(i)    = .false.
+            write (iulog,*) 'MDEBUG Liran',lchnk-begchunk,iam,ncol,i,state%crmrank(i,ii)
+            call MPI_Send(gcmrank,1,MPI_INTEGER,state%crmrank(i,ii),54321,MPI_COMM_WORLD,ierr)
+          enddo
+        enddo
+      endif
+    !end if
 #endif
 
     call crm_physics_tend(ztodt, state, tend, ptend, pbuf, cam_in)

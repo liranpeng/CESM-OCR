@@ -28,7 +28,7 @@ program TwoExecutableDriver
   CHARACTER(LEN=6) :: crm_number
   integer gcolindex(pcols)  ! array of global latitude indices
   ! local copies of input ingredients to CRM ( to be received)
-  integer :: inp01_lchnk,inp02_i ! pritch note important for integers to
+  integer :: inp01_lchnk,inp02_i,totalcol ! pritch note important for integers to
  ! be MPI_received that they masquerade as 1-element arrays here.
   real(r8), dimension(pver) :: inp03_tl,inp04_ql,inp05_qccl,inp06_qiil,inp07_ul,inp08_vl
   real(r8), dimension(pver) :: inp10_pmid,inp11_pdel,inp13_zm,inp14_zi
@@ -54,11 +54,11 @@ program TwoExecutableDriver
   real(r8) :: taux_crm,tauy_crm,z0m,timing_factor,jt_crm,mx_crm
   integer :: fcount,ii,jj,kk,ll,it,jt
   integer,parameter :: structlen  = 49
-  integer,parameter :: singlelen  = 30
+  integer,parameter :: singlelen  = 31
   integer,parameter :: flen       = structlen*pver+singlelen+1+20+pcols
   integer,parameter :: flen2      = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny
   integer,parameter :: structleno = 39
-  integer,parameter :: singleleno = 27
+  integer,parameter :: singleleno = 28
   integer,parameter :: fleno      = structleno*pver+singleleno+1+20
   integer,parameter :: chnksz     = orc_nx*orc_ny*crm_nz
   integer,parameter :: flen3      = fleno+17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields_total +orc_nx*orc_ny
@@ -182,6 +182,7 @@ program TwoExecutableDriver
   lat                 =     inp_Var_Flat(28)
   lon                 =     inp_Var_Flat(29)
   EndFlag             =     inp_Var_Flat(30)
+  totalcol            =     inp_Var_Flat(31)
   inp03_tl(1:pver)    = inp_Var_Flat(        1+singlelen:   pver+singlelen)
   inp04_ql(1:pver)    = inp_Var_Flat( 1*pver+1+singlelen: 2*pver+singlelen)
   inp05_qccl(1:pver)  = inp_Var_Flat( 2*pver+1+singlelen: 3*pver+singlelen)
@@ -364,6 +365,7 @@ write(13,*) 'Liran start send data back',myrank_crm,it,jt,wall(4)
   out_Var_Flat(       25)                               = jt
   out_Var_Flat(       26)                               = jt_crm
   out_Var_Flat(       27)                               = mx_crm
+  out_Var_Flat(       28)                               = totalcol
 !print*,'Check jt',jt_crm,mx_crm
   out_Var_Flat(        1+singleleno:   pver+singleleno) = out01_qltend
   out_Var_Flat( 1*pver+1+singleleno: 2*pver+singleleno) = out02_qcltend
