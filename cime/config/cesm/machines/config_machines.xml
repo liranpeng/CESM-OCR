@@ -2416,7 +2416,7 @@ This allows using a different mpirun command to launch unit tests
     <MAX_MPITASKS_PER_NODE>56</MAX_MPITASKS_PER_NODE>
     <PROJECT_REQUIRED>FALSE</PROJECT_REQUIRED>
     <mpirun mpilib="default">
-      <executable>ibrun</executable>
+      <executable>module swap impi mvapich2-x; ibrun</executable> 
     </mpirun>
     <module_system type="module">
       <init_path lang="perl">/opt/apps/lmod/lmod/init/perl</init_path>

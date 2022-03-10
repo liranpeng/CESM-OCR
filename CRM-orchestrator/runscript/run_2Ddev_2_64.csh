@@ -41,7 +41,7 @@ set FI_PROVIDER=verbs
 @ NPNN = $pcount +  $CRM_pcount
 @ NPNNX = 56
 @ NNODE = $NPNN / $NPNNX + 1
-setenv CASE       scallMPIdebug_check_${NPNNX}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
+setenv CASE       scallMPIdebug_mvapich2_${NPNNX}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
 ## ====================================================================
 #   define directories <Please make sure the directories are correct>
 ## ====================================================================
