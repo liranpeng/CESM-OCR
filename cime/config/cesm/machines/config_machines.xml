@@ -449,7 +449,7 @@ This allows using a different mpirun command to launch unit tests
     <MAX_MPITASKS_PER_NODE>36</MAX_MPITASKS_PER_NODE>
     <PROJECT_REQUIRED>TRUE</PROJECT_REQUIRED>
     <mpirun mpilib="default">
-      <executable>mpiexec_mpt</executable>
+      <executable>mpirun</executable>
       <arguments>
 	<arg name="labelstdout">-p "%g:"</arg>
 	<arg name="num_tasks"> -np {{ total_tasks }}</arg>

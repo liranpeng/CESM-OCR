@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Batch system directives
-#PBS -N run.scalling_36_crmnx64_crmny1_subx2_suby1_20orc_3nodes_regular
+#PBS -N run.CCCASE
 #PBS  -A PPRO
 #PBS  -q QQUE 
 #PBS  -j oe 

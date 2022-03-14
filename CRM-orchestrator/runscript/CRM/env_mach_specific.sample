@@ -6,7 +6,7 @@
     environment variables for use in the running job should also be set	here.
     </header>
   <group id="compliant_values">
-    <entry id="run_exe" value=" -n GCM_pcount ${EXEROOT}/cesm.exe : -n CRM_pcount ${EXEROOT}/crm.exe">
+    <entry id="run_exe" value=" -np GCM_pcount ${EXEROOT}/cesm.exe :  CRM_pcount ${EXEROOT}/crm.exe">
       <type>char</type>
       <desc>executable name</desc>
     </entry>
