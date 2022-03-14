@@ -3,11 +3,12 @@
 # Once the job is finished, it helps to submit the job
 set run_time       = 00:30:00
 #set queue          = skx-normal
-set queue          = development
-set account        = ATM20009
+set queue          = regular
+set account        = UWAS0096
 set run_start_date = "0001-01-01"
 set pcount         = 50
-set CRM_pcount     = 12          
+set taskPernode    = 36
+set emailaddress   = liranp@uci.edu
 ## ====================================================================
 #   define case
 ## ====================================================================
@@ -23,8 +24,9 @@ setenv CCSMTAG     CESM-OCR
 #   and movement toward aerosol-cloud interactions
 setenv CASESET     FSPCAMS
 setenv CASERES     f45_g37
-setenv PROJECT     ATM20009
+setenv PROJECT     UWAS0096
 setenv JOB_QUEUE   $queue
+setenv SCRATCH     /glade/scratch/lpeng 
 setenv SCRIPTDIR   $HOME/repositories/$CCSMTAG/CRM-orchestrator/runscript
 ### GRID OPTIONS <Liran>
 set crm_nx_in         = 64         # <<< change this one!
@@ -34,24 +36,23 @@ set crm_dt_in         = 0.5
 set crm_nz_in         = 24
 set spcam_subx_in     = 2
 set spcam_suby_in     = 1
-set spcam_orctotal_in = 20
+set spcam_orctotal_in = 6
 @ CRM_pcount       = $spcam_orctotal_in * $spcam_subx_in * $spcam_suby_in
 @ NPNN = $pcount +  $CRM_pcount
-@ NNODE = $NPNN / 56 + 1
-setenv CASE       scalling_${pcount}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
+@ NNODE = $NPNN / $taskPernode + 1
+setenv CASE       scalling22_${pcount}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
 ## ====================================================================
 #   define directories <Please make sure the directories are correct>
 ## ====================================================================
 #setenv MACH      stampede2-skx
 #setenv MACH      stampede2-knl
-setenv MACH      frontera
+setenv MACH      cheyenne
 setenv CCSMROOT  $HOME/repositories/$CCSMTAG
 setenv CASEROOT  $SCRATCH/CESM2_case/$CASE
 setenv PTMP      $SCRATCH/
 setenv RUNDIR    $PTMP/$CASE/run
 setenv ARCHDIR   $PTMP/archive/$CASE
-setenv DATADIR   /scratch1/07088/tg863871/inputdata # pritch, link to bloss' downloaded input data.
-# Note: my input folder is /scratch1/07088/tg863871/inputdata
+# Note: my input folder is $SCRATCH/inputdata
 ## ====================================================================
 #   Download model source code <This part only need to do once>
 ## ====================================================================
@@ -78,49 +79,49 @@ cp $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/src.cam/crmx_crm_modul
 cd $CCSMROOT/cime/scripts
 #bloss(2021-01-22): Revert to basic pelayout for testing
 #./create_newcase --case $CASEROOT --pecount $pcount --pesfile ./pelayout_frontera01.xml --res $CASERES --machine $MACH --compset $CASESET --input-dir $DATADIR --output-root $CASEROOT --run-unsupported
-./create_newcase --case $CASEROOT  --pecount $pcount --res $CASERES --machine $MACH --compset $CASESET --input-dir $DATADIR --output-root $CASEROOT  --run-unsupported
+./create_newcase --case $CASEROOT  --pecount $pcount --res $CASERES --machine $MACH --compset $CASESET  --output-root $CASEROOT  --run-unsupported
 cd  $CASEROOT
 sed -e "s/SUBXdim/$spcam_subx_in/g; s/SUBYdim/$spcam_suby_in/g; s/ORCT/$spcam_orctotal_in/g;" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/crmdims.sample > $HOME/repositories/CESM-OCR/components/cam/src/physics/spcam/crmdims.F90 
-sed -e "s/NPN/$NPNN/g; s/NNODE/$NNODE/g; s/CASE_FOLDER/$CASE/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.sample > $CASEROOT/.case.run
 sed -e "s/GCM_pcount/$pcount/g; s/CRM_pcount/$CRM_pcount/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/env_mach_specific.sample  > $CASEROOT/env_mach_specific.xml
 sed -e "s/NXX/$crm_nx_in/g; s/NYY/$crm_ny_in/g; s/DXX/$crm_dx_in/g; s/DTT/$crm_dt_in/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/config_component.sample > $HOME/repositories/CESM-OCR/components/cam/cime_config/config_component.xml
 #cat <<EOF >> user_nl_drv
 #atm_cpl_dt = 10
 #EOF
-xmlchange --file env_batch.xml --id JOB_QUEUE --val $queue
-xmlchange --file env_workflow.xml --id JOB_WALLCLOCK_TIME --val $run_time
-#xmlchange --file env_run.xml --id RUN_STARTDATE --val $run_start_date
-xmlchange --file env_run.xml --id STOP_OPTION --val nhour
-xmlchange --file env_run.xml --id STOP_N --val 2
-xmlchange --file env_run.xml --id ATM_NCPL --val 432
+cd  $CASEROOT
+./xmlchange --file env_batch.xml --id JOB_QUEUE --val $queue
+./xmlchange --file env_workflow.xml --id JOB_WALLCLOCK_TIME --val $run_time
+./xmlchange --file env_run.xml --id STOP_OPTION --val nhour
+./xmlchange --file env_run.xml --id STOP_N --val 2
+#./xmlchange --file env_run.xml --id ATM_NCPL --val 432
 ./case.setup
-#xmlchange --file env_run.xml --id run_data_archive --val "FALSE"
+./xmlchange --file env_run.xml --id run_data_archive --val "FALSE"
 #xmlchange --file env_run.xml --id RESUBMIT --val 4
 cp $SCRIPTDIR/src.cam/*F90 SourceMods/src.cam/.
-./case.build
+qcmd -A ${PROJECT} -- ./case.build --skip-provenance-check
 pwd
 cp -R $SCRIPTDIR/CRM/ CRM/
 cd CRM
-cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_task_init_ORC.o .
-cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/TwoExecutableDriver.o . 
-cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_crm_module_ORC.o .
-cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/crmdims.o .
-cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/ppgrid.o .
-cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/phys_grid.o .
-cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_mpi.o .
-cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/task_assign_bnd.o .
-cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/task_dispatch.o .
-cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/task_exchange.o .
-cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_task_util_ORC.o .
-cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_kurant_ORC.o .
-cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_pressure_ORC.o .
-cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_press_rhs_ORC.o .
-cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/mct/noesmf/c1a1l1i1o1r1g1w1i1e1/csm_share/shr_kind_mod.o .
-cp /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/gptl/perf_mod.o .
-mpif90  -o /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/crm.exe perf_mod.o task_exchange.o crmx_pressure_ORC.o crmx_press_rhs_ORC.o crmx_kurant_ORC.o task_dispatch.o task_assign_bnd.o crmx_mpi.o crmx_task_util_ORC.o crmx_task_init_ORC.o crmdims.o ppgrid.o crmx_crm_module_ORC.o  shr_kind_mod.o phys_grid.o TwoExecutableDriver.o -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -latm -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lice  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/mct/noesmf/lib/ -lclm  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -locn  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lrof  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lglc  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lwav  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -lesp  -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/lib/ -liac -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/mct/noesmf/c1a1l1i1o1r1g1w1i1e1/lib -lcsm_share -L/scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/intel/impi/nodebug/nothreads/mct/lib -lpiof -lpioc -lgptl -lmct -lmpeu  -lpthread   -mkl=cluster   -L/opt/apps/intel19/impi19_0/parallel-netcdf/4.7.4/x86_64 -lnetcdff -Wl,--as-needed,-L/opt/apps/intel19/impi19_0/parallel-netcdf/4.7.4/x86_64/lib -lnetcdff -lnetcdf  -L/opt/apps/intel19/impi19_0/pnetcdf/1.11.2/lib -lpnetcdf
+cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_task_init_ORC.o .
+cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/atm/obj/TwoExecutableDriver.o . 
+cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_crm_module_ORC.o .
+cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/atm/obj/crmdims.o .
+cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/atm/obj/ppgrid.o .
+cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/atm/obj/phys_grid.o .
+cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_mpi.o .
+cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/atm/obj/task_assign_bnd.o .
+cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/atm/obj/task_dispatch.o .
+cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/atm/obj/task_exchange.o .
+cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_task_util_ORC.o .
+cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_kurant_ORC.o .
+cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_pressure_ORC.o .
+cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_press_rhs_ORC.o .
+cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/intel/mpt/nodebug/nothreads/mct/mct/noesmf/c1a1l1i1o1r1g1w1i1e1/csm_share/shr_kind_mod.o .
+cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/intel/mpt/nodebug/nothreads/mct/gptl/perf_mod.o .
+mpif90  -o $SCRATCH/CESM2_case/$CASE/$CASE/bld/crm.exe perf_mod.o task_exchange.o crmx_pressure_ORC.o crmx_press_rhs_ORC.o crmx_kurant_ORC.o task_dispatch.o task_assign_bnd.o crmx_mpi.o crmx_task_util_ORC.o crmx_task_init_ORC.o crmdims.o ppgrid.o crmx_crm_module_ORC.o  shr_kind_mod.o phys_grid.o TwoExecutableDriver.o -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -latm -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lice  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/intel/mpt/nodebug/nothreads/mct/mct/noesmf/lib/ -lclm  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -locn  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lrof  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lglc  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lwav  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lesp  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -liac -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/intel/mpt/nodebug/nothreads/mct/mct/noesmf/c1a1l1i1o1r1g1w1i1e1/lib -lcsm_share -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/intel/mpt/nodebug/nothreads/mct/lib -lpiof -lpioc -lgptl -lmct -lmpeu   -mkl=cluster  -L/glade/u/apps/ch/opt/pnetcdf/1.12.1/mpt/2.21/intel/19.0.5//lib -lpnetcdf -L/glade/u/apps/ch/opt/netcdf/4.7.3/intel/19.0.5//lib -lnetcdff -lnetcdf
 cd  $CASEROOT
 ./case.submit
-sbatch --time ${run_time} -p ${queue} --nodes=${NNODE} --account ATM20009 .case.run --resubmit
+sed -e "s/NPN/${taskPernode}/g; s/NNNODE/${NNODE}/g; s/CASE_FOLDER/${CASE}/g; s/PPRO/${PROJECT}/g; s/QQUE/${queue}/g; s/EEMA/${emailaddress}/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.sample > $CASEROOT/.case.run
+qsub -l select=${NNODE}:ncpus=${taskPernode}:mpiprocs=${taskPernode}:ompthreads=1 -l -walltime ${run_time} -q ${queue}  -A ${account} .case.run -resubmit
 cd ..
 #./case.submit
 

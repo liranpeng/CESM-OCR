@@ -1120,7 +1120,7 @@ end subroutine crm_init_cnst
    real(r8) :: t, mu, acn, dumc, dunc, pgam, lamc
    real(r8) :: dunc_arr(pcols,pver)
    integer gcolindex(pcols)  ! array of global latitude indices
-   integer ii, jj,status,totalcol_sel
+   integer ii, jj,status(MPI_STATUS_SIZE),totalcol_sel
    integer iii,FlagEnd,it,jt
    integer i, k, m,lchnk_save,i_save
    integer ifld
