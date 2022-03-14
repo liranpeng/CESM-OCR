@@ -394,7 +394,7 @@ subroutine tphysbc_spcam (ztodt, state,   &
     !-----------------------------------------------------------------------
     call t_startf('bc_init')
     zero = 0._r8
-    begchunk0 = 51
+    begchunk0 = 57
 
     lchnk = state%lchnk
     ncol  = state%ncol
@@ -510,10 +510,9 @@ subroutine tphysbc_spcam (ztodt, state,   &
       chunkmax = 0
       colmax   = 0
       gcmrank(1) = iam
-      do cid=1,nchunks
-        if (cid.gt.1)then
-          totalcol(cid) = totalcol(cid-1)
-        endif 
+      write (iulog,*) 'MDEBUG Liran0',lchnk,begchunk
+      do cid=2,nchunks
+        totalcol(cid) = totalcol(cid-1)
         do ii = 1,chunks(cid)%ncols
           totalcol(cid) = totalcol(cid) + 1
           if (totalcol(cid).le.orc_total) then
@@ -522,32 +521,33 @@ subroutine tphysbc_spcam (ztodt, state,   &
           endif
         enddo
       enddo
+      write (iulog,*) 'MDEBUG Liran1',chunkmax,colmax,orc_total
       if ((lchnk-begchunk0+1).lt.chunkmax) then
         do i=1,ncol
           do ii=1,orc_nsubdomains
             if ((lchnk-begchunk0+1).gt.1)then 
-              state%crmrank(i,ii) = npes+totalcol(lchnk-1)*orc_nsubdomains+(i-1)*orc_nsubdomains+ii-1
+              state%crmrank(i,ii) = npes+totalcol(lchnk-begchunk0)*orc_nsubdomains+(i-1)*orc_nsubdomains+ii-1
             else
               state%crmrank(i,ii) = npes+(i-1)*orc_nsubdomains+ii-1
             endif 
             state%isorchestrated(i) = .true.
             state%isofflinecrm(i)    = .false.
-            write (iulog,*) 'MDEBUG Liran',lchnk-begchunk,iam,ncol,i,state%crmrank(i,ii)
+            write (iulog,*) 'MDEBUG Liran',lchnk-begchunk0,iam,ncol,i,state%crmrank(i,ii)
             call MPI_Send(gcmrank,1,MPI_INTEGER,state%crmrank(i,ii),54321,MPI_COMM_WORLD,ierr)
           enddo
         enddo
       endif
-      if ((lchnk-begchunk0+1).eq.chunkmax) then
-        do i=1,colmax
+      if ((lchnk-begchunk0+1).eq.chunkmax-1) then
+        do i=1,colmax-1
           do ii=1,orc_nsubdomains
             if ((lchnk-begchunk0+1).gt.1)then
-              state%crmrank(i,ii) = npes+totalcol(lchnk-1)*orc_nsubdomains+(i-1)*orc_nsubdomains+ii-1
+              state%crmrank(i,ii) = npes+totalcol(lchnk-begchunk0)*orc_nsubdomains+(i-1)*orc_nsubdomains+ii-1
             else
               state%crmrank(i,ii) = npes+(i-1)*orc_nsubdomains+ii-1
             endif
             state%isorchestrated(i) = .true.
             state%isofflinecrm(i)    = .false.
-            write (iulog,*) 'MDEBUG Liran',lchnk-begchunk,iam,ncol,i,state%crmrank(i,ii)
+            write (iulog,*) 'MDEBUG Liran',lchnk-begchunk0,iam,ncol,i,state%crmrank(i,ii)
             call MPI_Send(gcmrank,1,MPI_INTEGER,state%crmrank(i,ii),54321,MPI_COMM_WORLD,ierr)
           enddo
         enddo

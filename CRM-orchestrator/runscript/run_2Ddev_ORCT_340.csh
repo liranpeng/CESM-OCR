@@ -1,13 +1,20 @@
 #!/bin/csh
 # This script automatically download cesm2 
 # Once the job is finished, it helps to submit the job
-set run_time       = 00:30:00
+set run_time       = 00:10:00
 #set queue          = skx-normal
 set queue          = development
 set account        = ATM20009
 set run_start_date = "0001-01-01"
 set pcount         = 50
 set CRM_pcount     = 12          
+#setenv UCX_IB_RX_MAX_BUFS 65536
+#setenv UCX_ZCOPY_THRESH -1
+#setenv ucx_rndv_thresh 16384
+#setenv UCX_MAX_RNDV_RAILS 1
+#setenv UCX_RNDV_SCHEME get_zcopy
+setenv I_MPI_DEBUG 4
+setenv FI_PROVIDER verbs
 ## ====================================================================
 #   define case
 ## ====================================================================
@@ -37,7 +44,7 @@ set spcam_suby_in     = 1
 set spcam_orctotal_in = 340
 @ CRM_pcount       = $spcam_orctotal_in * $spcam_subx_in * $spcam_suby_in
 @ NPNN = $pcount +  $CRM_pcount
-@ NNODE = $NPNN / 56 + 1
+@ NNODE = $NPNN / 50 + 1
 setenv CASE       scalling_${pcount}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
 ## ====================================================================
 #   define directories <Please make sure the directories are correct>

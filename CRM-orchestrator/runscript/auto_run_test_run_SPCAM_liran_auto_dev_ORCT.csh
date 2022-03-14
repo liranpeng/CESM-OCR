@@ -7,5 +7,5 @@ do
 #sed -e "s/SBX/${SUBX}/g; s/NNNX/${NX}/g" test_run_SPCAM_liran_dev.csh > run_${SUBX}_${NX}.csh
 sed -e "s/ORCTTT/${NX}/g" run_2Ddev_2_64_sample.csh > run_2Ddev_ORCT_${NX}.csh
 chmod 700 run_2Ddev_ORCT_${NX}.csh
-./run_2Ddev_ORCT_${NX}.csh
+#./run_2Ddev_ORCT_${NX}.csh
 done
