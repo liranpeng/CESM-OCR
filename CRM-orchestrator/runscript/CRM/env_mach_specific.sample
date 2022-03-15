@@ -54,6 +54,9 @@
   </module_system>
   <environment_variables>
     <env name="OMP_STACKSIZE">128M</env>
+    <env name="I_MPI_DEBUG">4</env>
+    <env name="FI_PROVIDER">verbs</env>
+    <env name="I_MPI_OFI_PROVIDER">verbs</env>
   </environment_variables>
   <mpirun mpilib="default">
     <executable>ibrun</executable>

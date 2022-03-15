@@ -35,13 +35,13 @@ set crm_nz_in         = 24
 set spcam_subx_in     = 2
 set spcam_suby_in     = 1
 set spcam_orctotal_in = 384
-set I_MPI_DEBUG = 4
-set FI_PROVIDER=verbs
+#setenv I_MPI_DEBUG 4
+#setenv FI_PROVIDER verbs
 @ CRM_pcount       = $spcam_orctotal_in * $spcam_subx_in * $spcam_suby_in
 @ NPNN = $pcount +  $CRM_pcount
 @ NPNNX = 56
 @ NNODE = $NPNN / $NPNNX + 1
-setenv CASE       scallMPIdebug_mvapich2_${NPNNX}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
+setenv CASE       scallMPIdebug_Amid2_${NPNNX}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
 ## ====================================================================
 #   define directories <Please make sure the directories are correct>
 ## ====================================================================
@@ -129,6 +129,7 @@ mpif90  -o /scratch1/07088/tg863871/CESM2_case/$CASE/$CASE/bld/crm.exe perf_mod.
 cd  $CASEROOT
 ./case.submit
 sed -e "s/NPN/$NPNNX/g; s/NNODEEE/$NNODE/g; s/CASE_FOLDER/$CASE/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.sample > $CASEROOT/.case.run
+cat $CASEROOT/.case.run
 sbatch --time ${run_time} -p ${queue} --ntasks-per-node=50 --nodes=${NNODE} --account ATM20009 .case.run --resubmit
 cd ..
 #./case.submit

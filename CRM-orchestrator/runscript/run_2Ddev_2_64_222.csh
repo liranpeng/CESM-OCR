@@ -21,6 +21,9 @@ setenv CCSMTAG     CESM-OCR
 #setenv CASERES     f19_g17
 # Two moment microphysics SPCAM for testing
 #   and movement toward aerosol-cloud interactions
+setenv I_MPI_DEBUG 4
+setenv FI_PROVIDER verbs
+
 set crm_nx_in         = 64         # <<< change this one!
 set crm_ny_in         = 1
 set crm_dx_in         = 200
@@ -33,7 +36,7 @@ set spcam_orctotal_in = 384
 @ NPNN = $pcount +  $CRM_pcount
 @ NPNNX = 50
 @ NNODE = $NPNN / $NPNNX + 1
-setenv CASE       scalli_check_${NPNNX}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
+setenv CASE       scalling_IMPI4_check_${NPNNX}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
 
 setenv CASEROOT  $SCRATCH/CESM2_case/$CASE
 
