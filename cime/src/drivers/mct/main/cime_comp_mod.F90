@@ -687,15 +687,10 @@ contains
     integer :: mype, numpes !bloss: used for MPI split diagnostics
 
     beg_count = shr_sys_irtc(irtc_rate)
-    write(logunit,*) 'Liran here 1' 
     call mpi_init(ierr)
-    write(logunit,*) 'Liran here 2'
     call shr_mpi_chkerr(ierr,subname//' mpi_init')
-    write(logunit,*) 'Liran here 3'
     end_count = shr_sys_irtc(irtc_rate)
-    write(logunit,*) 'Liran here 4'
     mpi_init_time = real( (end_count-beg_count), r8)/real(irtc_rate, r8)
-        write(logunit,*) 'Liran here 5'
 !bloss(2021-04): Instead of duplicating MPI_COMM_WORLD into the new global_comm
 !         communicator, we are going to split MPI_COMM_WORLD into two 
 !         parts:
@@ -705,14 +700,10 @@ contains
 
 !bloss    call mpi_comm_dup(MPI_COMM_WORLD, global_comm, ierr)
 !bloss    call shr_mpi_chkerr(ierr,subname//' mpi_comm_dup')
-    write(logunit,*) 'Liran here 6'
     call mpi_comm_split(MPI_COMM_WORLD, 0, 0, global_comm, ierr)
-      write(logunit,*) 'Liran here 7'
     call shr_mpi_chkerr(ierr,subname//' mpi_comm_split')
-    write(logunit,*) 'Liran here 8'
     !bloss: write message to log about split from rank==0
     call shr_mpi_commrank(global_comm, mype  , ' cime_pre_init1a')
-    write(logunit,*) 'Liran here 9'
     if(mype.eq.0) then
        write(logunit,*) 'bloss: Split MPI_COMM_WORLD within cime_comp_mod.F90'
        write(logunit,*) 'bloss: global_comm is now distinct from MPI_COMM_WORLD'

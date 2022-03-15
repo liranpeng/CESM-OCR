@@ -126,25 +126,13 @@
     <resource name="RLIMIT_STACK">-1</resource>
   </resource_limits>
   <mpirun mpilib="default">
-    <executable>mpiexec_mpt</executable>
-    <arguments>
-      <arg name="labelstdout">-p "%g:"</arg>
-      <arg name="num_tasks"> -np {{ total_tasks }}</arg>
-      <arg name="zthreadplacement"> omplace -tm open64 </arg>
-    </arguments>
+    <executable>mpirun</executable>
   </mpirun>
   <mpirun mpilib="mpt" queue="share">
     <executable>mpirun `hostname`</executable>
-    <arguments>
-      <arg name="anum_tasks"> -np {{ total_tasks }}</arg>
-      <arg name="zthreadplacement"> omplace -tm open64 </arg>
-    </arguments>
   </mpirun>
   <mpirun mpilib="openmpi">
     <executable>mpirun</executable>
-    <arguments>
-      <arg name="anum_tasks"> -np {{ total_tasks }}</arg>
-    </arguments>
   </mpirun>
   <mpirun mpilib="default" unit_testing="true">
     <executable>/opt/sgi/mpt/mpt-2.15/bin/mpirun $ENV{UNIT_TEST_HOST} -np 1 </executable>

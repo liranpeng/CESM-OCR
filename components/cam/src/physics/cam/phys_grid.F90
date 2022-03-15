@@ -4326,6 +4326,7 @@ logical function phys_grid_initialized ()
                if (dyn_to_latlon_gcol_map(curgcol) .ne. -1) then
                   ! yes - then save the information
                   ncols = ncols + 1
+                  write(iulog,*) "Liran check curgcol",cid,ncols,curgcol  
                   chunks(cid)%gcol(ncols) = curgcol
                   chunks(cid)%lon(ncols)  = lon_p(curgcol)
                   chunks(cid)%lat(ncols)  = lat_p(curgcol)

@@ -1,9 +1,10 @@
 #!/bin/csh
 # This script automatically download cesm2 
 # Once the job is finished, it helps to submit the job
-set run_time       = 00:30:00
+set run_time       = 01:00:00
 #set queue          = skx-normal
-set queue          = economy
+#set queue          = economy
+set queue          = regular
 set account        = UWAS0096
 set run_start_date = "0001-01-01"
 set pcount         = 50
@@ -29,18 +30,18 @@ setenv JOB_QUEUE   $queue
 setenv SCRATCH     /glade/scratch/lpeng 
 setenv SCRIPTDIR   $HOME/repositories/$CCSMTAG/CRM-orchestrator/runscript
 ### GRID OPTIONS <Liran>
-set crm_nx_in         = 64         # <<< change this one!
+set crm_nx_in         = 256         # <<< change this one!
 set crm_ny_in         = 1
 set crm_dx_in         = 200
-set crm_dt_in         = 0.5
+set crm_dt_in         = 20
 set crm_nz_in         = 24
 set spcam_subx_in     = 2
 set spcam_suby_in     = 1
-set spcam_orctotal_in = 6
+set spcam_orctotal_in = 23
 @ CRM_pcount       = $spcam_orctotal_in * $spcam_subx_in * $spcam_suby_in
 @ NPNN = $pcount +  $CRM_pcount
 @ NNODE = $NPNN / $taskPernode + 1
-setenv CASE       scalling24_${pcount}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
+setenv CASE       scalling_fast_${pcount}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
 ## ====================================================================
 #   define directories <Please make sure the directories are correct>
 ## ====================================================================
@@ -88,11 +89,16 @@ sed -e "s/NPN/$taskPernode/g; s/NNNODE/$NNODE/g; s/CCCASE/$CASE/g; s/PPRO/$PROJE
 #cat <<EOF >> user_nl_drv
 #atm_cpl_dt = 10
 #EOF
+cat <<EOF >> user_nl_cam
+fincl2 = 'PS:I'
+nhtfrq = 0,1
+mfilt = 0,1
+EOF
 cd  $CASEROOT
 ./xmlchange --file env_batch.xml --id JOB_QUEUE --val $queue
 ./xmlchange --file env_workflow.xml --id JOB_WALLCLOCK_TIME --val $run_time
-./xmlchange --file env_run.xml --id STOP_OPTION --val nhour
-./xmlchange --file env_run.xml --id STOP_N --val 2
+./xmlchange --file env_run.xml --id STOP_OPTION --val nsteps
+./xmlchange --file env_run.xml --id STOP_N --val 10
 #./xmlchange --file env_run.xml --id ATM_NCPL --val 432
 ./case.setup
 ./xmlchange --file env_run.xml --id run_data_archive --val "FALSE"
