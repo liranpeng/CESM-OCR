@@ -816,6 +816,7 @@ subroutine spmdinit_dyn(jord, grid)
 
    lonn = plon / nprxy_x
    workleft = plon - lonn * nprxy_x
+   write(iulog,*) 'Liran plon',plon,nprxy_x,lonn,workleft
    if (lonn < 3) then
       call endrun(sub//': ERROR: less than 3 longitudes per XY subdomain')
    end if

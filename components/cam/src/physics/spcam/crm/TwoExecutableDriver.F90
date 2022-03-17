@@ -112,9 +112,9 @@ program TwoExecutableDriver
   923 format(I6.6)
   write(crm_number,923) myrank_crm
   open(unit=13,file='crm.log.'//TRIM(crm_number),form='formatted')
-  write(13,*) 'Global: ',MPI_COMM_WORLD,numproc_global,myrank_global
-  write(13,*) 'CRM: ',crm_comm,numproc_crm,myrank_crm
-  write(13,*) 'CRM in:',crm_comm_in,crm_comm_color,numproc_crm_in,myrank_crm_in
+  write(13,*) 'Global: ',myrank_global,numproc_global
+  write(13,*) 'CRM: ',myrank_crm,numproc_crm
+  write(13,*) 'CRM in:',myrank_crm_in,crm_comm_color,numproc_crm_in
   ! ----------- GCM handshake from spcam_drivers --------------
   EndFlag  = 0
   !do i = 1,numproc_crm-1
@@ -127,7 +127,7 @@ program TwoExecutableDriver
      ! Recieve rank of host GCM column linked to this CRM, for eventual MPI_Send
      call MPI_Recv(destGCM0,1,MPI_INTEGER,MPI_ANY_SOURCE,54321,MPI_COMM_WORLD,status,ierr)
      if (ierr.eq.0) then
-       write(13,*) 'CRM rank',myrank_crm,crm_comm_in,' got handshake; its GCM dest rank=',destGCM0,myrank_global
+       write(13,*) 'CRM rank',myrank_crm,' got handshake; its GCM dest rank=',destGCM0,myrank_global
      else 
        write (13,*) 'MPI_Recv from spcam_driver handshake failed for CRM rank ',myrank_crm,',ierr=',ierr
      end if
@@ -150,7 +150,6 @@ program TwoExecutableDriver
   call MPI_Recv(inp_Var_Flat2(:) ,flen2,MPI_REAL8,MPI_ANY_SOURCE,9019,MPI_COMM_WORLD,status,ierr)
   call t_stampf(wall(2), usr(2), sys(2))
   wall(3) = wall(2)-wall(1)
-  write(13,*) 'Finish receiving',myrank_crm_in,wall(3)
   call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
   inp01_lchnk         = int(inp_Var_Flat(1))
   inp02_i             = int(inp_Var_Flat(2))
@@ -279,6 +278,8 @@ program TwoExecutableDriver
     end do
   end do
 
+    write(13,*) 'Finish receiving',totalcol,myrank_global,wall(3)
+
 ! Preparing to call the CRM
 
   !call mpi_comm_size(crm_comm_in, numproc_crm_in, ierr)
@@ -365,7 +366,7 @@ write(13,*) 'Liran start send data back',myrank_crm,it,jt,wall(4)
   out_Var_Flat(       25)                               = jt
   out_Var_Flat(       26)                               = jt_crm
   out_Var_Flat(       27)                               = mx_crm
-  out_Var_Flat(       28)                               = totalcol
+  out_Var_Flat(       28)                               = inp02_i
 !print*,'Check jt',jt_crm,mx_crm
   out_Var_Flat(        1+singleleno:   pver+singleleno) = out01_qltend
   out_Var_Flat( 1*pver+1+singleleno: 2*pver+singleleno) = out02_qcltend

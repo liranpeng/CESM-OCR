@@ -509,10 +509,11 @@ subroutine tphysbc_spcam (ztodt, state,   &
     do i=1,ncol
       if (gcolindex(i).le.orc_total) then
         do ii=1,orc_nsubdomains
-          state%crmrank(i,ii) = npes+(gcolindex(i)-1)*orc_nsubdomains + ii
+          state%crmrank(i,ii) = npes+(gcolindex(i)-1)*orc_nsubdomains + ii-1 
           state%isorchestrated(i) = .true.
           state%isofflinecrm(i)    = .false.
-          write (iulog,*) 'MDEBUG Liran',iam,ncol,i,gcolindex(i),state%crmrank(i,ii)
+          gcmrank(1) = iam
+          write (iulog,*) 'MDEBUG Liran',iam,i,lchnk,gcolindex(i),state%crmrank(i,ii)
           call MPI_Send(gcmrank,1,MPI_INTEGER,state%crmrank(i,ii),54321,MPI_COMM_WORLD,ierr)
         end do
       endif

@@ -1702,23 +1702,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
             write(iulog,*) 'WARNING!! crm_nx is not dividable by orc_nsubdomains'
           end if 
 
-          lchnk = state%lchnk
-          totalcol = 0
-          do cid=1,nchunks
-            if (cid.gt.1)then
-              totalcol(cid) = totalcol(cid-1)
-            endif
-            do ii = 1,chunks(cid)%ncols
-              totalcol(cid) = totalcol(cid) + 1
-            enddo
-          enddo
-
-          if (lchnk.gt.begchunk)then
-            totalcol_sel = totalcol(lchnk-begchunk+1)
-          else
-            totalcol_sel = 0
-          endif
-
           crm_start_ind = (iorc-1)*crm_step+1
           crm_end_ind   = (iorc)*crm_step-1+1
           call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
@@ -1756,7 +1739,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           Var_Flat(       28)                             = latitude0
           Var_Flat(       29)                             = longitude0
           Var_Flat(       30)                             = FlagEnd
-          Var_Flat(       31)                             = totalcol_sel
+          Var_Flat(       31)                             = myrank_global
           Var_Flat(        1+singlelen:   pver+singlelen) = state_loc%t(i_save,:)
           Var_Flat( 1*pver+1+singlelen: 2*pver+singlelen) = state_loc%q(i_save,:,1)
           Var_Flat( 2*pver+1+singlelen: 3*pver+singlelen) = state_loc%q(i_save,:,ixcldliq)
@@ -1871,7 +1854,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
             Var_Flat2(fcount + 8 * crm_nz) = work_qp0(kk)
             Var_Flat2(fcount + 9 * crm_nz) = work_tke0(kk)
           end do
-write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
+write (iulog,*),'Sending data from: ',iam,dest,myrank_global,lchnk,i_save
           call MPI_Send(Var_Flat(:)         ,flen,MPI_REAL8 ,dest,9018,MPI_COMM_WORLD,ierr)
           call MPI_Send(Var_Flat2(:)         ,flen2,MPI_REAL8,dest,9019,MPI_COMM_WORLD,ierr)
           end do !do iorc=1,orc_nsubdomains
@@ -2075,7 +2058,8 @@ write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
           it = int(out_it)
           jt = int(out_jt)
           icheck_iorc = mod(int(out_global_rank-npes),orc_nsubdomains)
-          icheck_column = (int(out_global_rank)+1-icheck_iorc-npes-out_totalcol)/orc_nsubdomains+1   
+          icheck_column = out_totalcol
+          write(iulog,*),'Check here22',icheck_iorc,icheck_column,int(out_global_rank)  
           fcount = structleno*pver+20+singleleno+1
           do kk=1,crm_nz
             do jj=1,orc_ny

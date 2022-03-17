@@ -7,7 +7,7 @@ set run_time       = 01:00:00
 set queue          = regular
 set account        = UWAS0096
 set run_start_date = "0001-01-01"
-set pcount         = 50
+set pcount         = 36
 set taskPernode    = 36
 set emailaddress   = liranp@uci.edu
 ## ====================================================================
@@ -24,7 +24,8 @@ setenv CCSMTAG     CESM-OCR
 # Two moment microphysics SPCAM for testing
 #   and movement toward aerosol-cloud interactions
 setenv CASESET     FSPCAMS
-setenv CASERES     f45_g37
+#setenv CASERES     f45_g37
+setenv CASERES     f10_f10_mg37
 setenv PROJECT     UWAS0096
 setenv JOB_QUEUE   $queue
 setenv SCRATCH     /glade/scratch/lpeng 
@@ -37,11 +38,11 @@ set crm_dt_in         = 20
 set crm_nz_in         = 24
 set spcam_subx_in     = 2
 set spcam_suby_in     = 1
-set spcam_orctotal_in = 23
-@ CRM_pcount       = $spcam_orctotal_in * $spcam_subx_in * $spcam_suby_in
+set spcam_orctotal_in = 10
+@ CRM_pcount       = $spcam_orctotal_in * $spcam_subx_in * $spcam_suby_in 
 @ NPNN = $pcount +  $CRM_pcount
 @ NNODE = $NPNN / $taskPernode + 1
-setenv CASE       scalling_fast_${pcount}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
+setenv CASE       scalling10_GCMRes_${CASERES}_fast_${pcount}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
 ## ====================================================================
 #   define directories <Please make sure the directories are correct>
 ## ====================================================================
