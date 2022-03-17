@@ -1868,7 +1868,7 @@ write (iulog,*),'Sending data from: ',iam,dest,myrank_global,lchnk,i_save
          nsubdomains_y  = orc_nsubdomains_y
          call crm_define_grid()
  
-        if (state%isofflinecrm(i))then
+        if (state%isofflinecrm(i) .or. (.not. (state%isorchestrated(i))) )then
          call crm (lchnk,      i_save,                                                                                            &
              state_loc%t(i_save,:),   state_loc%q(i_save,:,1),    state_loc%q(i_save,:,ixcldliq), state_loc%q(i_save,:,ixcldice),                &
              ul(:),              vl(:),                                                                                      &
