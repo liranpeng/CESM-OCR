@@ -1127,7 +1127,7 @@ end subroutine crm_init_cnst
    logical :: ls, lu, lv, lq(pcnst)
    integer,parameter :: structlen = 49
    integer,parameter :: singlelen = 31
-   integer,parameter :: flen      = structlen*pver+singlelen+1+20+pcols
+   integer,parameter :: flen      = structlen*pver+singlelen+1+20+1 !bloss: +pcols --> + 1, because we pass a single gcolindex
    integer,parameter :: flen2     = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny
    integer,dimension(structlen) :: blocklengths
    INTEGER,dimension(structlen) :: types
@@ -1790,7 +1790,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           Var_Flat(47*pver+2+singlelen:48*pver+singlelen+1) = ptend_loc%q(i_save,:,ixcldice)
           Var_Flat(48*pver+2+singlelen:49*pver+singlelen+1) = ptend_loc%s(i_save,:)
           Var_Flat(49*pver+2+singlelen:49*pver+21+singlelen)= qtotcrm(i_save,1:20)
-          Var_Flat(49*pver+22+singlelen:49*pver+21+singlelen+pcols)=gcolindex(1:pcols) 
+          Var_Flat(49*pver+21+singlelen+1)=gcolindex(i) !bloss: Pass a single gcolindex.
           fcount = 0
           do kk=1,crm_nz
             do jj=1,crm_ny
