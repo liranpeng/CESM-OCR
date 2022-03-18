@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Batch system directives
-#PBS -N run.scalling11_GCMRes_f10_f10_mg37_fast_36_crmnx256_crmny1_subx2_suby1_10orc_2nodes_regular
+#PBS -N run.scalling12_GCMRes_f10_f10_mg37_fast_36_crmnx256_crmny1_subx2_suby1_10orc_2nodes_regular
 #PBS  -r n 
 #PBS  -j oe 
 #PBS  -V 
@@ -16,7 +16,7 @@ DO NOT RUN THIS SCRIPT MANUALLY
 """
 
 import os, sys
-os.chdir( '/glade/scratch/lpeng/CESM2_case/scalling11_GCMRes_f10_f10_mg37_fast_36_crmnx256_crmny1_subx2_suby1_10orc_2nodes_regular')
+os.chdir( '/glade/scratch/lpeng/CESM2_case/scalling12_GCMRes_f10_f10_mg37_fast_36_crmnx256_crmny1_subx2_suby1_10orc_2nodes_regular')
 
 _LIBDIR = os.path.join("/glade/u/home/lpeng/repositories/CESM-OCR/cime", "scripts", "Tools")
 sys.path.append(_LIBDIR)

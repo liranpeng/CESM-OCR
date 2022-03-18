@@ -622,16 +622,16 @@ write(0, *) 'Liran here 0'
           qp0(k) = qp0(k) * factor_xy
           tke0(k) = tke0(k) * factor_xy 
         end do
-        buffer1(:, 1) = u0(:)/float(nsubdomains)
-        buffer1(:, 2) = v0(:)/float(nsubdomains)
-        buffer1(:, 3) = t0(:)/float(nsubdomains)
-        buffer1(:, 4) = t00(:)/float(nsubdomains)
-        buffer1(:, 5) = tabs0(:)/float(nsubdomains)
-        buffer1(:, 6) = q0(:)/float(nsubdomains)
-        buffer1(:, 7) = qv0(:)/float(nsubdomains)
-        buffer1(:, 8) = qn0(:)/float(nsubdomains)
-        buffer1(:, 9) = qp0(:)/float(nsubdomains)
-        buffer1(:,10) = tke0(:)/float(nsubdomains)
+        buffer1(1:nzm, 1) = u0(:)/float(nsubdomains)
+        buffer1(1:nzm, 2) = v0(:)/float(nsubdomains)
+        buffer1(1:nzm, 3) = t0(:)/float(nsubdomains)
+        buffer1(1:nzm, 4) = t00(:)/float(nsubdomains)
+        buffer1(1:nzm, 5) = tabs0(:)/float(nsubdomains)
+        buffer1(1:nzm, 6) = q0(:)/float(nsubdomains)
+        buffer1(1:nzm, 7) = qv0(:)/float(nsubdomains)
+        buffer1(1:nzm, 8) = qn0(:)/float(nsubdomains)
+        buffer1(1:nzm, 9) = qp0(:)/float(nsubdomains)
+        buffer1(1:nzm,10) = tke0(:)/float(nsubdomains)
         call task_sum_real_ORC(buffer1,buffer2,nzm*nfield)
         u0(:)    = buffer2(:, 1)
         v0(:)    = buffer2(:, 2)
@@ -1157,6 +1157,7 @@ if (dudtmax.gt.100) then
 write(0, *) 'Wrong here 4',icol,dudtmax
 end if
 dudtmax = -9999.
+      do l=1,3
         do k=1,nzm
           do j=1,ny
            do i=1,nx
@@ -1166,7 +1167,7 @@ dudtmax = -9999.
            end do
           end do
         end do
-
+      end do
 if (dudtmax.gt.100) then
 write(0, *) 'Wrong here 42',icol,dudtmax
 end if

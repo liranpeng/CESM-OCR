@@ -1128,7 +1128,7 @@ end subroutine crm_init_cnst
    integer,parameter :: structlen = 49
    integer,parameter :: singlelen = 31
    integer,parameter :: flen      = structlen*pver+singlelen+1+20+1 !bloss: +pcols --> + 1, because we pass a single gcolindex
-   integer,parameter :: flen2     = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny
+   integer,parameter :: flen2     = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny + 10*crm_nz
    integer,dimension(structlen) :: blocklengths
    INTEGER,dimension(structlen) :: types
    integer :: crm_comm
@@ -1323,7 +1323,8 @@ end subroutine crm_init_cnst
          state_loc%q(:ncol, :pver, ixcldliq) = state%q(:ncol, :pver, ixcldliq)
    endif
 
-call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+   FlagEnd = 0
+   call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 
    !------------------------- 
    !------------------------- 
@@ -1501,7 +1502,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
          cs(:ncol, 1:pver) = state_loc%pmid(:ncol, 1:pver)/(287.15_r8*state_loc%t(:ncol, 1:pver))
 
        endif 
-       FlagEnd = 0
    !------------------------- 
    !------------------------- 
    ! not is_first_step
@@ -1509,7 +1509,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
    !------------------------- 
 
    else
-
        call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 
        !do i=1,ncol
@@ -1706,7 +1705,11 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           crm_end_ind   = (iorc)*crm_step-1+1
           call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           chnksz = orc_nx*orc_ny*crm_nz
+          write(iulog,*) 'Check dimension',orc_nx,crm_start_ind,crm_end_ind,nmicro_fields_total
           call get_gcol_all_p(lchnk, pcols, gcolindex)
+          if (i.eq.ncol) then
+            FlagEnd = 1
+          endif
           latitude0 = get_rlat_p(lchnk, i_save)*57.296_r8
           longitude0 = get_rlon_p(lchnk, i_save)*57.296_r8 
           Var_Flat(        1)                             = real(lchnk,8)
@@ -1816,7 +1819,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
               end do
             end do
           end do
-
+          write(iulog,*) 'Check dimension1',fcount
           fcount = 17*chnksz
           do ll=1,nmicro_fields_total
             do kk=1,crm_nz
@@ -1828,6 +1831,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
               end do
             end do
           end do
+          write(iulog,*) 'Check dimension2',fcount
         !write(iulog,*) 'check na:',na,nb,nc
         !write(iulog,*) 'Send 1:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,1)
         !write(iulog,*) 'Send 3:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,3)
@@ -1839,7 +1843,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
               Var_Flat2(fcount) = prec_crm(i_save,ii,jj)
             end do
           end do
-
+          write(iulog,*) 'Check dimension3',fcount
           fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny
           do kk=1,crm_nz
             fcount = fcount + 1
@@ -1854,6 +1858,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
             Var_Flat2(fcount + 8 * crm_nz) = work_qp0(kk)
             Var_Flat2(fcount + 9 * crm_nz) = work_tke0(kk)
           end do
+          write(iulog,*) 'Check dimension4',fcount
 write (iulog,*),'Sending data from: ',iam,dest,myrank_global,lchnk,i_save
           call MPI_Send(Var_Flat(:)         ,flen,MPI_REAL8 ,dest,9018,MPI_COMM_WORLD,ierr)
           call MPI_Send(Var_Flat2(:)         ,flen2,MPI_REAL8,dest,9019,MPI_COMM_WORLD,ierr)
@@ -2536,9 +2541,6 @@ write (iulog,*),'Sending data from: ',iam,dest,myrank_global,lchnk,i_save
               crm_ng(i,:,:,:) = crm_micro(i,:,:,:,10)
               crm_qc(i,:,:,:) = crm_micro(i,:,:,:,11)
           endif
-       if (i.eq.ncol) then
-         FlagEnd = 1
-       endif
        end do ! i (loop over ncol)
        call t_stopf('crm_call')
        call t_stampf(wall(2), usr(2), sys(2))

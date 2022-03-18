@@ -31,7 +31,8 @@ program TwoExecutableDriver
   integer :: inp01_lchnk,inp02_i,totalcol ! pritch note important for integers to
  ! be MPI_received that they masquerade as 1-element arrays here.
   real(r8), dimension(pver) :: inp03_tl,inp04_ql,inp05_qccl,inp06_qiil,inp07_ul,inp08_vl
-  real(r8), dimension(pver) :: inp10_pmid,inp11_pdel,inp13_zm,inp14_zi
+  real(r8), dimension(pver) :: inp10_pmid,inp11_pdel,inp13_zm
+  real(r8), dimension(pver+1) :: inp14_zi
   real(r8) :: inp09_ps,inp12_phis,inp15_ztodt
 
 ! output ingrdients from CRM (to be sent)
@@ -56,7 +57,7 @@ program TwoExecutableDriver
   integer,parameter :: structlen  = 49
   integer,parameter :: singlelen  = 31
   integer,parameter :: flen       = structlen*pver+singlelen+1+20+pcols
-  integer,parameter :: flen2      = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny
+  integer,parameter :: flen2      = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny+10*crm_nz
   integer,parameter :: structleno = 39
   integer,parameter :: singleleno = 28
   integer,parameter :: fleno      = structleno*pver+singleleno+1+20
