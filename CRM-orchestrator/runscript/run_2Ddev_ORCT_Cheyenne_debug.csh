@@ -7,7 +7,7 @@ set run_time       = 01:00:00
 set queue          = regular
 set account        = UWAS0096
 set run_start_date = "0001-01-01"
-set pcount         = 50
+set pcount         = 36
 set taskPernode    = 36
 set emailaddress   = liranp@uci.edu
 ## ====================================================================
@@ -24,6 +24,7 @@ setenv CCSMTAG     CESM-OCR
 # Two moment microphysics SPCAM for testing
 #   and movement toward aerosol-cloud interactions
 setenv CASESET     FSPCAMS
+#setenv CASERES     f45_g37
 setenv CASERES     f10_f10_mg37
 setenv PROJECT     UWAS0096
 setenv JOB_QUEUE   $queue
@@ -32,16 +33,16 @@ setenv SCRIPTDIR   $HOME/repositories/$CCSMTAG/CRM-orchestrator/runscript
 ### GRID OPTIONS <Liran>
 set crm_nx_in         = 256         # <<< change this one!
 set crm_ny_in         = 1
-set crm_dx_in         = 4000
+set crm_dx_in         = 200
 set crm_dt_in         = 20
 set crm_nz_in         = 24
 set spcam_subx_in     = 2
 set spcam_suby_in     = 1
-set spcam_orctotal_in = 40
-@ CRM_pcount       = $spcam_orctotal_in * $spcam_subx_in * $spcam_suby_in
+set spcam_orctotal_in = 10
+@ CRM_pcount       = $spcam_orctotal_in * $spcam_subx_in * $spcam_suby_in 
 @ NPNN = $pcount +  $CRM_pcount
 @ NNODE = $NPNN / $taskPernode + 1
-setenv CASE       scalling_GCMRes_${CASERES}_GCMTask${pcount}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
+setenv CASE       scalling12_GCMRes_${CASERES}_fast_${pcount}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
 ## ====================================================================
 #   define directories <Please make sure the directories are correct>
 ## ====================================================================
@@ -99,6 +100,7 @@ cd  $CASEROOT
 ./xmlchange --file env_workflow.xml --id JOB_WALLCLOCK_TIME --val $run_time
 ./xmlchange --file env_run.xml --id STOP_OPTION --val nsteps
 ./xmlchange --file env_run.xml --id STOP_N --val 10
+./xmlchange --file env_build.xml --id DEBUG --val TRUE
 #./xmlchange --file env_run.xml --id ATM_NCPL --val 432
 ./case.setup
 ./xmlchange --file env_run.xml --id run_data_archive --val "FALSE"
@@ -123,14 +125,14 @@ cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_task_util_ORC.o .
 cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_kurant_ORC.o .
 cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_pressure_ORC.o .
 cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/atm/obj/crmx_press_rhs_ORC.o .
-cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/intel/mpt/nodebug/nothreads/mct/mct/noesmf/c1a1l1i1o1r1g1w1i1e1/csm_share/shr_kind_mod.o .
-cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/intel/mpt/nodebug/nothreads/mct/gptl/perf_mod.o .
-mpif90  -o $SCRATCH/CESM2_case/$CASE/$CASE/bld/crm.exe perf_mod.o task_exchange.o crmx_pressure_ORC.o crmx_press_rhs_ORC.o crmx_kurant_ORC.o task_dispatch.o task_assign_bnd.o crmx_mpi.o crmx_task_util_ORC.o crmx_task_init_ORC.o crmdims.o ppgrid.o crmx_crm_module_ORC.o  shr_kind_mod.o phys_grid.o TwoExecutableDriver.o -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -latm -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lice  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/intel/mpt/nodebug/nothreads/mct/mct/noesmf/lib/ -lclm  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -locn  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lrof  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lglc  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lwav  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lesp  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -liac -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/intel/mpt/nodebug/nothreads/mct/mct/noesmf/c1a1l1i1o1r1g1w1i1e1/lib -lcsm_share -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/intel/mpt/nodebug/nothreads/mct/lib -lpiof -lpioc -lgptl -lmct -lmpeu   -mkl=cluster  -L/glade/u/apps/ch/opt/pnetcdf/1.12.1/mpt/2.21/intel/19.0.5//lib -lpnetcdf -L/glade/u/apps/ch/opt/netcdf/4.7.3/intel/19.0.5//lib -lnetcdff -lnetcdf
+cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/intel/mpt/debug/nothreads/mct/mct/noesmf/c1a1l1i1o1r1g1w1i1e1/csm_share/shr_kind_mod.o .
+cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/intel/mpt/debug/nothreads/mct/gptl/perf_mod.o .
+mpif90  -o $SCRATCH/CESM2_case/$CASE/$CASE/bld/crm.exe perf_mod.o task_exchange.o crmx_pressure_ORC.o crmx_press_rhs_ORC.o crmx_kurant_ORC.o task_dispatch.o task_assign_bnd.o crmx_mpi.o crmx_task_util_ORC.o crmx_task_init_ORC.o crmdims.o ppgrid.o crmx_crm_module_ORC.o  shr_kind_mod.o phys_grid.o TwoExecutableDriver.o -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -latm -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lice  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/intel/mpt/debug/nothreads/mct/mct/noesmf/lib/ -lclm  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -locn  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lrof  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lglc  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lwav  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lesp  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -liac -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/intel/mpt/debug/nothreads/mct/mct/noesmf/c1a1l1i1o1r1g1w1i1e1/lib -lcsm_share -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/intel/mpt/debug/nothreads/mct/lib -lpiof -lpioc -lgptl -lmct -lmpeu   -mkl=cluster  -L/glade/u/apps/ch/opt/pnetcdf/1.12.1/mpt/2.21/intel/19.0.5//lib -lpnetcdf -L/glade/u/apps/ch/opt/netcdf/4.7.3/intel/19.0.5//lib -lnetcdff -lnetcdf
 cd  $CASEROOT
 ./case.submit
+#sed -e "s/NPN/${taskPernode}/g; s/NNNODE/${NNODE}/g; s/CASE_FOLDER/$CASEROOT/g; s/CCCASE/${CASE}/g; s/PPRO/${PROJECT}/g; s/QQUE/${queue}/g; s/EEMA/${emailaddress}/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.sample > $CASEROOT/.case.run
+#qsub -l select=${NNODE}:ncpus=${taskPernode}:mpiprocs=${taskPernode}:ompthreads=1 -l -walltime ${run_time} -q ${queue}  -A ${account} .case.run -resubmit
 cp $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.send .case.run
-#qsub -l select=${NNODE}:ncpus=${taskPernode}:mpiprocs=${taskPernode}:ompthreads=2 -l -walltime ${run_time} -q ${queue}  -A ${account} .case.run -resubmit
-#cp $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.send .case.run
-#cd ..
+cd ..
 #./case.submit
 

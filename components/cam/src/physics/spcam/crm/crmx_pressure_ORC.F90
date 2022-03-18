@@ -165,9 +165,10 @@ do m = 0,nsubdomains-1
       call task_receive_float(bufp_subs(0,1-YES3D,1,n_in), &
                              nzslab*nxp1*nyp1,reqs_in(n_in))
     end if
+!print*,'Liran p check 12',rank,nxp1,nyp2,nzslab,n_in
      do k = 1,nzslab 
       do j = 1,nyp2 
-       do i = 1,nxp1 
+       do i = 1,nxp1-1 
          buff_subs(i,j,k,n_in) = bufp_subs(i,j,k,n_in) 
 !print*,'Liran p check 12',rank,m,i,j,k,n_in,bufp_subs(i,j,k,n_in)
        end do 
@@ -357,7 +358,7 @@ do m = 0, nsubdomains-1
       do j = 1,nyp22
        do i = 1,nxp1
          buff_subs(i,j,k,1) = fp(i+it,j+jt,k)
-         bufp_subs(i,j,k,1) = fp(i+it,j+jt,k)
+         !bufp_subs(i,j,k,1) = fp(i+it,j+jt,k)
 !print*,'Liran buff_subs',rank,i,k,bufp_subs(i,j,k,1)
        end do
       end do
@@ -620,7 +621,7 @@ do m = 0, nsubdomains-1
      do k = 1,nzslab 
       do j = 1-YES3D,ny 
        do i = 0,nx 
-         buff_slabs(i,j,k,n_in) = bufp_slabs(i,j,k,n_in) 
+         buff_slabs(i+1,j,k,n_in) = bufp_slabs(i,j,k,n_in) 
        end do 
       end do 
      end do 
@@ -664,7 +665,7 @@ do m = 0, nsubdomains-1
        do i = 0,nx
          ii=iii(i+it)
          bufp_subs(i,j,k,1) = fp(ii,jj,k)
-         buff_subs(i,j,k,1) = bufp_subs(i,j,k,1)
+         buff_subs(i+1,j,k,1) = bufp_subs(i,j,k,1)
 !print*, 'Liran Check bufp_subs1 ',rank,i,k,buff_subs(i,j,k,1)
        end do
       end do

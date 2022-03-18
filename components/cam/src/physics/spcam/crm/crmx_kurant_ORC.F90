@@ -27,7 +27,7 @@ allocate ( uhm(nzm) ) ! maximum horizontal wind velocity
 
 ncycle = 1
 	
-wm(nz)=0.
+wm =0.
 w_max =0.
 u_max =0.
 do k = 1,nzm
@@ -38,7 +38,7 @@ w_max=max(w_max,maxval(w(1:nx,1:ny,1:nz)))
 u_max=max(u_max,maxval(uhm(1:nzm)))
 
 cfl = 0.
-do k=1,nzm
+do k=1,nzm-1
   cfl = max(cfl,uhm(k)*dt*sqrt((1./dx)**2+YES3D*(1./dy)**2), &
                    max(wm(k),wm(k+1))*dt/(dz*adzw(k)) )
 end do

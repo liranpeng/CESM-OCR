@@ -513,7 +513,7 @@ subroutine tphysbc_spcam (ztodt, state,   &
           state%isorchestrated(i) = .true.
           state%isofflinecrm(i)    = .false.
           gcmrank(1) = iam
-          write (iulog,*) 'MDEBUG Liran',iam,i,lchnk,gcolindex(i),state%crmrank(i,ii)
+          !write (iulog,*) 'MDEBUG Liran',iam,i,lchnk,gcolindex(i),state%crmrank(i,ii)
           call MPI_Send(gcmrank,1,MPI_INTEGER,state%crmrank(i,ii),54321,MPI_COMM_WORLD,ierr)
         end do
       endif

@@ -1705,7 +1705,7 @@ end subroutine crm_init_cnst
           crm_end_ind   = (iorc)*crm_step-1+1
           call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           chnksz = orc_nx*orc_ny*crm_nz
-          write(iulog,*) 'Check dimension',orc_nx,crm_start_ind,crm_end_ind,nmicro_fields_total
+          !write(iulog,*) 'Check dimension',orc_nx,crm_start_ind,crm_end_ind,nmicro_fields_total
           call get_gcol_all_p(lchnk, pcols, gcolindex)
           if (i.eq.ncol) then
             FlagEnd = 1
@@ -1819,7 +1819,7 @@ end subroutine crm_init_cnst
               end do
             end do
           end do
-          write(iulog,*) 'Check dimension1',fcount
+          !write(iulog,*) 'Check dimension1',fcount
           fcount = 17*chnksz
           do ll=1,nmicro_fields_total
             do kk=1,crm_nz
@@ -1831,7 +1831,7 @@ end subroutine crm_init_cnst
               end do
             end do
           end do
-          write(iulog,*) 'Check dimension2',fcount
+          !write(iulog,*) 'Check dimension2',fcount
         !write(iulog,*) 'check na:',na,nb,nc
         !write(iulog,*) 'Send 1:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,1)
         !write(iulog,*) 'Send 3:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,3)
@@ -1843,7 +1843,7 @@ end subroutine crm_init_cnst
               Var_Flat2(fcount) = prec_crm(i_save,ii,jj)
             end do
           end do
-          write(iulog,*) 'Check dimension3',fcount
+          !write(iulog,*) 'Check dimension3',fcount
           fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny
           do kk=1,crm_nz
             fcount = fcount + 1
@@ -1858,7 +1858,7 @@ end subroutine crm_init_cnst
             Var_Flat2(fcount + 8 * crm_nz) = work_qp0(kk)
             Var_Flat2(fcount + 9 * crm_nz) = work_tke0(kk)
           end do
-          write(iulog,*) 'Check dimension4',fcount
+          !write(iulog,*) 'Check dimension4',fcount
 write (iulog,*),'Sending data from: ',iam,dest,myrank_global,lchnk,i_save
           call MPI_Send(Var_Flat(:)         ,flen,MPI_REAL8 ,dest,9018,MPI_COMM_WORLD,ierr)
           call MPI_Send(Var_Flat2(:)         ,flen2,MPI_REAL8,dest,9019,MPI_COMM_WORLD,ierr)
@@ -2064,7 +2064,7 @@ write (iulog,*),'Sending data from: ',iam,dest,myrank_global,lchnk,i_save
           jt = int(out_jt)
           icheck_iorc = mod(int(out_global_rank-npes),orc_nsubdomains)
           icheck_column = out_totalcol
-          write(iulog,*),'Check here22',icheck_iorc,icheck_column,int(out_global_rank)  
+          !write(iulog,*),'Check here22',icheck_iorc,icheck_column,int(out_global_rank)  
           fcount = structleno*pver+20+singleleno+1
           do kk=1,crm_nz
             do jj=1,orc_ny
