@@ -158,13 +158,13 @@ do m = 0,nsubdomains-1
       call task_receive_float(bufp_subs(0,1-YES3D,1,n_in), &
                              nzslab*nxp1*nyp1,reqs_in(n_in))
     end if
-     do k = 1,nzslab 
-      do j = 1,nyp2 
-       do i = 1,nxp1 
-         buff_subs(i,j,k,n_in) = bufp_subs(i,j,k,n_in) 
-       end do 
-      end do 
-     end do    
+    ! do k = 1,nzslab 
+    !  do j = 1,nyp2 
+    !   do i = 1,nxp1 
+    !     buff_subs(i,j,k,n_in) = bufp_subs(i,j,k,n_in) 
+    !   end do 
+    !  end do 
+    ! end do    
  
     flag(n_in) = .false.
 ! if(myrank_global.eq.0) then
@@ -598,13 +598,13 @@ do m = 0, nsubdomains-1
        call task_receive_float(bufp_slabs(0,1-YES3D,1,n_in), &
                                   nzslab*nxp1*nyp1, reqs_in(n_in))
      end if
-     do k = 1,nzslab 
-      do j = 1-YES3D,ny 
-       do i = 0,nx 
-         buff_slabs(i,j,k,n_in) = bufp_slabs(i,j,k,n_in) 
-       end do 
-      end do 
-     end do 
+     !do k = 1,nzslab 
+     ! do j = 1-YES3D,ny 
+     !  do i = 0,nx 
+     !    buff_slabs(i,j,k,n_in) = bufp_slabs(i,j,k,n_in) 
+     !  end do 
+     ! end do 
+     !end do 
      flag(n_in) = .false.    
 
    endif
