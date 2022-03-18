@@ -386,7 +386,7 @@ real(kind=core_rknd), dimension(nzm) :: &
         crm_count = 0
         nsubdomains_x  = orc_nsubdomains_x
         nsubdomains_y  = orc_nsubdomains_y
-
+write(0, *) 'Liran here 0'
         call crm_define_grid()
 !-----------------------------------------------
         allocate ( cltemp (nx, ny))
@@ -922,7 +922,7 @@ tke  = 0
 !------------------------------------------------------------------
 !   Main time loop    
 !------------------------------------------------------------------
-
+write(0, *) 'Liran here 1'
 do while(nstep.lt.nstop) 
         
   nstep = nstep + 1
@@ -1812,7 +1812,7 @@ end if
            mx_crm = max(k*1.0_r8, mx_crm)
          end if
         end do
-        
+write(0, *) 'Liran here 2'        
 !-------------------------------------------------------------
 !       Fluxes and other stat:
 !-------------------------------------------------------------
