@@ -329,14 +329,14 @@ do m = 0, nsubdomains-1
    end if
 
 
-     do k = 1,nzslab
-      do j = 1-YES3D,ny
-       do i = 1,nx
-         bufp_slabs(i,j,k,n_in) = buff_slabs(i,j,k,n_in)
+     !do k = 1,nzslab
+     ! do j = 1-YES3D,ny
+     !  do i = 1,nx
+     !    bufp_slabs(i,j,k,n_in) = buff_slabs(i,j,k,n_in)
          !print*,rank,i,k,n_in,bufp_slabs(i,j,k,n_in)
-       end do
-      end do
-     end do
+     !  end do
+     ! end do
+     !end do
 !print*,'Liran p check buff_slabs',rank,buff_slabs
      flag(n_in) = .false.	    
    endif
@@ -618,13 +618,13 @@ do m = 0, nsubdomains-1
        call task_receive_float(bufp_slabs(0,1-YES3D,1,n_in), &
                                   nzslab*nxp1*nyp1, reqs_in(n_in))
      end if
-     do k = 1,nzslab 
-      do j = 1-YES3D,ny 
-       do i = 0,nx 
-         buff_slabs(i+1,j,k,n_in) = bufp_slabs(i,j,k,n_in) 
-       end do 
-      end do 
-     end do 
+     !do k = 1,nzslab 
+     ! do j = 1-YES3D,ny 
+     !  do i = 0,nx 
+     !    buff_slabs(i+1,j,k,n_in) = bufp_slabs(i,j,k,n_in) 
+     !  end do 
+     ! end do 
+     !end do 
      flag(n_in) = .false.    
 
    endif
