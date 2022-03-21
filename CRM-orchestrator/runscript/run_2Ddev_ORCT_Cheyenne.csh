@@ -7,7 +7,7 @@ set run_time       = 01:00:00
 set queue          = regular
 set account        = UWAS0096
 set run_start_date = "0001-01-01"
-set pcount         = 50
+set pcount         = 36
 set taskPernode    = 36
 set emailaddress   = liranp@uci.edu
 ## ====================================================================
@@ -30,18 +30,18 @@ setenv JOB_QUEUE   $queue
 setenv SCRATCH     /glade/scratch/lpeng 
 setenv SCRIPTDIR   $HOME/repositories/$CCSMTAG/CRM-orchestrator/runscript
 ### GRID OPTIONS <Liran>
-set crm_nx_in         = 256         # <<< change this one!
+set crm_nx_in         = 1024         # <<< change this one!
 set crm_ny_in         = 1
-set crm_dx_in         = 4000
-set crm_dt_in         = 20
+set crm_dx_in         = 200
+set crm_dt_in         = 0.4
 set crm_nz_in         = 24
-set spcam_subx_in     = 2
+set spcam_subx_in     = 4
 set spcam_suby_in     = 1
-set spcam_orctotal_in = 40
+set spcam_orctotal_in = 456
 @ CRM_pcount       = $spcam_orctotal_in * $spcam_subx_in * $spcam_suby_in
 @ NPNN = $pcount +  $CRM_pcount
 @ NNODE = $NPNN / $taskPernode + 1
-setenv CASE       scalling_GCMRes_${CASERES}_GCMTask${pcount}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
+setenv CASE       scalling_timming_2day_GCMRes_${CASERES}_GCMTask${pcount}_crmnx${crm_nx_in}_crmdt04_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
 ## ====================================================================
 #   define directories <Please make sure the directories are correct>
 ## ====================================================================
@@ -94,12 +94,14 @@ fincl2 = 'PS:I'
 nhtfrq = 0,1
 mfilt = 0,1
 EOF
+mkdir $SCRATCH/CESM2_case/$CASE/archive
 cd  $CASEROOT
 ./xmlchange --file env_batch.xml --id JOB_QUEUE --val $queue
 ./xmlchange --file env_workflow.xml --id JOB_WALLCLOCK_TIME --val $run_time
-./xmlchange --file env_run.xml --id STOP_OPTION --val nsteps
-./xmlchange --file env_run.xml --id STOP_N --val 10
-#./xmlchange --file env_run.xml --id ATM_NCPL --val 432
+./xmlchange --file env_run.xml --id STOP_OPTION --val ndays
+./xmlchange --file env_run.xml --id STOP_N --val 2
+./xmlchange --file env_run.xml --id DOUT_S_ROOT --val $SCRATCH/CESM2_case/$CASE/archive
+./xmlchange --file env_run.xml --id DOUT_S --val TRUE
 ./case.setup
 ./xmlchange --file env_run.xml --id run_data_archive --val "FALSE"
 #xmlchange --file env_run.xml --id RESUBMIT --val 4

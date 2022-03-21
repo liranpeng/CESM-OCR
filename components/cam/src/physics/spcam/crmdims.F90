@@ -11,8 +11,8 @@ module crmdims
 
 
 #ifdef ORCHESTRATOR
-       integer, parameter ::  orc_total = 40
-       integer, parameter ::  SPCAM_ORC_NSUBDOMAINS_X = 2
+       integer, parameter ::  orc_total = 456
+       integer, parameter ::  SPCAM_ORC_NSUBDOMAINS_X = 4
        integer, parameter ::  SPCAM_ORC_NSUBDOMAINS_Y = 1
        integer, parameter ::  orc_nsubdomains_x=SPCAM_ORC_NSUBDOMAINS_X
        integer, parameter ::  orc_nsubdomains_y=SPCAM_ORC_NSUBDOMAINS_Y

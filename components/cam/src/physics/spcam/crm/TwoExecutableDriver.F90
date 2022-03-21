@@ -68,7 +68,7 @@ program TwoExecutableDriver
   real(r8),dimension(flen3) :: out_Var_Flat
   double precision :: wall(6), sys(6), usr(6)
   include 'mpif.h'
-
+  call t_stampf(wall(1), usr(1), sys(1))
   ! initialize MPI alongside CESM call in cime_comp_mod.F90
   call mpi_init(ierr)
   !call MPI_Init_thread(ierr)
@@ -141,16 +141,18 @@ program TwoExecutableDriver
   write(13,*) 'CRM rank2',numproc_crm_in,myrank_crm_in,crm_comm_in
   write(13,*) 'CRM Init Check',EndFlag,myrank_crm_in,myrank_crm,myrank_global
   do while (EndFlag.eq.0)
-  write(13,*) 'Enter Loop!!'
-  call t_stampf(wall(1), usr(1), sys(1))
+  call t_stampf(wall(2), usr(2), sys(2))
+  wall(3) = wall(2)-wall(1)
+  write(13,*) 'Enter Loop!!',wall(3)
+  !call t_stampf(wall(1), usr(1), sys(1))
   ! ----------- Receive from cesm.exe/crm_physics inputs to CRM right before call to crm() ----------------
 ! =====================================================================================
 ! Receive from GCM, in order, the input ingredients expected by crm subroutine:
 ! =====================================================================================
   call MPI_Recv(inp_Var_Flat(:) ,flen   ,MPI_REAL8,MPI_ANY_SOURCE,9018,MPI_COMM_WORLD,status,ierr)
   call MPI_Recv(inp_Var_Flat2(:) ,flen2,MPI_REAL8,MPI_ANY_SOURCE,9019,MPI_COMM_WORLD,status,ierr)
-  call t_stampf(wall(2), usr(2), sys(2))
-  wall(3) = wall(2)-wall(1)
+  !call t_stampf(wall(2), usr(2), sys(2))
+  !wall(3) = wall(2)-wall(1)
   call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
   inp01_lchnk         = int(inp_Var_Flat(1))
   inp02_i             = int(inp_Var_Flat(2))
@@ -182,6 +184,7 @@ program TwoExecutableDriver
   lat                 =     inp_Var_Flat(28)
   lon                 =     inp_Var_Flat(29)
   EndFlag             =     inp_Var_Flat(30)
+  EndFlag = 0
   totalcol            =     inp_Var_Flat(31)
   inp03_tl(1:pver)    = inp_Var_Flat(        1+singlelen:   pver+singlelen)
   inp04_ql(1:pver)    = inp_Var_Flat( 1*pver+1+singlelen: 2*pver+singlelen)
@@ -279,7 +282,7 @@ program TwoExecutableDriver
     end do
   end do
 
-    write(13,*) 'Finish receiving',totalcol,myrank_global,wall(3)
+    write(13,*) 'Finish receiving',totalcol,myrank_global!,wall(3)
 
 ! Preparing to call the CRM
 
@@ -336,10 +339,9 @@ program TwoExecutableDriver
              taux_crm,        tauy_crm,          z0m, timing_factor,        qtotcrm( :)         &
             )
 ! ====================== DONE CALLING CRM -- TIME TO SEND OUTPUTS TO GCM
-  call MPI_barrier(crm_comm_in, ierr)
-  call t_stampf(wall(2), usr(2), sys(2))
-  wall(4) = wall(2)-wall(1)
-write(13,*) 'Liran start send data back',myrank_crm,it,jt,wall(4)
+  !call t_stampf(wall(2), usr(2), sys(2))
+  !wall(4) = wall(2)-wall(1)
+!write(13,*) 'Liran start send data back',myrank_crm,it,jt,wall(4)
   out_Var_Flat(        1)                               = precc
   out_Var_Flat(        2)                               = precl
   out_Var_Flat(        3)                               = precsc
@@ -455,9 +457,12 @@ write(13,*) 'Liran start send data back',myrank_crm,it,jt,wall(4)
     end do
   end do
   call MPI_Send(out_Var_Flat,flen3,MPI_REAL8,destGCM0,8006,MPI_COMM_WORLD,ierr)
-  wall(5) = wall(2)-wall(1)
+  call t_stampf(wall(4), usr(4), sys(4))
+  wall(5) = wall(4)-wall(2)
   write(13,*) 'Finish Time',wall(5)
  end do
+
+  write(13,*) 'Call TwoExecutableDriver Finish',myrank_crm
   call MPI_comm_free(crm_comm, ierr)
   call MPI_comm_free(crm_comm_in, ierr)
   call MPI_barrier(MPI_COMM_WORLD, ierr)

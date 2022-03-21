@@ -905,12 +905,9 @@ contains
 
     ! initiate CLUBB within CAM
     if (do_clubb_sgs) call clubb_ini_cam(pbuf2d)
- write(iulog,*) 'Here is fine 0'
     call spcam_init(pbuf2d)
- write(iulog,*) 'Here is fine 1'
     !dummy(1) = 12
     !call MPI_BCast(dummy, 1, MPI_Integer, 0, MPI_COMM_WORLD, ierr) !bloss
- write(iulog,*) 'Here is fine 2'
     call qbo_init
 
     call lunar_tides_init()
