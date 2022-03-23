@@ -306,8 +306,8 @@ contains
 
 
        call spcam_register
-!       dummy = 24
-!       call MPI_BCast(dummy, 1, MPI_Integer, 0, MPI_COMM_WORLD, ierr) !bloss
+       !dummy = 24
+       !call MPI_BCast(dummy, 1, MPI_Integer, 0, MPI_COMM_WORLD, ierr) !bloss
 
        ! radiation
        call radiation_register
@@ -905,11 +905,9 @@ contains
 
     ! initiate CLUBB within CAM
     if (do_clubb_sgs) call clubb_ini_cam(pbuf2d)
-
     call spcam_init(pbuf2d)
-    dummy(1) = 12
-    call MPI_BCast(dummy, 1, MPI_Integer, 0, MPI_COMM_WORLD, ierr) !bloss
-
+    !dummy(1) = 12
+    !call MPI_BCast(dummy, 1, MPI_Integer, 0, MPI_COMM_WORLD, ierr) !bloss
     call qbo_init
 
     call lunar_tides_init()

@@ -128,7 +128,7 @@ subroutine crm_orc(it,jt,long,lati,gcolindex,lchnk, icol, &
         implicit none
 
 !        integer, parameter :: r8 = 8
-        integer, parameter :: pcols=16
+        integer, parameter :: pcols=1 !bloss: Hardwire to 1 but BE CAREFUL
 !  Input:
 
          integer, intent(in) :: lchnk    ! chunk identifier
@@ -386,7 +386,6 @@ real(kind=core_rknd), dimension(nzm) :: &
         crm_count = 0
         nsubdomains_x  = orc_nsubdomains_x
         nsubdomains_y  = orc_nsubdomains_y
-
         call crm_define_grid()
 !-----------------------------------------------
         allocate ( cltemp (nx, ny))
@@ -622,16 +621,16 @@ real(kind=core_rknd), dimension(nzm) :: &
           qp0(k) = qp0(k) * factor_xy
           tke0(k) = tke0(k) * factor_xy 
         end do
-        buffer1(:, 1) = u0(:)/float(nsubdomains)
-        buffer1(:, 2) = v0(:)/float(nsubdomains)
-        buffer1(:, 3) = t0(:)/float(nsubdomains)
-        buffer1(:, 4) = t00(:)/float(nsubdomains)
-        buffer1(:, 5) = tabs0(:)/float(nsubdomains)
-        buffer1(:, 6) = q0(:)/float(nsubdomains)
-        buffer1(:, 7) = qv0(:)/float(nsubdomains)
-        buffer1(:, 8) = qn0(:)/float(nsubdomains)
-        buffer1(:, 9) = qp0(:)/float(nsubdomains)
-        buffer1(:,10) = tke0(:)/float(nsubdomains)
+        buffer1(1:nzm, 1) = u0(:)/float(nsubdomains)
+        buffer1(1:nzm, 2) = v0(:)/float(nsubdomains)
+        buffer1(1:nzm, 3) = t0(:)/float(nsubdomains)
+        buffer1(1:nzm, 4) = t00(:)/float(nsubdomains)
+        buffer1(1:nzm, 5) = tabs0(:)/float(nsubdomains)
+        buffer1(1:nzm, 6) = q0(:)/float(nsubdomains)
+        buffer1(1:nzm, 7) = qv0(:)/float(nsubdomains)
+        buffer1(1:nzm, 8) = qn0(:)/float(nsubdomains)
+        buffer1(1:nzm, 9) = qp0(:)/float(nsubdomains)
+        buffer1(1:nzm,10) = tke0(:)/float(nsubdomains)
         call task_sum_real_ORC(buffer1,buffer2,nzm*nfield)
         u0(:)    = buffer2(:, 1)
         v0(:)    = buffer2(:, 2)
@@ -807,7 +806,8 @@ tke  = 0
 #endif
 
         !call get_gcol_all_p(lchnk, pcols, gcolindex)
-        iseed = gcolindex(icol)
+!bloss        iseed = gcolindex(icol)
+        iseed = gcolindex(1) !bloss: we have restricted gcolindex to have length one.
         if(u(1,1,1).eq.u(2,1,1).and.u(3,1,2).eq.u(4,1,2)) &
                     call setperturb(iseed)
 
@@ -921,7 +921,6 @@ tke  = 0
 !------------------------------------------------------------------
 !   Main time loop    
 !------------------------------------------------------------------
-
 do while(nstep.lt.nstop) 
         
   nstep = nstep + 1
@@ -1156,6 +1155,7 @@ if (dudtmax.gt.100) then
 write(0, *) 'Wrong here 4',icol,dudtmax
 end if
 dudtmax = -9999.
+      do l=1,3
         do k=1,nzm
           do j=1,ny
            do i=1,nx
@@ -1165,7 +1165,7 @@ dudtmax = -9999.
            end do
           end do
         end do
-
+      end do
 if (dudtmax.gt.100) then
 write(0, *) 'Wrong here 42',icol,dudtmax
 end if
@@ -1811,7 +1811,6 @@ end if
            mx_crm = max(k*1.0_r8, mx_crm)
          end if
         end do
-        
 !-------------------------------------------------------------
 !       Fluxes and other stat:
 !-------------------------------------------------------------

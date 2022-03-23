@@ -1120,15 +1120,15 @@ end subroutine crm_init_cnst
    real(r8) :: t, mu, acn, dumc, dunc, pgam, lamc
    real(r8) :: dunc_arr(pcols,pver)
    integer gcolindex(pcols)  ! array of global latitude indices
-   integer ii, jj,status,totalcol_sel
+   integer ii, jj,status(MPI_STATUS_SIZE),totalcol_sel
    integer iii,FlagEnd,it,jt
    integer i, k, m,lchnk_save,i_save
    integer ifld
    logical :: ls, lu, lv, lq(pcnst)
    integer,parameter :: structlen = 49
    integer,parameter :: singlelen = 31
-   integer,parameter :: flen      = structlen*pver+singlelen+1+20+pcols
-   integer,parameter :: flen2     = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny
+   integer,parameter :: flen      = structlen*pver+singlelen+1+20+1 !bloss: +pcols --> + 1, because we pass a single gcolindex
+   integer,parameter :: flen2     = 17*orc_nx*orc_ny*crm_nz + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny + 10*crm_nz
    integer,dimension(structlen) :: blocklengths
    INTEGER,dimension(structlen) :: types
    integer :: crm_comm
@@ -1323,7 +1323,8 @@ end subroutine crm_init_cnst
          state_loc%q(:ncol, :pver, ixcldliq) = state%q(:ncol, :pver, ixcldliq)
    endif
 
-call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
+   FlagEnd = 0
+   call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 
    !------------------------- 
    !------------------------- 
@@ -1501,7 +1502,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
          cs(:ncol, 1:pver) = state_loc%pmid(:ncol, 1:pver)/(287.15_r8*state_loc%t(:ncol, 1:pver))
 
        endif 
-       FlagEnd = 0
    !------------------------- 
    !------------------------- 
    ! not is_first_step
@@ -1509,7 +1509,6 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
    !------------------------- 
 
    else
-
        call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
 
        !do i=1,ncol
@@ -1702,28 +1701,15 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
             write(iulog,*) 'WARNING!! crm_nx is not dividable by orc_nsubdomains'
           end if 
 
-          lchnk = state%lchnk
-          totalcol = 0
-          do cid=1,nchunks
-            if (cid.gt.1)then
-              totalcol(cid) = totalcol(cid-1)
-            endif
-            do ii = 1,chunks(cid)%ncols
-              totalcol(cid) = totalcol(cid) + 1
-            enddo
-          enddo
-
-          if (lchnk.gt.begchunk)then
-            totalcol_sel = totalcol(lchnk-begchunk+1)
-          else
-            totalcol_sel = 0
-          endif
-
           crm_start_ind = (iorc-1)*crm_step+1
           crm_end_ind   = (iorc)*crm_step-1+1
           call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           chnksz = orc_nx*orc_ny*crm_nz
+          !write(iulog,*) 'Check dimension',orc_nx,crm_start_ind,crm_end_ind,nmicro_fields_total
           call get_gcol_all_p(lchnk, pcols, gcolindex)
+          if (i.eq.ncol) then
+            FlagEnd = 1
+          endif
           latitude0 = get_rlat_p(lchnk, i_save)*57.296_r8
           longitude0 = get_rlon_p(lchnk, i_save)*57.296_r8 
           Var_Flat(        1)                             = real(lchnk,8)
@@ -1756,7 +1742,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           Var_Flat(       28)                             = latitude0
           Var_Flat(       29)                             = longitude0
           Var_Flat(       30)                             = FlagEnd
-          Var_Flat(       31)                             = totalcol_sel
+          Var_Flat(       31)                             = myrank_global
           Var_Flat(        1+singlelen:   pver+singlelen) = state_loc%t(i_save,:)
           Var_Flat( 1*pver+1+singlelen: 2*pver+singlelen) = state_loc%q(i_save,:,1)
           Var_Flat( 2*pver+1+singlelen: 3*pver+singlelen) = state_loc%q(i_save,:,ixcldliq)
@@ -1807,7 +1793,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           Var_Flat(47*pver+2+singlelen:48*pver+singlelen+1) = ptend_loc%q(i_save,:,ixcldice)
           Var_Flat(48*pver+2+singlelen:49*pver+singlelen+1) = ptend_loc%s(i_save,:)
           Var_Flat(49*pver+2+singlelen:49*pver+21+singlelen)= qtotcrm(i_save,1:20)
-          Var_Flat(49*pver+22+singlelen:49*pver+21+singlelen+pcols)=gcolindex(1:pcols) 
+          Var_Flat(49*pver+21+singlelen+1)=gcolindex(i) !bloss: Pass a single gcolindex.
           fcount = 0
           do kk=1,crm_nz
             do jj=1,crm_ny
@@ -1833,7 +1819,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
               end do
             end do
           end do
-
+          !write(iulog,*) 'Check dimension1',fcount
           fcount = 17*chnksz
           do ll=1,nmicro_fields_total
             do kk=1,crm_nz
@@ -1845,6 +1831,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
               end do
             end do
           end do
+          !write(iulog,*) 'Check dimension2',fcount
         !write(iulog,*) 'check na:',na,nb,nc
         !write(iulog,*) 'Send 1:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,1)
         !write(iulog,*) 'Send 3:',i_save,lchnk,crm_micro(i_save,1:10,:,1:5,3)
@@ -1856,7 +1843,7 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
               Var_Flat2(fcount) = prec_crm(i_save,ii,jj)
             end do
           end do
-
+          !write(iulog,*) 'Check dimension3',fcount
           fcount = 17*chnksz + orc_nx*orc_ny*crm_nz*nmicro_fields_total+orc_nx*orc_ny
           do kk=1,crm_nz
             fcount = fcount + 1
@@ -1871,7 +1858,8 @@ call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
             Var_Flat2(fcount + 8 * crm_nz) = work_qp0(kk)
             Var_Flat2(fcount + 9 * crm_nz) = work_tke0(kk)
           end do
-write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
+          !write(iulog,*) 'Check dimension4',fcount
+!write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
           call MPI_Send(Var_Flat(:)         ,flen,MPI_REAL8 ,dest,9018,MPI_COMM_WORLD,ierr)
           call MPI_Send(Var_Flat2(:)         ,flen2,MPI_REAL8,dest,9019,MPI_COMM_WORLD,ierr)
           end do !do iorc=1,orc_nsubdomains
@@ -1885,7 +1873,7 @@ write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
          nsubdomains_y  = orc_nsubdomains_y
          call crm_define_grid()
  
-        if (state%isofflinecrm(i))then
+        if (state%isofflinecrm(i) .or. (.not. (state%isorchestrated(i))) )then
          call crm (lchnk,      i_save,                                                                                            &
              state_loc%t(i_save,:),   state_loc%q(i_save,:,1),    state_loc%q(i_save,:,ixcldliq), state_loc%q(i_save,:,ixcldice),                &
              ul(:),              vl(:),                                                                                      &
@@ -1939,15 +1927,13 @@ write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
              cam_in%ocnfrac(i_save),  wnd,                  tau00,                 bflx,                                          & 
              fluxu0,             fluxv0,               fluxt0,                fluxq0,                                        & 
              taux_crm(i_save),        tauy_crm(i_save),          z0m(i_save),                timing_factor(i_save),        qtotcrm(i_save, :)         )   
-
+          write (iulog,*),'Finish call crm module at rank: ',myrank_global
         end if !if (state%isofflinecrm(i))then
         !if (state%isorchestrated(i))then
         !write(iulog,*) 'After default crm:',i_save,crm_micro(i_save,:,:,:,3)
         !end if
         ! end if   ! if (state%isorchestrated(i))then
        end do  !do i = 1,ncol
-       write (iulog,*),'Finish call crm module at rank: ',myrank_global
-       do i = 1,ncol
         ! re: next args in call to crm () are ptend* which despite being declared inout are actually output.
 
           ! ****************
@@ -1997,11 +1983,13 @@ write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
           ! ---------- flattened multi-dim CRM inputs, prepackaged in
           ! crm_physics -------
 #ifdef ORCHESTRATOR
+         do i = 1,ncol
          if (state%isorchestrated(i)) then
          do iorc=1,orc_nsubdomains
          !if (state%crmrank0(i) .ne. -2) then ! is this column coupled to an external CRM?
           call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-          call MPI_Recv(CRM_Var_Flat,fleno+nflat,MPI_REAL8,MPI_ANY_SOURCE,8006,MPI_COMM_WORLD,status,ierr)
+          dest = state%crmrank(i,iorc)
+          call MPI_Recv(CRM_Var_Flat,fleno+nflat,MPI_REAL8,dest,8006,MPI_COMM_WORLD,status,ierr)
           out_precc               = CRM_Var_Flat(1 ) 
           out_precl               = CRM_Var_Flat(2 )
           out_precsc              = CRM_Var_Flat(3 )
@@ -2030,6 +2018,7 @@ write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
           out_jt_crm              = CRM_Var_Flat(26)
           out_mx_crm              = CRM_Var_Flat(27)
           out_totalcol            = CRM_Var_Flat(28)
+!write (iulog,*),'Finish Receiving at rank: ',out_global_rank,myrank_global,dest
 !print*,'test_new add',out_jt_crm,out_mx_crm
           out_qltend              = CRM_Var_Flat(        1+singleleno:  pver+singleleno)
           out_qcltend             = CRM_Var_Flat( 1*pver+1+singleleno:2*pver+singleleno) 
@@ -2075,7 +2064,8 @@ write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
           it = int(out_it)
           jt = int(out_jt)
           icheck_iorc = mod(int(out_global_rank-npes),orc_nsubdomains)
-          icheck_column = (int(out_global_rank)+1-icheck_iorc-npes-out_totalcol)/orc_nsubdomains+1   
+          icheck_column = out_totalcol
+          !write(iulog,*),'Check here22',icheck_iorc,icheck_column,int(out_global_rank)  
           fcount = structleno*pver+20+singleleno+1
           do kk=1,crm_nz
             do jj=1,orc_ny
@@ -2121,6 +2111,7 @@ write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
               out_prec_crm(ii,jj) = CRM_Var_Flat(fcount)
             end do
           end do
+
          call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
          lchnk = lchnk_save
          if (state%isofflinecrm(i)) then
@@ -2419,7 +2410,9 @@ write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
 1114  format ('C_m1',5I4,2E15.6)
 1115  format ('C_m2',5I4,2E15.6)
 1116  format ('C_m3',5I4,2E15.6)
-        else
+
+        else  ! if (state%isofflinecrm(i)) then
+
           cltot  (icheck_column)                           = out_cltot 
           clhgh  (icheck_column)                           = out_clhgh
           clmed  (icheck_column)                           = out_clmed
@@ -2521,7 +2514,7 @@ write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
           prectend(icheck_column)                          = out_prectend
           precstend(icheck_column)                         = out_precstend
        end do
-
+ 
         do kk=1,20
           qtotcrm(icheck_column,kk)                        = out_qtotcrm(kk) 
         end do
@@ -2530,7 +2523,6 @@ write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
        end do ! do iorc=1,orc_nsubdomains
         endif ! is this column column coupled to an external (orchestrated) CRM?
        end do !do i = 1,ncol
-
 #endif
 
        do i = 1,ncol
@@ -2552,9 +2544,6 @@ write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
               crm_ng(i,:,:,:) = crm_micro(i,:,:,:,10)
               crm_qc(i,:,:,:) = crm_micro(i,:,:,:,11)
           endif
-       if (i.eq.ncol) then
-         FlagEnd = 1
-       endif
        end do ! i (loop over ncol)
        call t_stopf('crm_call')
        call t_stampf(wall(2), usr(2), sys(2))
@@ -2598,7 +2587,6 @@ write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
           tmp4d(:ncol,:,:,:) = crm_qt(:ncol,:,:,:)-qc_crm(:ncol,:,:,:)
           call outfld('CRM_QV  ',tmp4d, pcols   ,lchnk   )
        endif
-
 
        if (is_spcam_m2005) then
           call outfld('CRM_NC ',  crm_nc       ,pcols   ,lchnk)
@@ -2713,7 +2701,6 @@ write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
           call outfld('SPACCRE_ENHAN', spaccre_enhan ,pcols, lchnk)
           call outfld('SPQCLVAR',      spqclvar      ,pcols, lchnk)
        endif ! if do_clubb_sgs
-
        spcld3d = 0.0_r8
        do i=1, ncol
          do jj=1, crm_ny
@@ -2743,7 +2730,6 @@ write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
        ! The radiation tendencies in the top 4 GCM levels are set to be zero in the CRM
        ptend_loc%s(:ncol, :pver-crm_nz+2) = qrs(:ncol,:pver-crm_nz+2)+qrl(:ncol,:pver-crm_nz+2)
    
-
        ! calculate the radiative fluxes from the radiation calculation
        ! This will be used to check energe conservations
        radflux(:) = 0.0_r8
@@ -2831,7 +2817,6 @@ write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
        call outfld('SPCLDHGH',clhgh  ,pcols,lchnk)
        call outfld('SPCLDMED',clmed  ,pcols,lchnk)
        call outfld('SPCLDLOW',cllow  ,pcols,lchnk)
-
        if(do_clubb_sgs) then
        ! Determine parameters for maximum/random overlap
 #ifdef SPCAM_CLUBB_SGS
@@ -2982,12 +2967,10 @@ write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
              end do
             end do
        end if
-
        ! Sum into overall ptend
        call physics_ptend_sum(ptend_loc, ptend, ncol)
 
        call physics_update(state_loc, ptend_loc, ztodt, tend_loc)
-
        ! calculate column water of rain, snow and graupel 
        if(is_spcam_m2005) then
          do i=1, ncol
@@ -3109,11 +3092,9 @@ write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
       ! Wet deposition is done in ECPP,
       ! So tendency from wet depostion is not updated in mz_aero_wet_intr (mz_aerosols_intr.F90)
       ! tendency from other parts of crmclouds_aerosol_wet_intr are still updated here.
-
       ! Sum into overall ptend
       call physics_ptend_sum(ptend_loc, ptend, ncol)
       call physics_update(state_loc, ptend_loc, ztodt, tend_loc)
-
 
       pblh_idx  = pbuf_get_index('pblh')
       call pbuf_get_field(pbuf, pblh_idx, pblh)
@@ -3165,7 +3146,6 @@ write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
 
    ! save for old cloud fraction in the MMF simulations
    cldo(:ncol, :) = cld(:ncol, :)
-
    deallocate(crm_micro)
    
    if (is_spcam_m2005) then
@@ -3198,7 +3178,6 @@ write (iulog,*),'Sending data from: ',dest,myrank_global,lchnk,i_save
       deallocate(vaerosol)
       deallocate(hygro)
    end if
-
 #endif
 
 end subroutine crm_physics_tend
