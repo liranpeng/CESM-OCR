@@ -36,9 +36,9 @@ set crm_ny_in         = 1
 set crm_dx_in         = 200
 set crm_dt_in         = 0.4
 set crm_nz_in         = 24
-set spcam_subx_in     = 4
+set spcam_subx_in     = 2
 set spcam_suby_in     = 1
-set spcam_orctotal_in = 456
+set spcam_orctotal_in = 20
 @ CRM_pcount       = $spcam_orctotal_in * $spcam_subx_in * $spcam_suby_in
 @ NPNN = $pcount +  $CRM_pcount
 @ NNODE = $NPNN / $taskPernode + 1
@@ -131,11 +131,11 @@ cp $SCRATCH/CESM2_case/$CASE/$CASE/bld/intel/mpt/nodebug/nothreads/mct/gptl/perf
 mpif90  -o $SCRATCH/CESM2_case/$CASE/$CASE/bld/crm.exe perf_mod.o task_exchange.o crmx_pressure_ORC.o crmx_press_rhs_ORC.o crmx_kurant_ORC.o task_dispatch.o task_assign_bnd.o crmx_mpi.o crmx_task_util_ORC.o crmx_task_init_ORC.o crmdims.o ppgrid.o crmx_crm_module_ORC.o  shr_kind_mod.o phys_grid.o TwoExecutableDriver.o -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -latm -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lice  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/intel/mpt/nodebug/nothreads/mct/mct/noesmf/lib/ -lclm  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -locn  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lrof  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lglc  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lwav  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -lesp  -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/lib/ -liac -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/intel/mpt/nodebug/nothreads/mct/mct/noesmf/c1a1l1i1o1r1g1w1i1e1/lib -lcsm_share -L$SCRATCH/CESM2_case/$CASE/$CASE/bld/intel/mpt/nodebug/nothreads/mct/lib -lpiof -lpioc -lgptl -lmct -lmpeu   -mkl=cluster  -L/glade/u/apps/ch/opt/pnetcdf/1.12.1/mpt/2.21/intel/19.0.5//lib -lpnetcdf -L/glade/u/apps/ch/opt/netcdf/4.7.3/intel/19.0.5//lib -lnetcdff -lnetcdf
 cd  $CASEROOT
 ./case.submit
-cp $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.send .case.run
+cp $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.send case.run
 
 echo "=================================================================================================="
 echo "=================================================================================================="
-echo "The model is currently run using interactive jobs on Cheyenne"
+echo "The model can also run using interactive jobs on Cheyenne"
 echo "Case Directory is"
 echo "cd" $CASEROOT
 echo "qsub -I -l select="${NNODE}":ncpus=36:mpiprocs=36 -l walltime=01:00:00 -q regular -A "${account}
@@ -143,7 +143,7 @@ echo "./.case.run"
 echo "=================================================================================================="
 echo "=================================================================================================="
 
-#qsub -l select=${NNODE}:ncpus=${taskPernode}:mpiprocs=${taskPernode}:ompthreads=2 -l -walltime ${run_time} -q ${queue}  -A ${account} .case.run -resubmit
+qsub -l select="${NNODE}":ncpus=36:mpiprocs=36  -l walltime=01:00:00 -q regular -A ${account} case.run 
 #cp $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.send .case.run
 #cd ..
 #./case.submit
