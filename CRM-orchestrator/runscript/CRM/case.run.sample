@@ -16,9 +16,9 @@ DO NOT RUN THIS SCRIPT MANUALLY
 """
 
 import os, sys
-os.chdir( '/glade/scratch/lpeng/CESM2_case/CCCASE')
+os.chdir( '/glade/scratch/USERNAME/CESM2_case/CCCASE')
 
-_LIBDIR = os.path.join("/glade/u/home/lpeng/repositories/CESM-OCR/cime", "scripts", "Tools")
+_LIBDIR = os.path.join("/glade/u/home/USERNAME/repositories/CESM-OCR/cime", "scripts", "Tools")
 sys.path.append(_LIBDIR)
 
 from standard_script_setup          import *

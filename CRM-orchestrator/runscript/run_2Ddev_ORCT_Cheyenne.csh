@@ -26,6 +26,7 @@ setenv CCSMTAG     CESM-OCR
 setenv CASESET     FSPCAMS
 setenv CASERES     f10_f10_mg37
 setenv PROJECT     UWAS0096
+setenv UNAME       lpeng
 setenv JOB_QUEUE   $queue
 setenv SCRATCH     /glade/scratch/lpeng 
 setenv SCRIPTDIR   $HOME/repositories/$CCSMTAG/CRM-orchestrator/runscript
@@ -41,7 +42,7 @@ set spcam_orctotal_in = 456
 @ CRM_pcount       = $spcam_orctotal_in * $spcam_subx_in * $spcam_suby_in
 @ NPNN = $pcount +  $CRM_pcount
 @ NNODE = $NPNN / $taskPernode + 1
-setenv CASE       scalling_timming_2day_GCMRes_${CASERES}_GCMTask${pcount}_crmnx${crm_nx_in}_crmdt04_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
+setenv CASE       scalling_timming_GCMRes_${CASERES}_GCMTask${pcount}_crmnx${crm_nx_in}_crmdt04_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
 ## ====================================================================
 #   define directories <Please make sure the directories are correct>
 ## ====================================================================
@@ -85,7 +86,7 @@ cd  $CASEROOT
 sed -e "s/SUBXdim/$spcam_subx_in/g; s/SUBYdim/$spcam_suby_in/g; s/ORCT/$spcam_orctotal_in/g;" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/crmdims.sample > $HOME/repositories/CESM-OCR/components/cam/src/physics/spcam/crmdims.F90 
 sed -e "s/GCM_pcount/$pcount/g; s/CRM_pcount/$CRM_pcount/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/env_mach_specific.sample  > $CASEROOT/env_mach_specific.xml
 sed -e "s/NXX/$crm_nx_in/g; s/NYY/$crm_ny_in/g; s/DXX/$crm_dx_in/g; s/DTT/$crm_dt_in/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/config_component.sample > $HOME/repositories/CESM-OCR/components/cam/cime_config/config_component.xml
-sed -e "s/NPN/$taskPernode/g; s/NNNODE/$NNODE/g; s/CCCASE/$CASE/g; s/PPRO/$PROJECT/g; s/QQUE/$queue/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.sample > $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.send
+sed -e "s/NPN/$taskPernode/g; s/USERNAME/$UNAME s/NNNODE/$NNODE/g; s/CCCASE/$CASE/g; s/PPRO/$PROJECT/g; s/QQUE/$queue/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.sample > $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.send
 #cat <<EOF >> user_nl_drv
 #atm_cpl_dt = 10
 #EOF
@@ -131,6 +132,17 @@ mpif90  -o $SCRATCH/CESM2_case/$CASE/$CASE/bld/crm.exe perf_mod.o task_exchange.
 cd  $CASEROOT
 ./case.submit
 cp $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.send .case.run
+
+echo "=================================================================================================="
+echo "=================================================================================================="
+echo "The model is currently run using interactive jobs on Cheyenne"
+echo "Case Directory is"
+echo "cd" $CASEROOT
+echo "qsub -I -l select="${NNODE}":ncpus=36:mpiprocs=36 -l walltime=01:00:00 -q regular -A "${account}
+echo "./.case.run"
+echo "=================================================================================================="
+echo "=================================================================================================="
+
 #qsub -l select=${NNODE}:ncpus=${taskPernode}:mpiprocs=${taskPernode}:ompthreads=2 -l -walltime ${run_time} -q ${queue}  -A ${account} .case.run -resubmit
 #cp $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.send .case.run
 #cd ..
