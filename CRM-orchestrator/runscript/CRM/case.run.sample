@@ -15,9 +15,9 @@ DO NOT RUN THIS SCRIPT MANUALLY
 """
 
 import os, sys
-os.chdir( '/scratch1/07088/tg863871/CESM2_case/CASE_FOLDER')
+os.chdir( '/scratch1/07088/YNAME/CESM2_case/CASE_FOLDER')
 
-_LIBDIR = os.path.join("/home1/07088/tg863871/repositories/CESM-OCR/cime", "scripts", "Tools")
+_LIBDIR = os.path.join("/home1/07088/YNAME/repositories/CESM-OCR/cime", "scripts", "Tools")
 sys.path.append(_LIBDIR)
 
 from standard_script_setup          import *
