@@ -86,7 +86,7 @@ cd  $CASEROOT
 sed -e "s/SUBXdim/$spcam_subx_in/g; s/SUBYdim/$spcam_suby_in/g; s/ORCT/$spcam_orctotal_in/g;" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/crmdims.sample > $HOME/repositories/CESM-OCR/components/cam/src/physics/spcam/crmdims.F90 
 sed -e "s/GCM_pcount/$pcount/g; s/CRM_pcount/$CRM_pcount/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/env_mach_specific.sample  > $CASEROOT/env_mach_specific.xml
 sed -e "s/NXX/$crm_nx_in/g; s/NYY/$crm_ny_in/g; s/DXX/$crm_dx_in/g; s/DTT/$crm_dt_in/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/config_component.sample > $HOME/repositories/CESM-OCR/components/cam/cime_config/config_component.xml
-sed -e "s/NPN/$taskPernode/g; s/USERNAME/$UNAME s/NNNODE/$NNODE/g; s/CCCASE/$CASE/g; s/PPRO/$PROJECT/g; s/QQUE/$queue/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.sample > $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.send
+sed -e "s/NPN/$taskPernode/g; s/USERNAME/$UNAME/g; s/NNNODE/$NNODE/g; s/CCCASE/$CASE/g; s/PPRO/$PROJECT/g; s/QQUE/$queue/g" $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.sample > $HOME/repositories/CESM-OCR/CRM-orchestrator/runscript/CRM/case.run.send
 #cat <<EOF >> user_nl_drv
 #atm_cpl_dt = 10
 #EOF
