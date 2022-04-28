@@ -2549,7 +2549,7 @@ end subroutine crm_init_cnst
        call t_stampf(wall(2), usr(2), sys(2))
        wall(1) = wall(2)-wall(1)
        call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
-       write(iulog,*),'Rank,time: ',myrank_global,wall(1)
+       !write(iulog,*),'Rank,time: ',myrank_global,wall(1)
        ! There is no separate convective and stratiform precip for CRM:
        precc(:ncol)  = precc(:ncol) + precl(:ncol)
        precl(:ncol)  = 0._r8

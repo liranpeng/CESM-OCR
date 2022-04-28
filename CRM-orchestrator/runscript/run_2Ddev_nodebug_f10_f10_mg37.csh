@@ -6,7 +6,7 @@ set run_time       = 02:00:00
 set queue          = development
 set account        = ATM20009
 set run_start_date = "0001-01-01"
-set pcount         = 48
+set pcount         = 52
 ## ====================================================================
 #   define case
 ## ====================================================================
@@ -21,26 +21,26 @@ setenv CCSMTAG     CESM-OCR
 # Two moment microphysics SPCAM for testing
 #   and movement toward aerosol-cloud interactions
 setenv CASESET     FSPCAMS
-setenv CASERES     f45_g37
+setenv CASERES     f10_f10_mg37
 setenv PROJECT     ATM20009
 setenv JOB_QUEUE   $queue
 setenv SCRIPTDIR   $HOME/repositories/$CCSMTAG/CRM-orchestrator/runscript
 setenv YOURNAME    $USER # Should double check this !!!
-echo $USER "is running this script now!"
+echo "\e[1;31m$USER\e[0m is running this script now!"
 ### GRID OPTIONS <Liran>
-set crm_nx_in         = 64         # <<< change this one!
+set crm_nx_in         = 4096         # <<< change this one!
 set crm_ny_in         = 1
 set crm_dx_in         = 200
-set crm_dt_in         = 0.5
+set crm_dt_in         = 0.4
 set crm_nz_in         = 24
-set spcam_subx_in     = 2
+set spcam_subx_in     = 4
 set spcam_suby_in     = 1
-set spcam_orctotal_in = 330
-set NPNX              = 50
+set spcam_orctotal_in = 456
+set NPNX              = 52
 @ CRM_pcount       = $spcam_orctotal_in * $spcam_subx_in * $spcam_suby_in
 @ NPNN = $pcount +  $CRM_pcount
 @ NNODE = $NPNN / $NPNX + 1
-setenv CASE       scalling2_Fmode_nodebug_${YOURNAME}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
+setenv CASE       scalling12_f10_f10_mg37_nodebug_${YOURNAME}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
 ## ====================================================================
 #   define directories <Please make sure the directories are correct>
 ## ====================================================================
@@ -52,7 +52,8 @@ setenv CASEROOT  $SCRATCH/CESM2_case/$CASE
 setenv PTMP      $SCRATCH/
 setenv RUNDIR    $PTMP/$CASE/run
 setenv ARCHDIR   $PTMP/archive/$CASE
-setenv DATADIR   /scratch1/07088/${YOURNAME}/inputdata # pritch, link to bloss' downloaded input data.
+setenv DATADIR   /scratch1/07088/tg863871/inputdata    # You do not need to change this. The inputdata is saved in my scratch directory
+#setenv DATADIR   /scratch1/07088/${YOURNAME}/inputdata # pritch, link to bloss' downloaded input data.
 # Note: my input folder is /scratch1/07088/tg863871/inputdata
 ## ====================================================================
 #   Download model source code <This part only need to do once>
@@ -89,6 +90,12 @@ sed -e "s/NXX/$crm_nx_in/g; s/NYY/$crm_ny_in/g; s/DXX/$crm_dx_in/g; s/DTT/$crm_d
 #cat <<EOF >> user_nl_drv
 #atm_cpl_dt = 10
 #EOF
+cat <<EOF >> user_nl_cam
+fincl2 = 'PS:I'
+nhtfrq = 0,1
+mfilt = 0,1
+npr_yz		= 5,8,8,5
+EOF
 xmlchange --file env_batch.xml --id JOB_QUEUE --val $queue
 xmlchange --file env_workflow.xml --id JOB_WALLCLOCK_TIME --val $run_time
 #xmlchange --file env_run.xml --id RUN_STARTDATE --val $run_start_date

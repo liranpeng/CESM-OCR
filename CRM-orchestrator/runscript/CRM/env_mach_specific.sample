@@ -56,6 +56,6 @@
     <env name="OMP_STACKSIZE">128M</env>
   </environment_variables>
   <mpirun mpilib="default">
-    <executable>ibrun</executable>
+    <executable>mpirun</executable>
   </mpirun>
 </file>
