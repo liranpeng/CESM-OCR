@@ -3,17 +3,17 @@
 # Once the job is finished, it helps to submit the job
 set run_time       = 01:00:00
 #set queue          = skx-normal
-#set queue          = economy
-set queue          = regular
+set queue          = economy
+#set queue          = regular
 set account        = UWAS0096
 set run_start_date = "0001-01-01"
-set pcount         = 50
+set pcount         = 48
 set taskPernode    = 36
-set emailaddress   = liranp@uci.edu
+set emailaddress   = pblossey@uw.edu
 ## ====================================================================
 #   define case
 ## ====================================================================
-setenv CCSMTAG     CESM-OCR
+setenv CCSMTAG     CESM-OCR-2022-09-19
 #setenv CASE        SPdev_liran_1mom_v864
 #bloss(2021-01-22): Revert to basic case for testing
 #setenv CASESET     HIST_CAM%SPCAMS_CLM50%SP_CICE%PRES_DOCN%DOM_RTM_SGLC_SWAV
@@ -27,7 +27,7 @@ setenv CASESET     FSPCAMS
 setenv CASERES     f10_f10_mg37
 setenv PROJECT     UWAS0096
 setenv JOB_QUEUE   $queue
-setenv SCRATCH     /glade/scratch/lpeng 
+setenv SCRATCH     /glade/scratch/$USER
 setenv CCSMROOT  $HOME/repositories/$CCSMTAG
 setenv SCRIPTDIR   $CCSMROOT/CRM-orchestrator/runscript
 ### GRID OPTIONS <Liran>
@@ -38,11 +38,11 @@ set crm_dt_in         = 20
 set crm_nz_in         = 24
 set spcam_subx_in     = 2
 set spcam_suby_in     = 1
-set spcam_orctotal_in = 40
+set spcam_orctotal_in = 6
 @ CRM_pcount       = $spcam_orctotal_in * $spcam_subx_in * $spcam_suby_in
 @ NPNN = $pcount +  $CRM_pcount
 @ NNODE = $NPNN / $taskPernode + 1
-setenv CASE       scalling_GCMRes_${CASERES}_GCMTask${pcount}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
+setenv CASE       ae_GCMRes_${CASERES}_GCMTask${pcount}_crmnx${crm_nx_in}_crmny${crm_ny_in}_subx${spcam_subx_in}_suby${spcam_suby_in}_${spcam_orctotal_in}orc_${NNODE}nodes_${queue}
 ## ====================================================================
 #   define directories <Please make sure the directories are correct>
 ## ====================================================================
