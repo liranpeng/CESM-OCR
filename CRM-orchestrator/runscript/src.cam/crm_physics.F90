@@ -10,6 +10,11 @@ module crm_physics
 !          crm_physics_tend 
 ! July, 2009, Minghuai Wang: m2005_effradius
 !
+! 2022, Liran Peng, Mike Pritchard, Peter Blossey: CRM Orchestrator
+!          Allow CRM processes to be run in separate executable and 
+!          communicate with them through MPI rather than by calling
+!          the crm() subroutine.  This allows the CRMs to be parallelized
+!          and may permit larger CRM domains.
 !---------------------------------------------------------------------------
    use crmx_grid
    use crmx_mpi
@@ -1685,6 +1690,7 @@ end subroutine crm_init_cnst
        call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
        do i = 1,ncol
          if (state%isorchestrated(i)) then
+          !ORC: Collect and send data to CRM executable via MPI_Send
           do iorc=1,orc_nsubdomains
          !if (state%crmrank0(i) .ne. -2) then ! is this column coupled to an external CRM?
           ! This part is to test the idear of creating a new data type for MPI
@@ -1710,6 +1716,18 @@ end subroutine crm_init_cnst
           if (i.eq.ncol) then
             FlagEnd = 1
           endif
+
+          !bloss(TODO): Separate passing of smaller arguments (scalar/vectors) 
+          !  from full 3D CRM fields.  Except for radiation fields, the 3D fields
+          !  are not really used in the GCM, so they really should only be passed
+          !  back from the CRM to the GCM when it is time for a full output or
+          !  restart file.
+          !bloss(TODO): *_rad variables are zeroed out at the start of crm() and crm_ORC()
+          !  so they do not really need to be passed to the CRM at the beginning of the
+          !  GCM timestep.  They only need to be passed back at the end.
+          !  The crm_qrad() variable DOES need to be passed to the CRM at the beginning of each step.
+          !bloss(TODO): The 3D fields would need to be sent to the CRM during the
+          !  first timestep of a restarted simulation.
           latitude0 = get_rlat_p(lchnk, i_save)*57.296_r8
           longitude0 = get_rlon_p(lchnk, i_save)*57.296_r8 
           Var_Flat(        1)                             = real(lchnk,8)
@@ -1794,6 +1812,12 @@ end subroutine crm_init_cnst
           Var_Flat(48*pver+2+singlelen:49*pver+singlelen+1) = ptend_loc%s(i_save,:)
           Var_Flat(49*pver+2+singlelen:49*pver+21+singlelen)= qtotcrm(i_save,1:20)
           Var_Flat(49*pver+21+singlelen+1)=gcolindex(i) !bloss: Pass a single gcolindex.
+
+          !bloss(TODO): Make this a separate pass from the GCM to CRM.
+          !  Exclude the _rad() arrays since we only need them to be
+          !  returned from the CRM.  Set it up to only send the 3D
+          !  arrays to the CRM on the first step of a run or just after
+          !  a restart.
           fcount = 0
           do kk=1,crm_nz
             do jj=1,crm_ny
@@ -1803,16 +1827,16 @@ end subroutine crm_init_cnst
                 Var_Flat2(fcount + 1 * chnksz) = crm_v(i_save,ii,jj,kk)
                 Var_Flat2(fcount + 2 * chnksz) = crm_w(i_save,ii,jj,kk)
                 Var_Flat2(fcount + 3 * chnksz) = crm_t(i_save,ii,jj,kk)
-                Var_Flat2(fcount + 4 * chnksz) = crm_qrad(i_save,ii,jj,kk)
+                Var_Flat2(fcount + 4 * chnksz) = crm_qrad(i_save,ii,jj,kk) !bloss: PASS TO CRM EVERY TIME
                 Var_Flat2(fcount + 5 * chnksz) = qc_crm(i_save,ii,jj,kk)
                 Var_Flat2(fcount + 6 * chnksz) = qi_crm(i_save,ii,jj,kk)
                 Var_Flat2(fcount + 7 * chnksz) = qpc_crm(i_save,ii,jj,kk)
                 Var_Flat2(fcount + 8 * chnksz) = qpi_crm(i_save,ii,jj,kk)
-                Var_Flat2(fcount + 9 * chnksz) = t_rad(i_save,ii,jj,kk)
-                Var_Flat2(fcount + 10* chnksz) = qv_rad(i_save,ii,jj,kk)
-                Var_Flat2(fcount + 11* chnksz) = qc_rad(i_save,ii,jj,kk)
-                Var_Flat2(fcount + 12* chnksz) = qi_rad(i_save,ii,jj,kk)
-                Var_Flat2(fcount + 13* chnksz) = cld_rad(i_save,ii,jj,kk)
+                Var_Flat2(fcount + 9 * chnksz) = t_rad(i_save,ii,jj,kk) !bloss: RECEIVE FROM CRM EVERY TIME
+                Var_Flat2(fcount + 10* chnksz) = qv_rad(i_save,ii,jj,kk) !bloss: RECEIVE FROM CRM EVERY TIME
+                Var_Flat2(fcount + 11* chnksz) = qc_rad(i_save,ii,jj,kk) !bloss: RECEIVE FROM CRM EVERY TIME
+                Var_Flat2(fcount + 12* chnksz) = qi_rad(i_save,ii,jj,kk) !bloss: RECEIVE FROM CRM EVERY TIME
+                Var_Flat2(fcount + 13* chnksz) = cld_rad(i_save,ii,jj,kk) !bloss: RECEIVE FROM CRM EVERY TIME
                 Var_Flat2(fcount + 14* chnksz) = cld3d_crm(i_save,ii,jj,kk)
                 Var_Flat2(fcount + 15* chnksz) = crm_tk(i_save,ii,jj,kk)
                 Var_Flat2(fcount + 16* chnksz) = crm_tkh(i_save,ii,jj,kk)
@@ -1969,6 +1993,8 @@ end subroutine crm_init_cnst
           ! **********************
 
 #ifdef m2005
+       !bloss(TODO): Allow orchestrated CRMs to run when using M2005 microphysics.
+       !   This is important for cloud-aerosol interactions
           call endrun('crm_physics: ORCHESTRATOR not compatible with m2005 microphysics') ! more stuff would be needed to pass to/fro CRM for this.
 #endif
           ! ----------------------- receive outputs from orchestrator
@@ -1983,10 +2009,49 @@ end subroutine crm_init_cnst
           ! ---------- flattened multi-dim CRM inputs, prepackaged in
           ! crm_physics -------
 #ifdef ORCHESTRATOR
+          !bloss(TODO): Proposed modifications for section of code receiving data via 
+          !       MPI from external CRM executables.
+          !   - First post non-blocking receive for all CRMs that we need to receive
+          !       data from.
+          !       + Question: Should CRM-mean fields be computed within the CRM?
+          !            If so, we only need to get them from the master node of each CRM.
+          !       + Question: If we are receiving 3D fields from the CRMs, would the
+          !            buffers required for many non-blocking receive commands strain
+          !            the memory available on the GCM nodes?
+          !   - IDEA: Do not send full 3D data back to GCM at the end of each GCM timestep.
+          !        My understanding is that the GCM does nothing with this and sends
+          !        it back at the start of the next step.  With the orchestrator, each
+          !        CRM still holds all of the 3D fields and is just waiting for the 
+          !        new GCM fields that are needed for the large-scale tendency during the
+          !        next CRM run.  If that is true, then the 3D fields only need to be passed
+          !        back to the GCM for writing restart files and for output files that
+          !        include them.
+          !    - NOTE: The crm_rad 3D fields need to be passed every time step, 
+          !        because the radiation is computed within the GCM rather than the CRM.  
+          !        The crm_rad fields could perhaps be sub-sampled as they are in E3SM-MMF.
+          !        This might reduce the effort for radiation computations, though it would
+          !        work best if McICA is used to account for the partial cloudiness associated
+          !        with the averaging of the crm_rad fields over the GCM timestep.
+          !
+
+          !bloss(TODO): Allocate array to hold data from non-blocking receives.
+          !      Add loop to post non-blocking receives.
+          !      This will allow the GCM to populate GCM arrays as the data arrives,
+          !      rather than waiting for each CRM in turn.
+
+
+          !bloss(TODO): Loop through i=1,ncol and iorc=1,orc_nsubdomains
+          !      and repeatedly check for message arrival from CRM.
+          !      Then, copy CRM data into GCM arrays, as below.
+
          do i = 1,ncol
          if (state%isorchestrated(i)) then
+            !ORC: This GCM column should receive data via MPI from the CRM.
+            !  NOTE: This approach uses a blocking receive, so the GCM waits for the
+            !    message from each CRM subdomain in sequence.  The above TODO would
+            !    separate this into two steps with a non-blocking receive command and
+            !    another loop checking for message arrival and unpacking the data.
          do iorc=1,orc_nsubdomains
-         !if (state%crmrank0(i) .ne. -2) then ! is this column coupled to an external CRM?
           call mpi_comm_rank(MPI_COMM_WORLD, myrank_global, ierr)
           dest = state%crmrank(i,iorc)
           call MPI_Recv(CRM_Var_Flat,fleno+nflat,MPI_REAL8,dest,8006,MPI_COMM_WORLD,status,ierr)
@@ -2071,20 +2136,22 @@ end subroutine crm_init_cnst
             do jj=1,orc_ny
               do ii=1,orc_nx
                 fcount = fcount + 1
+                !bloss(TODO): We probably only need to get the _rad() fields
+                !   after each CRM simulation.  Maybe they could be coarsened.
                 out_crm_u(ii,jj,kk)    = CRM_Var_Flat(fcount)             
                 out_crm_v(ii,jj,kk)    = CRM_Var_Flat(fcount + 1 * chnksz) 
                 out_crm_w(ii,jj,kk)    = CRM_Var_Flat(fcount + 2 * chnksz) 
                 out_crm_t(ii,jj,kk)    = CRM_Var_Flat(fcount + 3 * chnksz) 
-                out_crm_qrad(ii,jj,kk) = CRM_Var_Flat(fcount + 4 * chnksz) 
+                out_crm_qrad(ii,jj,kk) = CRM_Var_Flat(fcount + 4 * chnksz) !bloss: SEND-ONLY EACH TIME
                 out_qc_crm(ii,jj,kk)   = CRM_Var_Flat(fcount + 5 * chnksz) 
                 out_qi_crm(ii,jj,kk)   = CRM_Var_Flat(fcount + 6 * chnksz) 
                 out_qpc_crm(ii,jj,kk)  = CRM_Var_Flat(fcount + 7 * chnksz) 
                 out_qpi_crm(ii,jj,kk)  = CRM_Var_Flat(fcount + 8 * chnksz) 
-                out_t_rad(ii,jj,kk)    = CRM_Var_Flat(fcount + 9 * chnksz) 
-                out_qv_rad(ii,jj,kk)   = CRM_Var_Flat(fcount + 10* chnksz)
-                out_qc_rad(ii,jj,kk)   = CRM_Var_Flat(fcount + 11* chnksz)
-                out_qi_rad(ii,jj,kk)   = CRM_Var_Flat(fcount + 12* chnksz) 
-                out_cld_rad(ii,jj,kk)  = CRM_Var_Flat(fcount + 13* chnksz) 
+                out_t_rad(ii,jj,kk)    = CRM_Var_Flat(fcount + 9 * chnksz) !bloss: RECEIVE-ONLY EACH TIME
+                out_qv_rad(ii,jj,kk)   = CRM_Var_Flat(fcount + 10* chnksz) !bloss: RECEIVE-ONLY EACH TIME
+                out_qc_rad(ii,jj,kk)   = CRM_Var_Flat(fcount + 11* chnksz) !bloss: RECEIVE-ONLY EACH TIME
+                out_qi_rad(ii,jj,kk)   = CRM_Var_Flat(fcount + 12* chnksz) !bloss: RECEIVE-ONLY EACH TIME
+                out_cld_rad(ii,jj,kk)  = CRM_Var_Flat(fcount + 13* chnksz) !bloss: RECEIVE-ONLY EACH TIME
                 out_cld3d_crm(ii,jj,kk)= CRM_Var_Flat(fcount + 14* chnksz)
                 out_crm_tk(ii,jj,kk)   = CRM_Var_Flat(fcount + 15* chnksz)
                 out_crm_tkh(ii,jj,kk)  = CRM_Var_Flat(fcount + 16* chnksz)

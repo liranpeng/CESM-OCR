@@ -526,6 +526,11 @@ real(kind=core_rknd), dimension(nzm) :: &
         
         end if
 
+        !bloss(TODO): Is there a way to do this without having to copy the 3D fields?
+        !   That seems like a waste of memory.  Even if u_crm() does not include the
+        !   ghost cells, the packed fields sent from the GCM could be directly unpacked
+        !   into u(), which does have the ghost cells...  If possible, this might
+        !   cut down on the memory footprint of the CRMs.
         u(1:nx,1:ny,1:nzm) = u_crm(1:nx,1:ny,1:nzm)
         v(1:nx,1:ny,1:nzm) = v_crm(1:nx,1:ny,1:nzm)*YES3D
         w(1:nx,1:ny,1:nzm) = w_crm(1:nx,1:ny,1:nzm)
@@ -631,6 +636,9 @@ real(kind=core_rknd), dimension(nzm) :: &
         buffer1(1:nzm, 8) = qn0(:)/float(nsubdomains)
         buffer1(1:nzm, 9) = qp0(:)/float(nsubdomains)
         buffer1(1:nzm,10) = tke0(:)/float(nsubdomains)
+        !bloss(TODO): Could we implement some kind of check here
+        !  to make sure that nfield is really equal to the number
+        !  of fields being averaged across the subdomains?
         call task_sum_real_ORC(buffer1,buffer2,nzm*nfield)
         u0(:)    = buffer2(:, 1)
         v0(:)    = buffer2(:, 2)
