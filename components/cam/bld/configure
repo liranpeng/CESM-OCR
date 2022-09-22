@@ -1779,6 +1779,7 @@ if ($pergro eq "ON") { $cfg_cppdefs .= " -DPERGRO"; }
 
 # Building for superparameterization
 my $spcam_clubb_sgs = $cfg_ref->get('spcam_clubb_sgs');
+my $spcam_orchestrator = $cfg_ref->get('spcam_orchestrator');
 my $spcam_nx        = $cfg_ref->get('spcam_nx');
 my $spcam_ny        = $cfg_ref->get('spcam_ny');
 my $spcam_nz        = $cfg_ref->get('spcam_nz');
@@ -1792,6 +1793,9 @@ if ($phys_pkg eq 'spcam_m2005' or $phys_pkg eq 'spcam_sam1mom') {
     $cfg_cppdefs .= " -DSPCAM_NX=$spcam_nx -DSPCAM_NY=$spcam_ny -DSPCAM_NZ=$spcam_nz -DSPCAM_DX=$spcam_dx -DSPCAM_DT=$spcam_dt -DYES3DVAL=$yes3Dval -DCRM ";
     if ( $spcam_clubb_sgs == 1 )    {
         $cfg_cppdefs .= "-DSPCAM_CLUBB_SGS -DCLUBB_CRM -DCLUBB_REAL_TYPE=dp -DCLUBB_SAM";  ## -DNO_LAPACK_ISNAN";
+    }
+    if ( $spcam_orchestrator == 1 )    {
+        $cfg_cppdefs .= "-DORCHESTRATOR"; #bloss: automate control of ORCHESTRATOR setting
     }
 }
 

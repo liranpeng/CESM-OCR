@@ -3124,6 +3124,13 @@ Switch for CLUBB_SGS
 Default: set by build-namelist
 </entry>
 
+<entry id="do_spcam_orchestrator" type="logical" category="conv"
+       group="phys_ctl_nl" valid_values="" >
+Switch for SPCAM Orchestrator, which enables CRMs to be parallelized
+and run in a separate executable with communication via MPI.
+Default: set by build-namelist
+</entry>
+
 <entry id="shallow_scheme" type="char*16" category="conv"
        group="phys_ctl_nl" valid_values="Hack,UW,CLUBB_SGS,UNICON,SPCAM_m2005,SPCAM_sam1mom" >
 Type of shallow convection scheme employed.

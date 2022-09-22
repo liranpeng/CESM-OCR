@@ -1726,6 +1726,10 @@
 <conv_water_frac_limit            > 0.01d0  </conv_water_frac_limit>
 <conv_water_frac_limit unicon="1" > 0.001d0 </conv_water_frac_limit>
 
+<!-- SPCAM_ORCHESTRATOR -->
+<do_spcam_orchestrator                                 > .false. </do_spcam_orchestrator>
+<do_spcam_orchestrator   spcam_orchestrator="1"        > .true.  </do_spcam_orchestrator>
+
 <!-- CLUBB_SGS -->
 <do_clubb_sgs                                 > .false. </do_clubb_sgs>
 <do_clubb_sgs   clubb_sgs="1"                 > .true.  </do_clubb_sgs>
